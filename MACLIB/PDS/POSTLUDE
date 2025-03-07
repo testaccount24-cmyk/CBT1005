@@ -1,0 +1,30 @@
+         MACRO
+         POSTLUDE &LABEL
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                                   03NOV80-SYLVESTER
+.*
+         GBLB  &BLKXCPT(30)
+         GBLA  &BLK,&PRC
+         GBLC  &BLKID(30),&PRCXCPT(4)
+         LCLA  &I
+&LABEL   SASLIST MACRO,'POSTLUDE'
+         AIF   ('&LABEL' EQ '').YPOST
+         AIF   (&BLKXCPT(&BLK)).GENBR
+&BLKXCPT(&BLK) SETB 1
+&PRCXCPT(&PRC) LOCTR
+         AGO   .TERMEND
+.GENBR   IF0BC 15,@@Z&BLKID(&BLK)
+.TERMEND ANOP
+&I       SETA  1
+.LOOP    ANOP
+&SYSLIST(&I) DS  0H
+&I       SETA  &I+1
+         AIF  (&I LE N'&SYSLIST).LOOP
+         AGO  .MEND
+.**********************************************************************
+.YPOST   MNOTE 08,'****** POSTLUDE: EXCEPTION-NAME MISSING, IGNORED.'
+.MEND    SASLIST MACEND
+         MEND

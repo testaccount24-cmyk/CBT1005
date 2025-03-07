@@ -1,0 +1,14 @@
+         MACRO                                                          0    001
+         #MACLIST                                                       0    002
+         GBLC  &T(64)                                                   0    003
+         GBLA  &TI,&TJ                                                  0    004
+         GBLB  &NOTANY                                                  15MAY74
+         AIF   (&TJ EQ &TI+1).MEND    EXIT,IF NO EXAMPLES SKIPPED       0    006
+         AIF   (&NOTANY).GO           NO EJECT, IF NO EXAMPLES PRINTED  15MAY74
+         TITLE ' '                                                      0    008
+.GO      MNOTE *,'THERE ARE ALSO EXAMPLES FOR THE FOLLOWING MACROS :'   0    009
+.LOOP    ANOP                         LIST ALL EXAMPLES SKIPPED         0    010
+&TI      SETA  &TI+1                                                    0    011
+         MNOTE *,'                            &T(&TI)'                  0    012
+         AIF   (&TI LT &TJ).LOOP                                        0    013
+.MEND    MEND                                                           0    014

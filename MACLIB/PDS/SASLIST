@@ -1,0 +1,81 @@
+         MACRO
+&NAME    SASLIST &CODE,&TEXT
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+         GBLC  &SASLIST(100)
+         GBLA  &SASNDX,&SASMAC
+         GBLC  &SASTIME
+         LCLC  &T,&P1
+         LCLA  &TT
+.*                            SYLVESTER RZ.BN  06JUN80
+.*       MEXIT
+.*       AIF   ('&SASTIME' NE '').TIMETEST
+.*ASTIME AREAD CLOCKB
+.*       AGO   .TIMETEST
+         AIF  (&SASNDX GT 0).TEST1
+&SASNDX SETA 1
+&SASLIST(&SASNDX) SETC 'DATA'
+.*
+.TEST1   AIF  ('&CODE' NE 'MACRO').NMACRO
+&SASMAC  SETA &SASMAC+1
+         AIF  (&SASMAC GT 1).MEND
+         AIF  ('&SASLIST(&SASNDX)' EQ 'NONE').MEND
+         PUSH PRINT
+         PRINT GEN,DATA
+**SPTS MACRO
+         AGO .MEND
+.*
+.NMACRO  AIF  ('&CODE' NE 'MACEND').NMACEND
+         AIF  (&SASMAC LT 1).MEND
+&SASMAC  SETA &SASMAC-1
+         AIF  (&SASMAC GE 1).MEND
+         AIF  ('&SASLIST(&SASNDX)' EQ 'NONE').MEND
+**SPTS MACEND
+         POP  PRINT
+         AGO .MEND
+.*
+.NMACEND AIF  ('&CODE' NE 'MNOTE').NMNOTE
+.*
+         AGO .MEND
+.*
+.NMNOTE  AIF  ('&CODE' NE 'LOC').NLOC
+&SASLIST(&SASNDX) SETC 'LOC'
+         AGO .MEND
+.*
+.NLOC    AIF  ('&CODE' NE 'CODE').NCODE
+&SASLIST(&SASNDX) SETC 'CODE'
+         AGO .MEND
+.*
+.NCODE   AIF  ('&CODE' NE 'NONE').NNONE
+&SASLIST(&SASNDX) SETC 'NONE'
+         AGO .MEND
+.*
+.NNONE   AIF  ('&CODE' NE 'DATA').NDATA
+&SASLIST(&SASNDX) SETC 'DATA'
+         AGO .MEND
+.*
+.NDATA   AIF  ('&CODE' NE 'ASIS').NASIS
+&SASLIST(&SASNDX) SETC 'ASIS'
+         AGO .MEND
+.*
+.NASIS   AIF  ('&CODE' NE 'LIST').NLIST
+         AGO .MEND
+.*
+.NLIST   AIF  ('&CODE' NE 'PUSH').NPUSH
+&SASLIST(&SASNDX+1) SETC '&SASLIST(&SASNDX)'
+&SASNDX SETA &SASNDX+1
+.*
+.NPUSH   AIF  ('&CODE' NE 'POP').NPOP
+         AIF  (&SASNDX EQ 1).MEND
+&SASNDX SETA &SASNDX-1
+.*
+.NPOP    AGO  .MEND
+.TIMETEST ANOP
+&T       AREAD CLOCKB
+&TT      SETA  (&T-&SASTIME)*10
+         AIF   ('&TEXT' EQ '').MEND
+&P1      SETC  '&TEXT'(2,K'&TEXT-2)
+         MNOTE *,'&P1 : TIME IS NOW : &TT MS.'
+.MEND    MEND

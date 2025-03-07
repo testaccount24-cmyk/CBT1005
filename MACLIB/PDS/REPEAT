@@ -1,0 +1,50 @@
+         MACRO
+         REPEAT &LABEL
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                                      .......-PAHL
+.*                                                      19FEB76-GEIST
+.*                                                   20MAY80-SYLVESTER
+.*
+         GBLA  &BLK,&BLKCC(30),&PRC
+         GBLC  &BLKTYPE(30),&BLKNAME(30),&BLKID(30),&PRCID(04)
+         LCLA  &A,&CC
+         LCLC  &TLAB
+&LABEL   SASLIST MACRO,'REPEAT'
+&CC      SETA  15                                                    IF
+.*
+         AIF   ('&BLKTYPE(&BLK)' NE 'JX').NOIF                       IF
+.*  CONDITIONAL REPEAT: "IF" CONDITION "REPEAT"                      IF
+&CC      SETA  &BLKCC(&BLK)                                          IF
+&TLAB    SETC  '@@T&BLKID(&BLK)'
+@@F&BLKID(&BLK)  EQU *+4
+@@Z&BLKID(&BLK)  EQU *+4
+&BLK     SETA  &BLK-1                  POP-UP BLOCK STRUCTURE        IF
+.NOIF    ANOP
+&A       SETA  &BLK
+         AIF   ('&LABEL' EQ '').FOUND1 REPEAT CURRENT BLOCK
+.*  SEARCH BLOCK NAME IN STRUCTURE STACK
+.LOOP    AIF   ('&BLKNAME(&A)' EQ '&LABEL').FOUND
+&A       SETA  &A-1
+         AIF   (&A GT 0).LOOP
+         MNOTE 08,'****** REPEAT: NAMED BLOCK "&LABEL" NOT OPEN. IGNORE-
+               D.'
+         AGO  .MEND
+.FOUND   AIF   ('&BLKTYPE(&A)'(1,1) EQ 'R').FOUND2  REFINEMENT      SYL
+         DC    0S(&BLKNAME(&A))        CREATE ASM-XREF FOR BLOCK NAME.
+.FOUND1  AIF   ('&BLKTYPE(&A)'(1,1) EQ 'B').GENBC   BLOCK            GT
+         AIF   ('&BLKTYPE(&A)'(1,1) EQ 'W').GENBC   WHILE           STO
+         AIF   ('&BLKTYPE(&A)'(1,1) EQ 'R').GENBC   REFINEMENT      SYL
+         AIF   ('&BLKTYPE(&A)'(1,1) NE 'L').YREPEAT                  GT
+.GENBC   BC    &CC,@@A&BLKID(&A)       JUMP TO BEGIN OF BLOCK        GT
+         AIF   ('&TLAB' EQ '').MEND                                  IF
+&TLAB    EQU   @@A&BLKID(&A)                                         IF
+         AGO  .MEND
+.FOUND2  DC    0S(@START@&PRCID(&PRC)@OF@&LABEL)                    SYL
+         AGO   .GENBC                                               SYL
+.**********************************************************************
+.YREPEAT MNOTE 08,'****** REPEAT: BLOCK NOT "REPEATABLE". IGNORED.'
+.MEND    SASLIST MACEND
+         MEND

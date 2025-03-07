@@ -1,0 +1,34 @@
+         MACRO ,                                       STRUCT MACRO SET
+&LABEL   $EX$  &A,&REL,&B,&CALLER=$EX$
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                            SYLVESTER GMD-RZ) 00JAN79
+.*  EVALUATE RELATION-EXPRESSION AND SET BRANCH CODE
+.*  &A,&REL,&B  COMPRISES THE CONDITIONAL EXPRESSION, LEAVING TRUE OR
+.*       FALSE.  WHAT IS A LEGAL CONDITION, IS DEFINED IN MACRO IF0CE.
+.*
+         GBLA  &BLK
+         GBLC  &BLKTYPE(30),&BLKNAME(30),&BLKID(30)
+         LCLC  &C
+&LABEL   SASLIST MACRO,'(EX)'
+         AIF   ('&LABEL' EQ '').GO
+&LABEL   DS    0S(&LABEL)
+.*
+.*  EVALUATE CONDITIONAL EXPRESSION
+.*
+.GO      AIF   ('&BLKTYPE(&BLK)'(2,1) EQ 'X').Y0
+         AIF ('&A&REL&B' EQ '').YEX
+         IF0CE &A,&REL,&B,CALLER=&CALLER
+&BLKTYPE(&BLK) SETC '&BLKTYPE(&BLK)'(1,1)'X'
+         AIF   (N'&SYSLIST GT 3).YEX1
+         AGO  .MEND
+.**********************************************************************
+.YEX     MNOTE 08,'****** $EX$: MISSING PARAMETERS'
+         AGO  .MEND
+.YEX1    MNOTE 08,'****** $EX$: ONLY THREE PARAMETERS ALLOWED'
+         AGO  .MEND
+.Y0      BLK0TEST EX,$X,&LABEL
+.MEND    SASLIST MACEND
+         MEND

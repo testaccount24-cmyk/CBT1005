@@ -1,0 +1,64 @@
+         MACRO ,                             REGISTER CONTROL MACRO SET
+&LABEL   #USE  &GPR,&BLOCK,&ADDR,&NOMSG
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*
+.*  CONTROL REGISTER USAGE: SEIZE REGISTER, GENERATE USING, AND LOAD
+.*  PROPER VALUE.
+.*
+         GBLA  &EQUR                   EQUR MACRO OUTPUT
+         GBLC  &EQURUSE(16),&EQURBLK(16)
+         LCLA  &R
+&LABEL   SASLIST MACRO,'#USE'
+.*
+         AIF   ('&GPR' EQ '?').INUSE
+         EQUR  &GPR                    GET REG NUMBER+1 TO &EQUR
+         AIF   (&EQUR LT 1).YGPR       GPR NOT DEFINED
+.*  SEE IF REGISTER IS SEIZED ALREADY
+&R       SETA  &EQUR-1                 BINARY REGISTER NUMBER
+         AIF   ('&EQURUSE(&EQUR)' EQ '').SEIZE
+         AIF   ('&EQURUSE(&EQUR)' EQ '&GPR').OVERRID
+         MNOTE 12,'****** #USE: &GPR (&R) IN USE W/NAME &EQURUSE(&EQUR)-
+                -&EQURBLK(&EQUR)- THAT USE NOW OVERRIDDEN'
+         AGO   .SEIZE
+.OVERRID AIF   ('&NOMSG' EQ '*' OR '&NOMSG' EQ 'NOMSG').SEIZE
+         MNOTE 12,'****** #USE: &GPR (&R) IN USE -&EQURBLK(&EQUR)- THAT-
+                USE NOW OVERRIDDEN'
+.*  SEIZE NEW REGISTER
+.SEIZE   ANOP
+&EQURUSE(&EQUR) SETC '&GPR'
+&EQURBLK(&EQUR) SETC '&BLOCK'
+.*  GENERATE USING HERE ONLY IF LOCATION COUNTER REFERENCE ('*')
+         AIF   ('&BLOCK' NE '*' OR '&ADDR' EQ '*').NAME
+         USING *,&GPR
+.*   PLACE ANY LABEL
+.NAME    AIF   ('&LABEL' EQ '').LOAD
+&LABEL   DS    0H
+.*  LOAD REGISTER
+.LOAD    AIF   ('&ADDR' EQ '').USE
+         EQUR  &ADDR                   TEST FOR REGISTER
+         AIF   (&EQUR GT 0).LR
+         AIF   ('&ADDR'     NE '*').NOSTAR
+         AIF   ('&BLOCK' NE '*').YSTAR
+         BALR  &GPR,0
+         USING *,&GPR
+         AGO   .MEND
+.NOSTAR  LET   &GPR,=,&ADDR            LOAD REG WITH ADDRESS
+         AGO   .USE
+.LR      LR    &GPR,&ADDR(1)
+.*  GENERATE USING
+.USE     AIF   ('&BLOCK' EQ '*' OR '&BLOCK' EQ '').MEND
+         USING &BLOCK,&GPR
+         AGO  .MEND
+.*
+.*   "#USE ?" : DISPLAY REGISTER USAGE
+.INUSE   #DROP ?
+         AGO  .MEND
+.**********************************************************************
+.YGPR MNOTE 12,'** #USE: REGISTER-SYMBOL "&GPR" NOT PREVIOUSLY DEFINED'
+         AGO  .MEND
+.YSTAR MNOTE 12,'** #USE: ILLEGAL OPERAND(S)'
+.MEND    SASLIST MACEND
+         MEND

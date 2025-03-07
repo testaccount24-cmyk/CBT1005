@@ -1,0 +1,828 @@
+./ ADD NAME=WHATTODO
+EINE ERROR RECOVERY ROUTINE, DIE
+GQSCAN QUIT=YES MACHT, WENN MAN NOCH EINEN
+TOKEN IN GRS HAT.
+./ ADD NAME=$RZFUN06
+$RZFUN06 TITLE 'QCB EXTRACTION ROUTINE  --  PROGRAM DESCRIPTION'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*                                                                     *
+* COPYRIGHT: COPYRIGHT BY GESELLSCHAFT FUER MATHEMATIK UND            *
+*                                      DATENVERARBEITUNG MBH BONN,    *
+*                         - RECHENZENTREN -                           *
+*                         SCHLOSS BIRLINGHOVEN                        *
+*                         5205 ST. AUGUSTIN 1                         *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+*        $ R Z F U N 0 6                                              *
+*                                                                     *
+*                                                                     *
+* <CLASS>:                                                            *
+*        SUBROUTINE                                                   *
+*                                                                     *
+*                                                                     *
+* <FUNCTION/OPERATION>:                                               *
+*        $RZFUN06 SEARCHES THE QCB QUEUES AND CREATES A LIST OF       *
+*        ELEMENTS CONTAINING THEN FOLLOWING INFORMATION:              *
+*           MAJORNAME, MINORNAME, ACCOUNTNUMBER, USERNAME, STATUS OF  *
+*           THE ALLOCATED RESOURCE                                    *
+*                                                                     *
+*                                                                     *
+* <ENTRY POINTS>:                                                     *
+*        $RZFUN06 (ADDRESS OF ENTRY POINT MUST BE IN GPR 15 ON ENTRY.)*
+*                                                                     *
+*        REMAINDER OF DESCRIPTION IS FOUND IN                         *
+*        RZ.SOURCE.LINKLIB(QCBEXTR)                                   *
+*                                                                     *
+* <NOTES>:                                                            *
+*                                                                     *
+*        THE PROGRAM MUST RUN IN SUPERVISOR STATE AND ANY KEY.        *
+*        IT GETS THE SVC255 CALLER'S KEY FROM THE RBOPSW FIELD        *
+*        OF THE CALLER'S RB.                                          *
+*        WHEN THE PROGRAM ACCESSES USER PARAMETER DATA, IT            *
+*        SWITCHES TO THE USER'S KEY AND BACK AFTER ACCESSING THEM.    *
+*                                                                     *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         TITLE 'THE PROGRAM'
+         SASLIST LOC
+         AGO .SUPERV
+         MACRO
+&NAME    MODESET &KEYADDR=,&WORKREG=,&RELATED=
+&NAME    DS  0H
+         MEND
+         MACRO
+&NAME    SETLOCK &WHAT,&RELATED=,&TYPE=,&MODE=,&REGS=
+&NAME    DS  0H
+         MEND
+         MACRO
+&NAME    IPK &WHAT
+&NAME    DS  0H
+         MEND
+.SUPERV ANOP
+$RZFUN06 $PROC BASE=R11,ID='$RZFUN06-V2.0-27SEP81-SYLVESTER'
+***
+****        DECLARE SUBROUTINES, DATAAREAS, REGISTER-SYMBOLS ...
+***
+            COPY     QCBDECL
+                                          SPACE   3
+***
+****        INITIALIZE WORKAREAS
+***
+            COPY     QCBINITW
+                                          SPACE   3
+***
+****        FIND THE FIRST QCB
+***
+            #USE     RMAJOR,CVT,16(0,0):F
+            #USE     RMAJOR,QCB,CVTFQCB,NOMSG
+            SPACE 2
+            $IF      RMAJOR,¬=,0,THEN
+***
+****        PROCESS PRE MVS SP3 QCB'S
+***
+               COPY   NSP3QCBS
+            #DROP  RMAJOR
+            ELSE
+***
+****        PROCESS MVS SP3 QCB'S
+***
+               COPY   SP3QCBS
+            IF$
+***
+****        COMPLETE OUTPUT AREAS
+***
+USEREND        MODESET KEYADDR=USERKEY,WORKREG=2,RELATED=MYEND -----+
+               LET R2,=,OLENADR                                     +
+               LET 0(R2):F,:=,OBUFFER,-,BUFFBEGN                    +
+               LET R2,:=,BUFFBEGN                                   +
+               LET 0(R2):F,:=,OCOUNT                                +
+MYEND          MODESET KEYADDR=MYKEY,WORKREG=2,RELATED=USEREND -----+
+                                                    SPACE 2
+***
+****        PARAMETER ERROR EXITS AND END OF PROGRAM                  *
+***
+         POSTLUDE MINORWRONG
+            LET  RETCODE,=,16
+         POSTLUDE MAJORWRONG
+            LET  RETCODE,=,12
+         PROC$ RC=(RETCODE,RETCODE)
+         END
+./ ADD NAME=QCBMIN
+         TITLE 'PROCESS MINOR QUEUE OF ONE MAJOR QCB'
+         #USE ?
+QCBMIN   $BLOCK
+            $IF SWITCH,¬:,MINORNO,THEN       ANY MINOR WANTED ?
+*              HOLE ERSTEN MINOR QCB
+               #USE RMINOR,MIN,MAJFMIN
+MINORLOOP         $WHILE RMINOR,¬=,0         IS THERE A MINOR ?
+                  LOOP
+                     RECURSIV        ?
+                     $IF SWITCH,:,MINORALL  MINOR MATCHES SEARCH KRIT.?
+*                                           I.E. ALL MAJOR'S WANTED
+                     ORELSE ,               LENGTH AND CONTENTS EQUAL
+                        $EX SWITCH,:,MINOREQUAL
+                        ANDTHEN ,
+                           LET R2,=,MINNAMEL:C,-,1
+                           $EX$ R2,=,IMINLEN
+                        ANDTHEN ,
+                           COMPARE MINORCOMPARE
+                        EX$
+                     ORELSE ,               PREFIX EQUAL
+                        $EX SWITCH,¬:,MINOREQUAL
+                        ANDTHEN ,
+                            LET  R2,=,MINNAMEL:C,-,1
+                            $EX$  R2,>=,IMINLEN
+                        ANDTHEN ,
+                           LET  R2,=,IMINLEN
+                           COMPARE MINORCOMPARE
+                        EX$
+                     THEN
+*                       YES, PUT HIM INTO OUTPUT AREA
+                        LET   QCBSELEN,=,MINNAMEL,+,QCBSMIN#
+                        LET   QCBSTYPE,=,QCBSMINT
+                        LET   QCBSSCOP,=,MINFLGS:C
+                        NI    QCBSSCOP,B'11100000'
+                        LET   R3,:=,MINNAMEL
+                        LET   QCBSMLEN,=,R3
+                        LET   R3,-,1
+                        EX    R3,MINORMOVE
+                        $IF   MINFLGS,:,MINNOENQ,THEN
+                           LET QCBSMDEF,=,1
+                        ELSE
+                           LET QCBSMDEF,=,0
+                           ICALL PUTOUTELEMENT
+*                          GET FIRST QEL
+                           #USE  RQEL,QEL,MINFQEL
+QELLOOP                       $WHILE RQEL,¬=,0      IS THERE A QEL ?
+                              LOOP
+                              RECURSIV        ?
+*                                EDIT QEL INTO WORK AREA
+                                 COPY   QCBQELED
+*                                PUT IT TO OUTPUT AREA
+                                 ICALL PUTOUTELEMENT
+*                                GET NEXT QEL
+                                 LET RQEL,=,QELNQEL
+                              WHILE$ QELLOOP
+                           #DROP RQEL
+                        IF$
+                     IF$
+*                    GET NEXT MINOR
+                     LET RMINOR,=,MINNMIN
+                  WHILE$ MINORLOOP
+                 #DROP RMINOR
+            IF$ ,
+         BLOCK$
+         ENDCOPY QCBMIN
+./ ADD NAME=QCBQELED
+            TITLE 'MOVE ONE QEL INTO OUTPUT AREA'
+         #USE ?
+QCBQELED $BLOCK
+***
+****        FILL QEL FLAGS                                            *
+***
+            LET   QCBSTYPE,=,QCBSQELT         SAY THIS IS A QEL ENTRY
+            LET   QCBSELEN,=,QCBSQEL#           SAY THIS IS A QEL ENTRY
+            $IF   QELQFLGS,:,QELSHARE,THEN
+               LET QCBSEXCL,=,0
+            ELSE
+               LET QCBSEXCL,=,1
+            IF$
+            $IF   QELQFLGS,:,QELMC,THEN
+               LET QCBSMC,=,1
+            ELSE
+               LET QCBSMC,=,0
+            IF$
+            $IF   QELQFLGS,:,QELRESV,THEN
+               LET QCBSRESV,=,1
+            ELSE
+               LET QCBSRESV,=,0
+            IF$
+***
+****        SEARCH TO GET QELTYPE AND ACCOUNT NUMBER                  *
+***
+*           INTERPRETE ASID OF QEL-ENTRY
+            LET   (QCBSQELN,8),=,'*??????*'     SAY DUMMY JOBNAME
+            LET   (QCBSASID,2),:=,QELASID
+            LET   QCBSUSRT,=,0
+            #USE  RASVT,CVT,16:F
+            #USE  RASVT,ASVT,CVTASVT,NOMSG
+            LET   R4,=,ASVTMAXU
+            LET   RASVT,->,ASVTFRST
+            #DROP RASVT
+FINDASCB    $FOR  R4,TIMES,LOOP
+               $IF 0(RASVT),¬:,ASVTAVAL
+               ANDTHEN
+                  #USE  RASCB,ASCB,0(RASVT):F
+                  $EX$  ASCBASID,=,QELASID
+               THEN
+                  $IF
+                     LET   R6,=,ASCBJBNI
+                     $EX$  R6,¬=,0
+                  THEN
+                     LET   (QCBSQELN,8),=,0(R6)
+                  ELSEIF
+                     LET   R6,=,ASCBJBNS
+                     $EX$  R6,¬=,0
+                  THEN
+                     LET   (QCBSQELN,8),=,0(R6)
+                  IF$
+                  LET   RCSCB,=,ASCBCSCB
+                  LA    RCSCB,0(,RCSCB)
+                  $IF   RCSCB,¬=,0,THEN
+                     #USE  RCSCB,CHAIN,ASCBCSCB
+                        $IF    CHTRKID,:,CHINITID:N,THEN
+                           LET  QCBSUSRT,=,QCBSBTCH
+                        ELSEIF CHTRKID,:,CHJOBID:N,THEN
+                           LET  QCBSUSRT,=,QCBSSTC
+                        ELSEIF CHTRKID,:,CHTSID:N,THEN
+                           LET  QCBSUSRT,=,QCBSTSOU
+                        IF$
+                     #DROP RCSCB
+                  IF$
+                  #DROP RASCB
+                  LEAVE FINDASCB
+               IF$
+               LET RASVT,->,4(,RASVT)  NEXT ADDRESS SPACE POINTER
+            FOR$  FINDASCB
+         BLOCK$ QCBQELED
+         ENDCOPY QCBQELED
+./ ADD NAME=QCBDECL
+            TITLE 'DECLARATIONS'
+            #USE ?
+***
+****        MACROS                                                    *
+***
+            MACRO
+&NAME       COMPARE &WHAT
+&NAME       EX    R2,&WHAT
+            TRUECC EQ
+            MEND
+            MACRO
+&NAME       RECURSIV
+&NAME       LET   R0,=,RECURSIONCNT,+,1
+            LET   RECURSIONCNT,=,R0
+            IF    R0,<,0,SIGNAL,RECURSION
+            MEND
+***
+****        REGISTERS TO HOLD DATAAREA POINTER                        *
+***
+RPARM       EQUR  R10                 PARAMETER AREA
+RMAJOR      EQUR  R9                  CURRENT MAJOR QCB POINTER
+RMINOR      EQUR  R8                  CURRENT MINOR QCB POINTER
+RQEL        EQUR  R7                  CURRENT QEL QCB POINTER
+RASVT       EQUR  R3                  POINTER INTO AS-VECTOR-TABLE
+RASCB       EQUR  R5                  CURRENT ASCB POINTER
+RCSCB       EQUR  R6                  CURRENT CSCB POINTER
+***
+****        PARAMETER POINTER DSECT (POINTED TO BY GPR 1 ON ENTRY     *
+***
+PARM        DSECT
+QSTRINGP    DS    F
+QLENGTHP    DS    F
+RSTRINGP    DS    F
+RLENGTHP    DS    F
+EAREAP      DS    F
+EAREALP     DS    F
+***
+****        LOCAL VARIABLES, CONSTANTS AND EQUS                       *
+***
+            DATA ,
+RETCODE     DS    F                   RETURN CODES
+MYKEY       DS    C                   PROGRAM'S PROTECTION KEY
+USERKEY     DS    C                   SVC-CALLER'S PROTECTION KEY
+IMAJOR      DC    CL8' '
+IMINOR      DC    CL255' '
+                                     SPACE 3
+SWITCH      DS    B                   GENERAL SWITCH
+MAJORALL    EQUN  1                   SELECT ALL MAJOR QCB'S
+MINORALL    EQUN  2                   SELECT ALL MINOR QCB'S
+MINORNO     EQUN  4                   SELECT NO MINOR QCB
+MINOREQUAL  EQUN  8                   SELECT IF MINOR NAME IS EQUAL,
+*                                     ELSE IF PREFIX IS EQUAL
+                                      SPACE 3
+IMAJLEN     DS    H
+IMINLEN     DS    H
+OBUFFER     DS    F                   POINTER TO NEXT FREE OUTPUT AREA
+BUFFMAX     DS    F                   TOTAL SPACE IN E-AREA
+BUFFBEGN    DS    F                   START ADDRESS OF E-AREA
+OLENADR     DS    A                   ADDRESS OF E-AREA LENGTH FIELD
+OCOUNT      DS    F                   NUMBER OF ENTRIES IN E-AREA
+RECURSIONCNT DS    F                  RECURSION COUNT
+         CONST ,
+RECURSIONMAX   DC    A(X'01000000'/20) MAXIMUM NUMBER OF EXISTING
+*                                     QUEUE ELEMENTS
+MAJORCOMPARE   CLC   MAJNAME-QCB(*-*,RMAJOR),IMAJOR
+MINORCOMPARE   CLC   MINNAME-MIN(*-*,RMINOR),IMINOR
+***
+****     OUTPUT AREA AND WORKAREA DECLARATION                         *
+***
+         DATA ,
+QCBSBUFF    DS    CL(QCBSBLEN)        BUFFER FOR QCB ELEMENTS
+            USING QCBSAREA,QCBSBUFF   ADDRESSABILITY TO WORKAREA
+            SASLIST ASIS
+            @EXTRACT DSECT=QCBEXTR    FORMAT OUTPUT AREA
+         CONST ,
+MINORMOVE MVC QCBSMINN(*-*),MINNAME-MIN(RMINOR)
+         SPACE 3
+***
+**** RTN. TO MOVE ONE EXTRACTED ELEMENT FROM WORKAREA INTO OUTPUT AREA
+***
+            SASLIST LOC
+         IHAPSA ,
+         USING PSA,0
+         IHARB ,
+         IKJTCB ,
+         CODE
+         PUSH USING
+         SASLIST DATA
+PUTOUTELEMENT $PROC TYPE=(L,I)
+            LET     R5,:=,OBUFFER,+,QCBSELEN
+            IF      R5,>=,BUFFMAX,SIGNAL,OUTPUTLISTFULL
+            LET     R5,:=,QCBSELEN
+            LET     R4,:=,OBUFFER
+            LET     R6,->,QCBSAREA
+            LET     R7,:=,R5
+USERPUT     MODESET KEYADDR=USERKEY,WORKREG=2,RELATED=MYPUT  -----+
+            MVCL    R4,R6                                         +
+MYPUT       MODESET KEYADDR=MYKEY,WORKREG=2,RELATED=USERPUT  -----+
+            LET     OBUFFER,:=,R4
+            LET     OCOUNT,+,1
+         PROC$ ,
+         POP USING
+         SPACE 6
+***
+**** ROUTINE TO MOVE VARIABLE LENGTH DATA FROM USER AREA TO MY AREA
+****     <R0> = LENGTH OF DATA
+****     <R1> = ADDRESS OF SOURCE
+****     <R2> = ADDRESS OF TARGET
+***
+         PUSH USING
+MOVEFROMUSERTOME $PROC TYPE=(L,I)
+         $FOR  (R3,:=,R0),TIMES,LOOP
+USERMOVE    MODESET KEYADDR=USERKEY,WORKREG=4,RELATED=MYMOVE ----+
+            IC   R0,0(,R1)                                       +
+MYMOVE      MODESET KEYADDR=MYKEY,WORKREG=4,RELATED=USERMOVE ----+
+            STC  R0,0(,R2)
+            LET  R1,->,1(,R1)
+            LET  R2,->,1(,R2)
+         FOR$
+         PROC$
+         POP USING
+         SPACE 6
+***
+****     SYSTEM DSECTS                                                *
+***
+         PUSH PRINT
+         PRINT NOGEN
+CSCB     DSECT
+         IEECHAIN ,
+         SPACE 3
+         IHAASVT ,
+         SPACE 3
+         IHAASCB ,
+         SPACE 3
+         IHAQCB ,
+         SPACE 3
+         IHAQEL ,
+         SPACE 3
+         CVT   DSECT=YES,LIST=NO,PREFIX=NO
+         POP PRINT
+         ENDCOPY QCBDECL
+./ ADD NAME=QCBINITW
+         TITLE 'INITIALIZE LOCAL VARIABLES'
+         SASLIST  DATA
+         CODE ,
+         #USE ?
+                                       SPACE 3
+***
+****     SAVE PROTECTION KEYS                                         *
+***
+                           SPACE 3
+         IPK   0(0)
+         LET   MYKEY,:=,R2               SAVE OWN PROTECTION KEY
+                           SPACE 1
+         #USE  R2,TCB,PSATOLD
+         #USE  R2,RBBASIC,TCBRBP,NOMSG
+         #USE  R2,RBBASIC,RBLINK,NOMSG
+         LET   (USERKEY,1),:=,RBOPSW+1   SAVE CALLER'S PROTECTION KEY
+         #DROP R2
+                                       SPACE 3
+***
+****     DEFAULTS AND LOCAL VARIABLES                                 *
+***
+                                       SPACE 3
+         LET   SWITCH,=,0           RESET ALL FLAGS
+         LET   RETCODE,=,0          DEFAULT RETURN CODE
+         LET   RECURSIONCNT,=,0     QUEUE RECURSION COUNTER
+                                       SPACE 3
+***
+****     TRANSFORM PARAMTERS FOR MAJOR QCB SELECTION                  *
+***
+         #USE  RPARM,PARM,R1
+                                       SPACE 3
+QCBINITMAJOR $BLOCK
+            LET   (IMAJOR,8),=,=CL8' ' CLEAR MAJOR NAME FIELDG
+USERMAJ     MODESET KEYADDR=USERKEY,WORKREG=4,RELATED=MYMAJ ------+
+            LET   R2,=,QLENGTHP     LOAD Q-LENGTH                 +
+            LET   R2,=,0(,R2):F                                   +
+            LET   R3,=,QSTRINGP     LOAD Q-NAME POINTER           +
+MYMAJ       MODESET KEYADDR=MYKEY,WORKREG=4,RELATED=USERMAJ ------+
+            IF    R2,<,-8,SIGNAL,MAJORWRONG
+            IF    R2,>,8,SIGNAL,MAJORWRONG
+            $IF    R2,>,0,THEN
+               LET  IMAJLEN,=,7
+               LET  R0,=,R2
+               LET  R1,->,0(,R3)
+               LET  R2,->,IMAJOR
+               ICALL MOVEFROMUSERTOME
+            ELSEIF R2,<,0,THEN
+               LET  R2,=,-,R2
+               LET  IMAJLEN,=,R2,-,1
+               LET  R0,=,R2
+               LET  R1,->,0(,R3)
+               LET  R2,->,IMAJOR
+               ICALL MOVEFROMUSERTOME
+            ELSE
+               LET  IMAJLEN,:=,0
+               LET  SWITCH,:,MAJORALL
+            IF$
+         BLOCK$ QCBINITMAJOR
+         SPACE 3
+***
+****     TRANSFORM PARAMETERS FOR MINOR QCB SELECTION                 *
+***
+                                       SPACE 3
+QCBINITMINOR $BLOCK
+            BLANK IMINOR,255           CLEAR MINOR NAME FIELD
+USERMIN     MODESET KEYADDR=USERKEY,WORKREG=4,RELATED=MYMIN  ------+
+            LET   R3,=,RSTRINGP                                    +
+            LET   R2,=,RLENGTHP                                    +
+            LET   R2,=,0(,R2):F                                    +
+MYMIN       MODESET KEYADDR=MYKEY,WORKREG=4,RELATED=USERMIN  ------+
+            IF    R2,>,256,SIGNAL,MINORWRONG
+            $IF   R2,<,-256,THEN
+               LET  SWITCH,:,MINORNO
+            ELSEIF R2,=,0,THEN
+               LET  SWITCH,:,MINORALL
+            ELSE
+               $IF  R2,>,0,THEN
+                  LET  SWITCH,:,MINOREQUAL
+               ELSE
+                  LET  R2,=,-,R2
+               IF$
+               LET  IMINLEN,=,R2,-,1
+               LET  R0,:=,R2
+               LET  R1,->,0(,R3)
+               LET  R2,->,IMINOR
+               ICALL MOVEFROMUSERTOME
+            IF$
+         BLOCK$ QCBINITMINOR
+         SPACE 3
+***
+****     INITIALIZE E-AREA VARIABLES                                  *
+***
+                                       SPACE 3
+QCBINITOBUFFER $BLOCK
+USERINOB    MODESET KEYADDR=USERKEY,WORKREG=4,RELATED=MYINOB -----+
+            LET    R3,:=,EAREAP                                   +
+            LA     R3,0(,R3)                                      +
+            LET    R2,=,EAREALP                                   +
+            LET    R1,:=,0(,R2):F,+,R3                            +
+MYINOB      MODESET KEYADDR=MYKEY,WORKREG=4,RELATED=USERINOB -----+
+            LET    BUFFMAX,:=,R1
+            LET    OLENADR,=,R2
+            LET    BUFFBEGN,=,R3
+            LET    R3,+,4
+            IF     R3,>=,BUFFMAX,SIGNAL,OUTPUTLISTFULL
+            LET    OBUFFER,=,R3
+            LET    OCOUNT,=,0
+         BLOCK$ QCBINITOBUFFER
+         #DROP  RPARM
+         ENDCOPY QCBINITW
+./ ADD NAME=SP3QCBS
+        TITLE 'DEFINE AND INITAILIZE DATA AREAS FOR MVS SP3 PROCESSING'
+***
+****    DEFINE AND INITIALIZE GQSCAN PARAMETER LIST
+***
+                                               SASLIST ASIS
+            ISGRIB
+                                               SASLIST DATA
+         DATA
+***
+****    WE NOW DEFINE SPACE FOR GQSCAN ROUTINE TO RETURN AT LEAST
+****    100 RESOURCE INFORMATION-BLOCKS (RIB+RIBVAR+RIBE).
+***
+$RIB           EQUR  RMAJOR
+$RIBVAR        EQUR  RCSCB
+$RIBS_ASSOCIATED  EQUR  RMINOR
+$RIBS_RETURNED    EQUR  RQEL
+FIRSTMAJOR_DONE   EQUN 16
+DGQSCAN     GQSCAN MF=L
+DGQSCAN_END DS 0F
+RIB_AND_RIBE_LENGTH DS 0F
+RIB_LENGTH  DS     H
+RIBE_LENGTH DS     H
+TOKEN       DS     F
+OLDMAJOR    DS   CL8
+GQSBUFFER   DS   CL((RIBEND-RIB+256+RIBEEND-RIBE)*100)
+            CONST
+SP3_MAJOR_COMPARE    CLC  RIBQNAME-RIB(*-*,$RIB),IMAJOR
+SP3_MINOR_COMPARE    CLC  RIBRNAME-RIBVAR(*-*,$RIBVAR),IMINOR
+            CODE ,
+         TITLE 'PROCESS SP3 QCBS'
+***
+****     RESERVE QCB-HASH TABLES
+***
+                                                    SPACE 2
+GETLOCAL3    SETLOCK OBTAIN,TYPE=LOCAL,MODE=UNCOND,REGS=USE,           -
+               RELATED=FREELOCAL3
+GETCMSEQDQ3  SETLOCK OBTAIN,TYPE=CMSEQDQ,MODE=UNCOND,REGS=USE,         -
+               RELATED=FREECMSEQDQ3
+***
+****     INITIALIZE AND START GQSCAN LOOP
+***
+            XC    DGQSCAN(DGQSCAN_END-DGQSCAN),DGQSCAN
+            LET   TOKEN,:=,0
+            LET $RIBS_ASSOCIATED,:=,0
+            $LOOP
+            LET   R14,->,TOKEN
+            LET   R15,->,GQSBUFFER
+***
+****    TRY GET FIRST QCB INFORMATION BUFFER FROM GRS ADDRESS SPACE
+***
+            $IF IMAJLEN,=,7,THEN
+***
+****    WE HAVE AN EXPLICIT MAJOR NAME
+***
+               LET   R2,->,IMAJOR
+               $IF SWITCH,:,MINOREQUAL,THEN
+***
+****    WE HAVE AN EXPLICIT MAJOR AND MINOR NAME
+***
+                  LET   R3,->,IMINOR
+                  LET   R4,:=,IMINLEN,+,1
+                  GQSCAN MF=(E,DGQSCAN),                               X
+               REQLIM=MAX,SCOPE=LOCAL,                                 X
+               TOKEN=(R14),                                            X
+               AREA=((R15),L'GQSBUFFER),                               X
+               RESNAME=((R2),(R3),(R4))
+               ELSE
+***
+****    ONLY EXPLICT MAJOR NAME
+***
+                  GQSCAN MF=(E,DGQSCAN),                               X
+               REQLIM=MAX,SCOPE=LOCAL,                                 X
+               TOKEN=(R14),                                            X
+               AREA=((R15),L'GQSBUFFER),                               X
+               RESNAME=((R2))
+               IF$
+            ELSE
+***
+****    NO EXPLICT MAJOR
+***
+               GQSCAN MF=(E,DGQSCAN),                                  X
+               REQLIM=MAX,SCOPE=LOCAL,                                 X
+               TOKEN=(R14),                                            X
+               AREA=((R15),L'GQSBUFFER)
+            IF$
+            WHILE R15,=,0,ORELSE,R15,=,8  DO WE GET INFORMATIONS ?
+            LOOP
+               LET  RIB_AND_RIBE_LENGTH,:=,R0
+***
+****    START WITH FIRST ELEMENT IN BUFFER
+***
+               #USE  $RIB,RIB,:GQSBUFFER
+               $FOR  R1,TIMES,LOOP
+***
+****              EXTRACT MAJOR/MINOR ELEMENT IF NECESSARY
+***
+                  LET  $RIBVAR,:=,RIB_LENGTH,+,$RIB
+                  #USE $RIBVAR,RIBVAR,,NOMSG
+                  $IF
+                     $EX SWITCH,:,MAJORALL
+                     ORELSE ,
+                        LET  R2,=,IMAJLEN
+                        COMPARE SP3_MAJOR_COMPARE
+                     EX$
+                  ANDTHEN
+                  $EX$  SWITCH,M,MINORALL+MINORNO
+                  ORELSE ,
+                     $EX SWITCH,:,MINOREQUAL
+                     ANDTHEN ,
+                        LET  R2,:=,RIBRNMLN,-,1
+                        $EX$ R2,=,IMINLEN
+                     ANDTHEN ,
+                        COMPARE SP3_MINOR_COMPARE
+                     EX$
+                  ORELSE ,
+                     $EX SWITCH,¬:,MINOREQUAL
+                     ANDTHEN ,
+                        LET  R2,:=,RIBRNMLN,-,1
+                        $EX$ R2,>=,IMINLEN
+                     ANDTHEN ,
+                        LET  R2,:=,IMINLEN
+                        COMPARE SP3_MINOR_COMPARE
+                     EX$
+                  THEN
+                     $IF $RIBS_ASSOCIATED,<=,0,THEN
+                        $IF  SWITCH,¬:,FIRSTMAJOR_DONE
+                        ORELSE  (OLDMAJOR,L'OLDMAJOR),¬=,RIBQNAME
+                        THEN
+                           LET   SWITCH,:,FIRSTMAJOR_DONE
+                           LET   (OLDMAJOR,L'RIBQNAME),:=,RIBQNAME
+                           LET   QCBSELEN,:=,QCBSMAJ#
+                           LET   QCBSTYPE,=,QCBSMAJT
+                           LET   (QCBSMAJN,L'RIBQNAME),:=,RIBQNAME
+                           ICALL PUTOUTELEMENT
+                        IF$
+                        IF SWITCH,:,MINORNO,SIGNAL,NO_MINOR_EXTRACT
+                        LET  $RIBS_ASSOCIATED,:=,RIBTRIBE
+                        LET  QCBSELEN,:=,RIBRNMLN,+,QCBSMIN#
+                        LET  QCBSTYPE,:=,QCBSMINT
+                        LET  QCBSSCOP,:=,RIBSCOPE
+                        NI   QCBSSCOP,B'11100000'
+                        LET  R2,:=,RIBRNMLN
+                        LET  QCBSMLEN,:=,R2
+                        LET  (QCBSMINN,R2),:=,RIBRNAME
+                        LET  QCBSMDEF,:=,0
+                        ICALL PUTOUTELEMENT
+                     IF$
+***
+****              EXTRACT USER ELEMENT'S
+***
+                     LET  $RIBS_RETURNED,:=,RIBNRIBE
+                     LET  $RIB,:=,RIBVLEN,+,$RIBVAR
+                     #DROP $RIBVAR
+                     #USE $RIB,RIBE,,NOMSG
+                     $FOR $RIBS_RETURNED,TIMES,LOOP
+***
+****              EXTRACT USER ELEMENT
+***
+                        LET    QCBSTYPE,:=,QCBSQELT
+                        LET    QCBSELEN,:=,QCBSQEL#
+                        $IF    RIBERFLG,:,RIBETYPE,THEN
+                           LET   QCBSEXCL,:=,0
+                        ELSE
+                           LET   QCBSEXCL,:=,1
+                        IF$
+                        $IF    RIBERFLG,:,RIBEMC,THEN
+                           LET   QCBSMC,:=,1
+                        ELSE
+                           LET   QCBSMC,:=,0
+                        IF$
+                        $IF    RIBERFLG,NZ,RIBERESV+RIBERESC,THEN
+                           LET   QCBSRESV,:=,1
+                        ELSE
+                           LET   QCBSRESV,:=,0
+                        IF$
+*                       LET (QCBSQELN,L'QCBSQELN),:=,RIBEJBNM
+                        LET (QCBSASID,L'QCBSASID),:=,RIBEASID
+                        LET   QCBSUSRT,=,0
+                        #USE  RASVT,CVT,16:F
+                        #USE  RASVT,ASVT,CVTASVT,NOMSG
+                        LET   R4,=,ASVTMAXU
+                        LET   RASVT,->,ASVTFRST
+                        #DROP RASVT
+FINDASCB2               $FOR  R4,TIMES,LOOP
+                           $IF 0(RASVT),¬:,ASVTAVAL
+                           ANDTHEN
+                              #USE  RASCB,ASCB,0(RASVT):F
+                              $EX$  ASCBASID,=,RIBEASID
+                           THEN
+                              $IF
+                                 LET   R6,=,ASCBJBNI
+                                 $EX$  R6,¬=,0
+                              THEN
+                                 LET   (QCBSQELN,8),=,0(R6)
+                              ELSEIF
+                                 LET   R6,=,ASCBJBNS
+                                 $EX$  R6,¬=,0
+                              THEN
+                                 LET   (QCBSQELN,8),=,0(R6)
+                              IF$
+                              LET   RCSCB,=,ASCBCSCB
+                              LA    RCSCB,0(,RCSCB)
+                              $IF   RCSCB,¬=,0,THEN
+                                 #USE  RCSCB,CHAIN,ASCBCSCB
+                                    $IF    CHTRKID,:,CHINITID:N,THEN
+                                       LET  QCBSUSRT,=,QCBSBTCH
+                                    ELSEIF CHTRKID,:,CHJOBID:N,THEN
+                                       LET  QCBSUSRT,=,QCBSSTC
+                                    ELSEIF CHTRKID,:,CHTSID:N,THEN
+                                       LET  QCBSUSRT,=,QCBSTSOU
+                                    ELSEIF CHTRKID,:,CHSASID:N,THEN
+                                       LET  QCBSUSRT,=,QCBSSYST
+                                    ELSE
+                                       LET  QCBSUSRT,=,0
+                                    IF$
+                                 #DROP RCSCB
+                              IF$
+                              #DROP RASCB
+                              LEAVE FINDASCB2
+                           IF$
+                           LET RASVT,->,4(,RASVT)  NEXT ADDRESS SPACE
+                        FOR$  FINDASCB2
+                        ICALL PUTOUTELEMENT
+                        LET    $RIB,+,RIBE_LENGTH
+                        LET    $RIBS_ASSOCIATED,-,1
+                        $IF    $RIBS_ASSOCIATED,<,0,THEN
+*                 WTO '$RZFUN06 INVALID NUMBER OF RIB''S CALCULATED'
+                           LET   QCBSELEN,:=,QCBSERR#
+                           LET   QCBSTYPE,:=,QCBSERRT
+                           LET   (QCBSEMSG,L'QCBSEMSG),:=,             X
+               =CL(L'QCBSEMSG)'INVALID NUMBER OF RIB''S CALCULATED'
+                           ICALL PUTOUTELEMENT
+                           SIGNAL RIB_BUFFER_ERROR
+                        IF$
+                     FOR$
+                  ELSE
+                     #USE $RIB,RIB,,NOMSG
+***
+****              SKIP THROUGH ALL USER ELEMENTS
+***
+NO_MINOR_EXTRACT     $IF    $RIBS_ASSOCIATED,<=,0,THEN
+                        LET    $RIBS_ASSOCIATED,:=,RIBNRIBE
+                     IF$
+                     LET    $RIBS_ASSOCIATED,-,RIBNRIBE
+                     $IF    $RIBS_ASSOCIATED,<,0,THEN
+*                    WTO '$RZFUN06 INVALID NUMBER OF RIB''S CALCULATED'
+                     LET   QCBSELEN,:=,QCBSERR#
+                     LET   QCBSTYPE,:=,QCBSERRT
+                     LET   (QCBSEMSG,L'QCBSEMSG),:=,                   X
+               =CL(L'QCBSEMSG)'INVALID NUMBER OF RIB''S CALCULATED'
+                        SIGNAL RIB_BUFFER_ERROR
+                     IF$
+                     LET    R2,:=,RIBNRIBE,*,RIBE_LENGTH
+                     LET    $RIB,+,RIBVLEN,+,RIB_LENGTH,+,R2
+                  IF$
+***
+****              CONSUME THE RIB
+***
+               FOR$
+RIB_BUFFER_ERROR DS 0H
+            UNTIL R15,¬=,8  GRS INDICATED "THERE ARE NO MORE ELEMENTS"
+            LOOP
+            LET   QCBSELEN,:=,QCBSTOK#
+            LET   QCBSTYPE,:=,QCBSTOKT
+            ICALL PUTOUTELEMENT
+         LOOP$
+*        IF$
+***
+****     RELEASE QCB-HASH-TABLE RESERVATION
+***
+                                                    SPACE 2
+FREECMSEQDQ3 SETLOCK RELEASE,TYPE=CMSEQDQ,REGS=USE,RELATED=GETCMSEQDQ3
+FREELOCAL3   SETLOCK RELEASE,TYPE=LOCAL,REGS=USE,RELATED=GETLOCAL3
+                                                    SPACE 2
+         ENDCOPY SP3QCBS
+./ ADD NAME=NSP3QCBS
+ TITLE 'PROCESS NON SP3 QCBS'
+***
+****        RESERVE  QCB-QUEUES
+***
+NON_SP3_QCBS $BLOCK
+            SPACE 3
+GETLOCAL       SETLOCK OBTAIN,TYPE=LOCAL,MODE=UNCOND,REGS=USE,         -
+               RELATED=FREELOCAL
+GETCMSEQDQ     SETLOCK OBTAIN,TYPE=CMSEQDQ,MODE=UNCOND,REGS=USE,       -
+               RELATED=FREECMSEQDQ
+***
+****        PROCESS MAJOR QCB CHAIN
+***
+MAJORLOOP      $WHILE RMAJOR,¬=,0       IS THERE A MAJOR TO BE PROCSSD?
+               LOOP ,
+                  RECURSIV        ?
+                  $IF SWITCH,:,MAJORALL   MAJOR MATCHES SEARCH KRIT.?
+                  ORELSE ,
+                     LET   R2,=,IMAJLEN
+                     COMPARE MAJORCOMPARE
+                  THEN ,
+*                    EDIT IT INTO OUTPUT AREA
+                     LET   QCBSELEN,=,QCBSMAJ#
+                     LET   QCBSTYPE,=,QCBSMAJT
+                     LET   (QCBSMAJN,L'MAJNAME),=,MAJNAME
+                     ICALL PUTOUTELEMENT   PUT IT TO OUTPUTAREA
+*                    PROCESS ALL MINORS OF THIS MAJOR
+                     COPY  QCBMIN
+                  IF$ ,
+*                 GET NEXT MAJOR QCB
+                  LET RMAJOR,=,MAJNMAJ
+               WHILE$ MAJORLOOP
+***
+****        ERROR EXITS WHILE SEARCHING                               *
+***
+               POSTLUDE RECURSION
+                  LET  RETCODE,=,24
+               POSTLUDE OUTPUTLISTFULL
+                  LET  RETCODE,=,20
+            BLOCK$  NON_SP3_QCBS
+                                                    SPACE 2
+***
+****     RELEASE QCB-QUEUE RESERVATION                                *
+***
+                                                    SPACE 2
+FREECMSEQDQ SETLOCK RELEASE,TYPE=CMSEQDQ,REGS=USE,RELATED=GETCMSEQDQ
+FREELOCAL   SETLOCK RELEASE,TYPE=LOCAL,REGS=USE,RELATED=GETLOCAL
+                                                    SPACE 2
+               ENDCOPY NSP3QCBS

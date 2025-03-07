@@ -1,0 +1,53 @@
+         MACRO ,                                       STRUCT MACRO SET
+&LABEL   TRUECC &CC
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                            SYLVESTER GMD-RZ  08JUN80
+.*  SET INTERPRETATION OF CONDITION CODE
+.*       WHAT IS A LEGAL CONDITION, IS DEFINED IN MACRO IF0CE.
+.*
+         GBLA  &BLK,&BLKCC(30)
+         GBLC  &BLKTYPE(30),&BLKNAME(30),&BLKID(30)
+.SASLIST SASLIST MACRO,'TRUECC'
+&LABEL   DS    0H
+.*
+.*  EVALUATE CONDITIONAL EXPRESSION
+.*
+         AIF   ('&BLKTYPE(&BLK)'(2,1) EQ 'X').YEX1
+         AIF   ('&CC' EQ '').YEX
+         AIF   ('&CC' EQ '0').DIRECT
+         AIF   ('&CC' EQ '1').DIRECT
+         AIF   ('&CC' EQ '2').DIRECT
+         AIF   ('&CC' EQ '3').DIRECT
+         AIF   ('&CC' EQ '4').DIRECT
+         AIF   ('&CC' EQ '5').DIRECT
+         AIF   ('&CC' EQ '6').DIRECT
+         AIF   ('&CC' EQ '7').DIRECT
+         AIF   ('&CC' EQ '8').DIRECT
+         AIF   ('&CC' EQ '9').DIRECT
+         AIF   ('&CC' EQ '10').DIRECT
+         AIF   ('&CC' EQ '11').DIRECT
+         AIF   ('&CC' EQ '12').DIRECT
+         AIF   ('&CC' EQ '13').DIRECT
+         AIF   ('&CC' EQ '14').DIRECT
+         AIF   ('&CC' EQ '15').DIRECT
+         IF0CE   ,&CC,CALLER=TRUECC
+&BLKTYPE(&BLK) SETC '&BLKTYPE(&BLK)'(1,1)'X'
+         AGO  .MEND
+.DIRECT  ANOP
+&BLKCC(&BLK)   SETA  &CC        DIRECT CONDITION CODE MASK SETTING
+&BLKTYPE(&BLK) SETC '&BLKTYPE(&BLK)'(1,1)'X'
+         AGO  .MEND
+.**********************************************************************
+.YEX1   MNOTE 08,'****** TRUECC: CONDITION CODE INTERPRETATION ALREADY X
+               SET, IGNORED'
+         AGO  .MEND
+.YEX     MNOTE 08,'****** TRUECC: MISSING PARAMETER'
+&BLKCC(&BLK)   SETA 0       SAY INVALID
+&BLKTYPE(&BLK) SETC '&BLKTYPE(&BLK)'(1,1)'X'
+         AGO  .MEND
+.Y0      BLK0TEST TRUECC,,&LABEL
+.MEND    SASLIST MACEND
+         MEND

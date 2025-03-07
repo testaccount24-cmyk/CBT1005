@@ -1,0 +1,59 @@
+         MACRO                                         STRUCT MACRO SET
+&LABEL   IF    &A,&REL,&B,&GOTO,&GO
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                            PAHL (GMD-IST/RZ) 00JAN73
+.*  CONDITIONAL GOTO:
+.*  "IF" CONDITION "GOTO" LABEL
+.*       EVALUATE CONDITIONAL EXPRESSION,
+.*       TRANSFER.
+.*  OR CONDITIONAL BLOCK LEAVE:
+.*  "IF" CONDITION "LEAVE"  BLOCK-LABEL
+.*       EVALUATE CONDITIONAL EXPRESSION,
+.*       TRANSFER TO END OF NAMED BLOCK.
+.*  OR CONDITIONAL BLOCK REPEAT:
+.*  "IF" CONDITION "REPEAT"  BLOCK-LABEL
+.*       EVALUATE CONDITIONAL EXPRESSION,
+.*       TRANSFER TO BEGIN OF NAMED BLOCK.
+.*  OR CONDITIONAL BLOCK REPEAT:
+.*  "IF" CONDITION "SIGNAL"  POSTLUDE-NAME
+.*       EVALUATE CONDITIONAL EXPRESSION,
+.*       TRANSFER TO A POSTLUDE-ALTERNATIVE.
+.*
+         GBLA  &BLK
+         GBLC  &BLKTYPE(30),&BLKNAME(30),&BLKID(30)
+.*
+&LABEL   SASLIST MACRO,'IF'
+&BLK     SETA  &BLK+1                  PUSH BLOCK STRUCTURE
+&BLKTYPE(&BLK) SETC 'J '               BEING IN BEGINNING PART OF "IF"
+         SPTSNDX J
+&BLKNAME(&BLK) SETC '&LABEL'
+         AIF   ('&LABEL' EQ '').GO
+&LABEL   DS    0S(&LABEL)
+.*
+.*  EVALUATE CONDITIONAL EXPRESSION
+.*
+.GO      AIF   ('&A&REL&B' EQ '').MEND
+&BLKTYPE(&BLK) SETC 'JX'               BEING IN CONDITION PART OF "IF"
+         IF0CE &A,&REL,&B
+.*
+.*  SEE WHAT TO BE DONE AFTER COMPARISON
+.*
+         AIF   ('&GOTO' EQ '').MEND
+         AIF   ('&REL' EQ '').YCOND
+.*
+.*  "GOTO" / "LEAVE" / "REPEAT"
+.*
+.GOTO    AIF   ('&GOTO' NE 'GOTO' AND '&GOTO' NE 'LEAVE' AND '&GOTO' NE-
+                'REPEAT' AND '&GOTO' NE 'SIGNAL').YWHAT
+         &GOTO &GO
+         AGO  .MEND
+.**********************************************************************
+.YCOND   MNOTE 08,'****** IF: CONDITIONAL EXPRESSION MISSING.'
+         AGO   .GOTO
+.YWHAT   STRERMAC IF,20,GOTO,&GOTO
+&BLK     SETA  &BLK-1                  NO EFFECT TO BLOCK STRUCTURE
+.MEND    SASLIST MACEND
+         MEND

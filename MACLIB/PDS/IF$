@@ -1,0 +1,78 @@
+         MACRO                                         STRUCT MACRO SET
+         IF$   &LABEL
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                            PAHL (GMD-IST/RZ) 00JAN73
+.*  "(IF" CONDITION "THEN" BLOCK <"ELSE" BLOCK> "IF)"
+.*       END "IF" CLAUSE.
+.*
+         GBLA  &BLK,&BLKDCNT(30)
+         GBLB  &OPT
+         GBLC  &BLKTYPE(30),&BLKNAME(30),&BLKID(30)
+         GBLB  &BLKXCPT(30)
+         LCLC  &T,&C
+&LABEL   SASLIST MACRO,'IF)'
+.*
+         AIF   ('&LABEL' NE '' AND '&LABEL' NE '&BLKNAME(&BLK)').Y0
+.*
+         AIF   (NOT &BLKXCPT(&BLK)).NOXCPT
+         CODEX ,
+&BLKXCPT(&BLK) SETB 0
+         IF0BC 15,@@Z&BLKID(&BLK)
+         CODEX ,
+.NOXCPT ANOP
+         AIF   ('&BLKNAME(&BLK)' EQ '').NOXREF
+         DS    0S(&BLKNAME(&BLK))
+.NOXREF  ANOP
+         AIF   ('&BLKTYPE(&BLK)' NE 'IT').ELSE      NOT IN THEN PART
+@@Y&BLKID(&BLK)  DS  0H                  END OF "THEN" CLAUSE
+@@F&BLKID(&BLK)  EQU @@Z&BLKID(&BLK)
+@@V&BLKID(&BLK)  DS  0H                  BEGIN OF "ELSE" CLAUSE
+&BLKTYPE(&BLK) SETC  'IE'
+.ELSE  ANOP
+@@X&BLKID(&BLK)   DS  0H
+         AIF   ('&BLKTYPE(&BLK)' NE 'IE').YPART
+&BLK     SETA  &BLK-1                  POP
+         AIF   (&OPT EQ 0).NOOUTER
+         AIF   (&BLK EQ 0).NOOUTER
+&T       SETC  '&BLKID(&BLK)-@@X&BLKID(&BLK+1)'
+&C       SETC  '&BLKTYPE(&BLK)'
+         AIF   ('&C' NE 'IT').CDTEST
+.* $IF .. THEN .. $IF .. THEN .. ELSE .. IF$ .. ELSE .. IF$
+@@Z&BLKID(&BLK+1) EQU @@Z&BLKID(&BLK)-(@@Y&T)/(@@Y&T)*(@@Z&T)
+         AGO  .MEND
+.CDTEST  AIF   ('&C' NE 'CD').IETEST
+.* $IF .. THEN .. $IF .. THEN .. ELSE .. IF$ .. ELSE .. IF$
+&T       SETC  '&BLKID(&BLK)&BLKDCNT(&BLK)-*'
+@@Z&BLKID(&BLK+1) EQU @@Z&BLKID(&BLK)-(@@Y&T)/(@@Y&T)*(@@Z&T)
+         AGO  .MEND
+.IETEST  AIF   ('&C' NE 'IE').WTEST
+.* $IF .. THEN .. $IF .. THEN .. ELSE .. IF$ .. ELSE .. IF$
+@@Z&BLKID(&BLK+1) EQU @@Z&BLKID(&BLK)-(@@X&T)/(@@X&T)*(@@Z&T)
+         AGO  .MEND
+.WTEST   AIF   ('&C' NE 'WD').LTEST
+@@Z&BLKID(&BLK+1) EQU @@A&BLKID(&BLK)-(@@Y&T)/(@@Y&T)*(@@A&T)
+         AGO  .MEND
+.LTEST   AIF   ('&C' NE 'L ').BTEST
+@@Z&BLKID(&BLK+1) EQU @@A&BLKID(&BLK)-(@@Y&T)/(@@Y&T)*(@@A&T)
+         AGO  .MEND
+.BTEST   AIF   ('&C'(1,1) NE 'B').NOOUTER
+@@Z&BLKID(&BLK+1) EQU @@Z&BLKID(&BLK)-(@@Y&T)/(@@Y&T)*(@@Z&T)
+         AGO  .MEND
+.*
+.NOOUTER ANOP
+@@Z&BLKID(&BLK+1) EQU *
+         AGO  .MEND
+.**********************************************************************
+.YPART   AIF   ('&BLKTYPE(&BLK)'(1,1) NE 'I').Y0
+         MNOTE 08,'****** IF): THEN/ELSE PART(S) MISSING'
+         BLK0TEST IF,(T,E),&LABEL
+         MNOTE 08,'****** BLOCK WILL BE TERMINATED'
+&BLK     SETA   &BLK-1
+         AGO    .MEND
+.*-      AGO   .TEST
+.Y0      BLK0TEST IF,(T,E),&LABEL
+.MEND    SASLIST MACEND
+         MEND

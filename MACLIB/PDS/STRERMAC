@@ -1,0 +1,219 @@
+         MACRO                                                          19FEB73P
+         STRERMAC &MAC,&N,&OPRND,&BAD,&NEW,&LABEL,&DETAIL=,&SC=         19FEB73P
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                                         11MAR70-PAHL 19FEB73P
+.*  MACRO GENERATION ERROR MESSAGES (MNOTES)               06AUG73-PAHL 06AUG73P
+.*                                                                      19FEB73P
+.*  &MAC    : NAME OF CALLING MACRO                                     19FEB73P
+.*  &N      : DECIMAL<998   ERROR MESSAGE CODE                          19FEB73P
+.*  &OPRND  : IDENTIFIES THE OPERAND IN ERROR                           19FEB73P
+.*  &BAD    : VALUE OF THE ERRONEOUS OPERAND (USUALLY)                  19FEB73P
+.*  &NEW    : VALUE SUBSTITUTED FOR &BAD (..4 MESSAGES)                 19FEB73P
+.*  &LABEL  : LABEL OPERAND OF CALLING MACRO (GENERATE &LABEL DS 0H)    19FEB73P
+.*  &DETAIL : CHAR.STRING   OPTIONAL EXTRA INFORMATION ABOUT ERROR,     19FEB73P
+.*            WILL BE DISPLAYED IN A SECOND MNOTE.                      19FEB73P
+.*  &SC     : DECIMAL<4096|* MNOTE SEVERITY CODE (OVERRIDES DEFAULTS)   19FEB73P
+.*                                                                      19FEB73P
+.*             ERROR CODE "SYSTEM":                                     19FEB73P
+.*              10-19  OPERAND MISSING                                  19FEB73P
+.*              20-29  OPERAND INVALID                                  19FEB73P
+.*              30-39  OPERAND INCONSISTENT                             19FEB73P
+.*              40-49  OPERAND IGNORED                                  19FEB73P
+.*              60-69  OPERANDS EXCLUSIVE  ETC.                         20JUL73P
+.*              70-79  OPERAND NOT SUPPORTED YET                        19FEB73P
+.*              80-87  OPERAND ILLEGAL WITH MF=&NEW                     19FEB73P
+.*              .0  STANDARD CASE                                       19FEB73P
+.*              .1  ... HERE ...                                        19FEB73P
+.*              .3  ... - ASSUMED &NEW                                  19FEB73P
+.*              .4  ... - IGNORED                                       19FEB73P
+.*              .5  ... REGISTER REQUIRED                               19FEB73P
+.*              .6  ... REGISTER NOT PERMITTED                          19FEB73P
+.*              .8  ... WITH MF=&NEW                                    19FEB73P
+.*              .9  ... HERE ... WITH MF=&NEW                           19FEB73P
+.*             (NEARLY) NO SYSTEM FOR &N>100: NUMEROUS INDIVIDUAL MSGS  19FEB73P
+.*                                                                      19FEB73P
+         GBLA  &BMCERSC            HIGHEST SEVERITY CODE                19FEB73P
+         LCLC  &MC                 SEVERITY CODE FOR MNOTE              19FEB73P
+         LCLC  &ID1,&H                                                  19FEB73P
+         AIF   (T'&N NE 'N' OR K'&N GE 4).Y998                          20JUL73P
+.*  SET MNOTE SEVERITY CODE                                             19FEB73P
+&MC      SETC  '0'                                                      19FEB73P
+         AIF   ('&SC' EQ '').MCDEF NO EXTERNALLY SPECIFIED SC           19FEB73P
+&MC      SETC  '&SC'                                                    19FEB73P
+         AGO   .MCMAX                                                   19FEB73P
+.MCDEF   AIF   (&N EQ 146 OR &N EQ 213).MCMAX                           19FEB73P
+&MC      SETC  '4'                 ..4, 40-49, 140-149                  20JUL73P
+         AIF   ('&N'(K'&N,1) EQ '4' OR                                 -20JUL73P
+               &N GE 40 AND &N LE 49 OR &N GE 140 AND &N LE 149).MCMAX  20JUL73P
+&MC      SETC  '8'                 ..3 FROM 13 TO 193                   06AUG73P
+         AIF   ('&N'(K'&N,1) EQ '3' AND &N GE 13 AND &N LE 193).MCMAX   06AUG73P
+&MC      SETC  '12'                ALL ELSE                             19FEB73P
+.*  HIGHEST SEVERITY CODE FOR USE BY CALLING MACRO                      19FEB73P
+.MCMAX   AIF   ('&MC' EQ '*').SETMSGI                                   19FEB73P
+         AIF   (&BMCERSC GE &MC).SETMSGI                                19FEB73P
+&BMCERSC SETA  &MC                 UPDATE HIGHEST SEVERITY CODE         19FEB73P
+.*  CONSTRUCT MESSAGE ID: NUMBER, MACRO NAME                            19FEB73P
+.SETMSGI ANOP                                                           19FEB73P
+&ID1     SETC  '0000'(1,4-K'&N)'&N'                                     19FEB73P
+&ID1     SETC  'BMC'.'&ID1'(2,3)' '                                     19FEB73P
+.*  SELECT MESSAGE FINALLY                                              19FEB73P
+         AIF   (&N EQ 1).E1                                             19FEB73P
+         AIF   (&N EQ 2).E2                                             19FEB73P
+         AIF   (&N EQ 3).E3                                             19FEB73P
+         AIF   (&N EQ 4).E4                                             19FEB73P
+         AIF   ('&N'(K'&N,1) NE '1' AND '&N'(K'&N,1) NE '9').GOON       19FEB73P
+&H       SETC  ' HERE'                                                  19FEB73P
+.GOON    AIF   (&N GE 100).GO100                                        19FEB73P
+         AIF   (&N EQ 10 OR &N EQ 11).E10                               19FEB73P
+         AIF   (&N EQ 13).E13                                           19FEB73P
+         AIF   (&N EQ 18).E18                                           19FEB73P
+         AIF   (&N EQ 20 OR &N EQ 21).E20                               19FEB73P
+         AIF   (&N EQ 23).E23                                           19FEB73P
+         AIF   (&N EQ 24).E24                                           19FEB73P
+         AIF   (&N EQ 25).E25                                           19FEB73P
+         AIF   (&N EQ 27).E27                                           19FEB73P
+         AIF   (&N EQ 28).E28                                           19FEB73P
+         AIF   (&N EQ 30 OR &N EQ 31).E30                               19FEB73P
+         AIF   (&N EQ 34).E34                                           19FEB73P
+         AIF   (&N EQ 40 OR &N EQ 41).E40                               19FEB73P
+         AIF   (&N EQ 60 OR &N EQ 61).E60                               20JUL73P
+         AIF   (&N EQ 64).E64                                           20JUL73P
+         AIF   (&N EQ 67).E67                                           20JUL73P
+         AIF   (&N EQ 70).E70                                           19FEB73P
+         AIF   (&N EQ 73).E73                                           19FEB73P
+         AIF   (&N EQ 80).E80                                           19FEB73P
+         AIF   (&N EQ 84).E84                                           19FEB73P
+         AIF   (&N EQ 86).E86                                           19FEB73P
+         AGO   .Y999                                                    19FEB73P
+.GO100   AIF   (&N EQ 110 OR &N EQ 111).E110                            19FEB73P
+         AIF   (&N EQ 113).E113                                         19FEB73P
+         AIF   (&N EQ 123).E123                                         19FEB73P
+         AIF   (&N EQ 130 OR &N EQ 131).E130                            19FEB73P
+         AIF   (&N EQ 132).E132                                         19FEB73P
+         AIF   (&N EQ 135).E135                                         19FEB73P
+         AIF   (&N EQ 136).E136                                         19FEB73P
+         AIF   (&N EQ 140 OR &N EQ 141).E140                            19FEB73P
+         AIF   (&N EQ 146).E146                                         19FEB73P
+         AIF   (&N EQ 190).E190                                         19FEB73P
+         AIF   (&N EQ 213).E213                                         19FEB73P
+         AGO   .Y999                                                    19FEB73P
+.E1      MNOTE &MC,'&ID1&MAC: MISSING OPERAND(S)'                       19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E2      MNOTE &MC,'&ID1&MAC: INVALID OPERAND(S)'                       19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E3      MNOTE &MC,'&ID1&MAC: INCONSISTENT OPERANDS'                    19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E4      MNOTE &MC,'&ID1&MAC: OPERAND(S) IGNORED'                       19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E10     MNOTE &MC,'&ID1&MAC: &OPRND OPERAND MUST BE SPECIFIED&H'       19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E13     MNOTE &MC,'&ID1&MAC: &OPRND OPERAND NOT SPECIFIED - "&NEW" ASS-19FEB73P
+               UMED'                                                    19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E18     MNOTE &MC,'&ID1&MAC: &OPRND OPERAND REQUIRED WITH MF=&NEW'     19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E20     MNOTE &MC,'&ID1&MAC:&H INVALID &OPRND OPERAND SPECIFIED - "&BA-19FEB73P
+               D"'                                                      19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E23     MNOTE &MC,'&ID1&MAC: INVALID &OPRND OPERAND "&BAD" SUBSTITUTED-19FEB73P
+                BY "&NEW"'                                              19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E24     MNOTE &MC,'&ID1&MAC: INVALID &OPRND OPERAND IGNORED - "&BAD"'  19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E25     MNOTE &MC,'&ID1&MAC: INVALID &OPRND OPERAND "&BAD" - MUST SPEC-19FEB73P
+               IFY REGISTER'                                            19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E27     MNOTE &MC,'&ID1&MAC: INVALID &OPRND OPERAND "&BAD" - MUST SPEC-19FEB73P
+               IFY SYMBOL'                                              19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E28     MNOTE &MC,'&ID1&MAC: &OPRND OPERAND HAS INVALID VALUE FOR MF=&-19FEB73P
+               NEW - "&BAD"'                                            19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E30     MNOTE &MC,'&ID1&MAC: &OPRND OPERAND&H INCONSISTENT - "&BAD"'   19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E34     MNOTE &MC,'&ID1&MAC: INCONSISTENT &OPRND OPERAND IGNORED "&BAD-19FEB73P
+               "'                                                       19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E40     AIF   ('&BAD' EQ '').E40A                                      19FEB73P
+         MNOTE &MC,'&ID1&MAC: &OPRND OPERAND&H IGNORED - "&BAD"'        19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E40A    MNOTE &MC,'&ID1&MAC: &OPRND OPERAND&H IGNORED'                 19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E60     MNOTE &MC,'&ID1&MAC: &OPRND, &BAD OPERANDS&H MUTUALLY EXCLUSIV-20JUL73P
+               E'                                                       20JUL73P
+         AGO   .DETAIL                                                  20JUL73P
+.E64     MNOTE &MC,'&ID1&MAC: &OPRND, &BAD OPERANDS MUTUALLY EXCLUSIVE -20JUL73P
+               - &BAD IGNORED'                                          20JUL73P
+         AGO   .DETAIL                                                  20JUL73P
+.E67     MNOTE &MC,'&ID1&MAC: &OPRND, &BAD OPERANDS MUST NOT BE EQUAL'  20JUL73P
+         AGO   .DETAIL                                                  20JUL73P
+.E70     AIF   ('&BAD' NE '').E70A                                      19FEB73P
+         MNOTE &MC,'&ID1&MAC: &OPRND OPERAND NOT SUPPORTED YET'         19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E70A    MNOTE &MC,'&ID1&MAC: &OPRND = &BAD NOT SUPPORTED YET'          19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E73     MNOTE &MC,'&ID1&MAC: VALUE "&BAD" OF &OPRND OPERAND PRESENTLY -19FEB73P
+               NOT SUPPORTED - "&NEW" ASSUMED'                          19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E80     MNOTE &MC,'&ID1&MAC: &OPRND OPERAND ILLEGAL WITH MF=&NEW'      19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E84     MNOTE &MC,'&ID1&MAC: &OPRND OPERAND ILLEGAL WITH MF=&NEW, IGNO-19FEB73P
+               RED'                                                     19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E86     MNOTE &MC,'&ID1&MAC: &OPRND OPERAND, REGISTER NOTATION INVALID-19FEB73P
+                WITH MF=&NEW - "&BAD"'                                  19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E110    MNOTE &MC,'&ID1&MAC: &OPRND KEYWORD MUST NOT BE SET TO NULL&H' 19FEB73P
+         MEXIT                                                          19FEB73P
+.E113    MNOTE &MC,'&ID1&MAC: &OPRND KEYWORD MUST NOT BE SET TO NULL - -19FEB73P
+               "&NEW" ASSUMED'                                          19FEB73P
+         MEXIT                                                          19FEB73P
+.E123    MNOTE &MC,'&ID1&MAC: INVALID VALUE "&BAD" OF YES/NO KEYWORD &O-19FEB73P
+               PRND - "&NEW" ASSUMED'                                   19FEB73P
+         MEXIT                                                          19FEB73P
+.E130    MNOTE &MC,'&ID1&MAC: R= OPERAND MUST SPECIFY 2 AUXILIARY REGIS-19FEB73P
+               TERS&H'                                                  19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E132    MNOTE &MC,'&ID1&MAC: R=0 NOT PERMITTED WITH &OPRND=&BAD'       19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E135    MNOTE &MC,'&ID1&MAC: &OPRND AND R= OPERANDS BOTH SPECIFY REGIS-19FEB73P
+               TER 0'                                                   19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E136    MNOTE &MC,'&ID1&MAC: &OPRND AND R= OPERANDS MUST NOT SPECIFY S-19FEB73P
+               AME REGISTER'                                            19FEB73P
+         AGO   .DETAIL                                                  20JUL73P
+.E140    MNOTE &MC,'&ID1&MAC: LBLID OPERAND&H INVALID WITH DSECT - IGNO-19FEB73P
+               RED'                                                     19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E146    MNOTE &MC,'&ID1&MAC: LBLID OPERAND TRUNCATED TO 3 CHARACTERS'  19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E190    MNOTE &MC,'&ID1&MAC: PREREQUESITIVE MACRO "&OPRND" NOT CALLED -19FEB73P
+               BEFORE'                                                  19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E213    AIF   ('&NEW' EQ '').E213A                                     19FEB73P
+         MNOTE &MC,'&ID1&MAC: NO &OPRND SPECIFIED, "&NEW" ASSUMED'      19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.E213A   MNOTE &MC,'&ID1&MAC: NO &OPRND SPECIFIED, ALL ASSUMED'         19FEB73P
+         AGO   .DETAIL                                                  19FEB73P
+.*                                                                      19FEB73P
+.Y998    MNOTE 16,'BMC998 STRERMAC: ILLEGAL ERROR CODE &N FROM &MAC'    19FEB73P
+&BMCERSC SETA  16                                                       19FEB73P
+         AGO   .DETAIL                                                  20JUL73P
+.Y999    MNOTE 16,'BMC999 STRERMAC: UNKNOWN ERROR CODE &N FROM &MAC'    19FEB73P
+&BMCERSC SETA  16                                                       19FEB73P
+.*                                                                      19FEB73P
+.*   OPTIONALLY GENERATE SECOND MNOTE GIVING DETAIL INFORMATION         19FEB73P
+.DETAIL  AIF   ('&DETAIL' EQ '').LABEL                                  19FEB73P
+         AIF   ('&DETAIL'(1,1) EQ '''').DETAILQ                         19FEB73P
+         MNOTE '               &DETAIL'                                 19FEB73P
+         AGO   .LABEL                                                   19FEB73P
+.DETAILQ MNOTE &DETAIL                                                  19FEB73P
+.*                                                                      19FEB73P
+.*  GENERATE LABEL FOR CALLING MACRO TO AVOID SECONDARY ERRORS          19FEB73P
+.*  (UNDEFINED LABEL)                                                   19FEB73P
+.LABEL   AIF   ('&LABEL' EQ '').MEXIT                                   19FEB73P
+&LABEL   DC    0H'0'                                                    19FEB73P
+.MEXIT   MEND                                                           19FEB73P

@@ -1,0 +1,34 @@
+         AIF   (&NOTANY).#EXAM#                                         #P    01
+         PRINT ON,NOGEN                                                 #P    02
+R0       EQUR  0                                                        #P    03
+R1       EQUR  1                                                        #P    04
+R2       EQUR  2                                                        #P    05
+R3       EQUR  3                                                        #P    06
+R4       EQUR  4                                                        #P    07
+R5       EQUR  5                                                        #P    08
+R6       EQUR  6                                                        #P    09
+R7       EQUR  7                                                        #P    10
+R8       EQUR  8                                                        #P    11
+R9       EQUR  9                                                        #P    12
+R10      EQUR  10                                                       #P    13
+R11      EQUR  11                                                       #P    14
+R12      EQUR  12                                                       #P    15
+R13      EQUR  13                                                       #P    16
+R14      EQUR  14                                                       #P    17
+R15      EQUR  15                                                       #P    18
+         SPACE 3                                                        #P    19
+PGM      $PROC TYPE=(STD,EXTERNAL),BASE=(R9,R10)                        #P    20
+         DATA                                                           #P    21
+FULLWORD DS    A                                                        #P    22
+HALFWORD DS    H                                                        #P    23
+CHAR     DS    10C
+H2       DS    H
+F2       DS    F
+C2       DS    C
+D2       DS    D
+         SPACE 2                                                        #P    24
+NINE     EQUN  9
+#BIT2    EQUN  B'00100000'                                              #P    25
+         CODE                                                           #P    26
+         PRINT OFF,GEN                                                  #P    27
+.#EXAM#  ANOP                                                           #P    28

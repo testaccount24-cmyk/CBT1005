@@ -1,0 +1,29 @@
+         MACRO                  V:01JUL73-GEIST    REV:15MAY74-GEIST    ----0100
+         #MACRO#F &LIST,&OF,&MACRO,&NAMES                               15MAY740
+.* ASM-F VERSION OF #MACRO=H (SEE THAT DESCRIPTION)                     15MAY741
+         GBLC  &T(64)                                                   ----0400
+         GBLA  &TI,&TJ                                                  ----0500
+         GBLB  &NOTANY                                                  15MAY742
+         LCLA  &I,&K,&N                                                 ----0700
+         ACTR  128                                                      ----0800
+&N       SETA  N'&SYSLIST                                               ----0900
+.*                                                                      ----1000
+.LOOP1   AIF   (&K GE &N).TERM                                          ----1100
+&K       SETA  &K+1                                                     ----1200
+         AIF   ('&SYSLIST(&K)' EQ '$NOGEN').NOGEN                       ----1300
+         AIF   ('&SYSLIST(&K)' EQ '$ALL').ALL                           15MAY743
+&I       SETA  &I+1                                                     ----1400
+&T(&I)   SETC  '&SYSLIST(&K)'                                           ----1500
+         AGO   .LOOP1                                                   ----1600
+.NOGEN   PRINT  NOGEN                                                   ----1700
+         AGO   .LOOP1                                                   ----1800
+.ALL     ANOP                                                           15MAY744
+&T(1)    SETC  '$ALL'                                                   15MAY745
+&I       SETA  1                                                        15MAY746
+         AGO   .LOOP1                                                   15MAY747
+.*                                                                      ----1900
+.TERM    ANOP                                                           ----2000
+&TI      SETA  &I                                                       ----2100
+&TJ      SETA  &TI+1                                                    ----2200
+&NOTANY  SETB  (&TI EQ 0)                                               15MAY748
+         MEND                                                           ----2400

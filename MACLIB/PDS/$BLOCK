@@ -1,0 +1,37 @@
+         MACRO
+&LABEL   $BLOCK
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*
+.*  "(BLOCK" BLOCK "BLOCK)"
+.*
+         GBLA  &BLK
+         GBLC  &BLKTYPE(30),&BLKNAME(30),&BLKID(30)
+.*
+&LABEL   SASLIST MACRO,'(BLOCK'
+&BLK     SETA  &BLK+1                  PUSH BLOCK DEPTH
+&BLKTYPE(&BLK) SETC 'BX'
+         SPTSNDX B
+&BLKNAME(&BLK) SETC '&LABEL'
+.*
+         AIF   (&BLK EQ 1).NOCASE
+         AIF   ('&BLKTYPE(&BLK-1)' NE 'CB').NOCASE
+&BLKTYPE(&BLK) SETC 'BC'
+         AIF   ('&BLKNAME(&BLK-1)' EQ '').NOREF
+&LABEL   DS    0S(&BLKNAME(&BLK-1))    BLOCK LABEL
+         AGO   .REFREF
+.NOREF   ANOP
+&LABEL   DS    0H                      BLOCK LABEL
+.REFREF  ANOP
+@@A&BLKID(&BLK) DS 0S(@@A&BLKID(&BLK-1))   LABEL FOR "REPEAT"
+         AGO   .MEND
+.*
+.NOCASE  ANOP
+         AIF   ('&LABEL' EQ '').REPEAT
+&LABEL   DS    0H                      BLOCK LABEL
+.REPEAT  ANOP
+@@A&BLKID(&BLK) DS 0H                    LABEL FOR "REPEAT"
+.MEND    SASLIST MACEND
+         MEND

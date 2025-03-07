@@ -1,0 +1,1239 @@
+./  ADD NAME=WHATTODO
+THE PROGRAM DOESN'T WORK AFTER 1999
+./  ADD NAME=EDDATE
+EDDATE   TITLE 'EDDATE -- DATE CONVERSION ROUTINE'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*                                                                     *
+* COPYRIGHT: COPYRIGHT BY GESELLSCHAFT FUER MATHEMATIK UND            *
+*                                      DATENVERARBEITUNG MBH BONN,    *
+*                         - RECHENZENTREN -                           *
+*                         SCHLOSS BIRLINGHOVEN                        *
+*                         5205 ST. AUGUSTIN 1                         *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+*        E D D A T E                                                  *
+*                                                                     *
+*                                                                     *
+* <CLASS>:                                                            *
+*        SUBROUTINE                                                   *
+*                                                                     *
+* <FUNCTION/OPERATION>:                                               *
+*        THE PROGRAM CONVERTS REPRESENTATIONS OF DATES AND TIMES      *
+*        IT WORKS ON THE FOLLOWING REPRESENTATIONS OF DATES:          *
+*                                                                     *
+*        1. IBM TOD CLOCK:                                            *
+*           A DOUBLEWORD CONTAINING A 64-BIT UNSIGNED BINARY COUNTER  *
+*           WHERE BIT 51 IS INCREMENTED BY ONE EVERY MICROSECOND. A   *
+*           VALUE OF ZERO CORRESPONDS TO JANUARY 1,1900 0 A.M.        *
+*           GREENWICH MEAN TIME. THE RIGHTMOST 12 BITS ARE UNDEFINED. *
+*                                                                     *
+*        2. GMD DAY STAMP:                                            *
+*           A FULLWORD CONTAINING A 32-BIT UNSIGNED INTEGER COUNTING  *
+*           EACH DAY. A VALUE OF ZERO CORRESPONDS TO JANUARY 1,1900.  *
+*                                                                     *
+*        3. INTERNAL DECIMAL:                                         *
+*           A FULLWORD CONTAINING A DECIMAL PACKED NUMBER OF THE      *
+*           FORM X'00YYDDDS' WITH DDD FOR THE DAY, YY FOR THE YEAR    *
+*           AND S MAY BE X'F' OR X'C'.                                *
+*                                                                     *
+*        4. EXTERNAL DIN:                                             *
+*           EIGHT BYTES CONTAINING CHARACTERS OF THE FORM C'YY-MM-DD' *
+*           WITH YY FOR THE YEAR, MM FOR THE MONTH AND DD FOR THE     *
+*           DAY.                                                      *
+*                                                                     *
+*        5. EXTERNAL GMD:                                             *
+*           SEVEN BYTES CONTAINING CHARACTERS OF THE FORM             *
+*           C'DDMMMYY' WITH                                           *
+*               DD   DECIMAL CHARACTERS FOR THE DAY,                  *
+*               MMM  A MNEMONIC FOR THE MONTH (JAN,FEB,...)           *
+*               YY   DECIMAL CHARACTERS FOR THE YEAR.                 *
+*                                                                     *
+*        6. DAY OF THE WEEK:                                          *
+*           A FULLWORD CONTAINING A 32-BIT INTEGER REPRESENTING THE   *
+*           RELATIVE NUMBER OF THE DAY OF THE WEEK I.E. 1 FOR MONDAY  *
+*           TO 7 FOR SUNDAY.                                          *
+*                                                                     *
+*        7. EXTERNAL DECIMAL:                                         *
+*           SIX BYTES CONTAINING CHARCACTERS OF THE FORM              *
+*           C'YY.DDD' WITH                                            *
+*               YY   DECIMAL CHARACTERS FOR THE YEAR,                 *
+*               DDD  DECIMAL CHARACTERS FOR THE DAY.                  *
+*           (THIS IS THE UNPACKED VERSION OF REPRESENTION 3.)         *
+*                                                                     *
+*        THE PROGRAM PERFORMS ALL CONVERSIONS BETWEEN THE             *
+*        REPRESENTATIONS 1-5,7 AND FROM 1-5,7 TO REPRESENTATION 6.    *
+*                                                                     *
+*                                                                     *
+*        THE PROGRAM WORKS ON THE FOLLOWING REPRESENTATION OF TIMES:  *
+*                                                                     *
+*        1. IBM TOD CLOCK:                                            *
+*           A DOUBLEWORD CONTAINING A 64-BIT UNSIGNED BINARY COUNTER  *
+*           WHERE BIT 51 IS INCREMENTED BY ONE EVERY MICROSECOND. A   *
+*           VALUE OF ZERO CORRESPONDS TO JANUARY 1,1900 0 A.M.        *
+*           GREENWICH MEAN TIME. THE RIGHTMOST 12 BITS ARE UNDEFINED. *
+*           ONLY THE MODULO VALUE WITHIN ONE DAY IS USED.             *
+*                                                                     *
+*        2. GMD TIME STAMP:                                           *
+*           A FULLWORD CONTAINING A 32-BIT UNSIGNED INTEGER COUNTING  *
+*           EACH HUNDREDTH OF A SECOND WITHIN ONE DAY.                *
+*                                                                     *
+*        3. EXTERNAL GMD:                                             *
+*           11 BYTES CONTAINING CHARACTERS OF THE FORM:               *
+*           C'HH:MM:SS.XX' WITH                                       *
+*               HH   DECIMAL CHARACTERS FOR THE HOUR,                 *
+*               MM   DECIMAL CHARACTERS FOR THE MINUTES,              *
+*               SS   DECIMAL CHARACTERS FOR THE SECONDS,              *
+*               XX   DECIMAL CHARACTERS FOR HUNDREDTHS OF A SECONDS.  *
+*                                                                     *
+*        THE PROGRAM PERFORMS ALL CONVERSIONS BETWEEN THESE           *
+*        REPRESENTATIONS.                                             *
+*                                                                     *
+* <ENTRY POINTS>:                                                     *
+*        EDDATE                                                       *
+*                                                                     *
+*                                                                     *
+* <PARAMETER>:                                                        *
+*                                                                     *
+*        R1                                                           *
+*        |                                                            *
+*        V                                                            *
+*        ------------------------      --------------                 *
+*        |  XX  |          -----|----> | CODE       |                 *
+*        ------------------------      -------------------            *
+*        |  XX  |          -----|----> | INPUT-REPR.     |            *
+*        ------------------------      -------------------            *
+*        |  XX  |          -----|----> | OUTPUT-REPR.    |            *
+*        ------------------------      -------------------            *
+*                                                                     *
+*        CODE IS A FULLWORD CONTAINING AN UNSIGNED 32-BIT INTEGER.    *
+*        THE TYPE OF CONVERSION IS DETERMINED FROM THE                *
+*        VALUE OF CODE BY THE FORMULA :                               *
+*                                                                     *
+*        INPUT-REPR. NUMBER * 10 + OUTPUT REPR. NUMBER.               *
+*                                                                     *
+*        (EXAMPLE: 25 == CONVERT FROM GMD DAY STAMP TO EXTERNAL GMD)  *
+*                                                                     *
+*        OR:                                                          *
+*                                                                     *
+*        R1                                                           *
+*        |                                                            *
+*        V                                                            *
+*        ------------------------      --------------                 *
+*        |  XX  |          -----|----> | CODE       |                 *
+*        ------------------------      ------------------------       *
+*        |  XX  |          -----|----> | INPUT-REPR. (DATE)   |       *
+*        ------------------------      ------------------------       *
+*        |  XX  |          -----|----> | OUTPUT-REPR. (DATE)  |       *
+*        ------------------------      ------------------------       *
+*        |  XX  |          -----|----> | INPUT-REPR. (TIME)   |       *
+*        ------------------------      ------------------------       *
+*        |  XX  |          -----|----> | OUTPUT-REPR. (TIME)  |       *
+*        ------------------------      ------------------------       *
+*                                                                     *
+*        CODE IS A FULLWORD CONTAINING AN UNSIGNED 32-BIT INTEGER.    *
+*        THE TYPE OF CONVERSION IS DETERMINED FROM THE                *
+*        VALUE OF CODE BY THE FORMULA :                               *
+*                                                                     *
+*        INPUT-REPR.(TIME) NUMBER * 1000                              *
+*        OUTPUT REPR.(TIME) NUMBER * 100                              *
+*        INPUT-REPR.(DATE) NUMBER * 10                                *
+*        OUTPUT REPR.(DATE) NUMBER.                                   *
+*                                                                     *
+*        IF ZERO IS SPECIFIED FOR A REPRESENTATION, THE VALUE IS NOT  *
+*        USED ON INPUT RESP. NOT CALCULATED ON OUTPUT.                *
+*        IF THERE ARE INPUT REPRESENTATIONS FOR BOTH DATE AND TIME,   *
+*        THE PROGRAM MAKES SEPARATE CONVERSION TO CALCULATE THE       *
+*        OUTPUT EXCEPT THE CASE WHERE THE OUTPUT IS ONLY THE TOD DATE *
+*        REPRESENTATION. IN THIS CASE THE REPRESENTATIONS ARE ADDED   *
+*        IN THE FOLLOWING WAY: THE INPUT DATE REPRESENTATION IS       *
+*        ROUNDED TO THE BEGINNING OF THE DAY; THE MODULO WITHIN A     *
+*        DAY OF THE TIME REPRESENTION IS ADDED.                       *
+*                                                                     *
+*        (EXAMPLE: 1215 == CONVERT TOD TO EXTERNAL GMD DATE/TIME)     *
+*                                                                     *
+*                                                                     *
+* <DD-STATEMENTS/DATA SETS>:                                          *
+*        NONE                                                         *
+*                                                                     *
+*                                                                     *
+* <NORMAL EXIT>:                                                      *
+*        VIA  BR 14                                                   *
+*                                                                     *
+*                                                                     *
+* <ERROR EXIT>:                                                       *
+*        NONE                                                         *
+*                                                                     *
+*                                                                     *
+* <RETURN CODES>:                                                     *
+*        =0    CONVERSION OK                                          *
+*        ¬=0   CONVERSION NOT OK                                      *
+*                                                                     *
+*        THE RETURN CODE IS TRANSFERRED TO THE CALLER                 *
+*        VIA GPR 15 AND GPR 0.                                        *
+*        THE VALUE OF THE OUTPUT-PARAMETER IS UNCHANGED               *
+*        IF THE RETURN CODE IS NOT ZERO.                              *
+*                                                                     *
+*                                                                     *
+* <EXTERNAL ROUTINES>:                                                *
+*        NONE                                                         *
+*                                                                     *
+*                                                                     *
+* <TABLES/WORK AREAS>:                                                *
+*        18 BYTES STANDARD SAVEAREA POINTED TO BY REGISTER 13         *
+*        ON ENTRY.                                                    *
+*                                                                     *
+*                                                                     *
+* <ATTRIBUTES>:                                                       *
+*        REENTERABLE, REFRESHABLE                                     *
+*                                                                     *
+*                                                                     *
+* <RESTRICTIONS>:                                                     *
+*        THE PROGRAMM ASSUMES THAT DATES ARE BETWEEN                  *
+*        JANUARY 1,1900 0 A.M. AND                                    *
+*        DECEMBER 31,1999 11:59:59.999999 P.M.                        *
+*                                                                     *
+* <AUTHORIZATION REQUIRED>:                                           *
+*        NONE                                                         *
+*                                                                     *
+*                                                                     *
+* <RELATED PROGRAMS>:                                                 *
+*        EDITDATE (MACRO)                                             *
+*        TODCNVRT                                                     *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+* <STORAGE>:                                                          *
+*        PROGRAM:  APPR. 2K BYTES                                     *
+*        DYNAMIC:  0                                                  *
+*        BUFFER :  72 BYTES POINTED TO BY GPR 13                      *
+*                                                                     *
+*                                                                     *
+* <LOAD MODULE CREATION>:                                             *
+*      SOURCE LANGUAGE      :      ASSEMBLER H , SASLIST              *
+*      COMPILE LIBRARIES    :      SYS2.SPTS.MACLIB ,GMD.MACLIB       *
+*      COMPILE PARAMETERS   :      RENT                               *
+*      LINK-EDIT LIBRARIES  :      --                                 *
+*      LINK-EDIT PARAMETERS :      REUS,RENT,REFR                     *
+*      LINK-EDIT INPUT      :      --                                 *
+*      DESTINATION LIBRARIES:      GMD.LINKLIB(EDDATE)                *
+*                                                                     *
+*      GENERATING DECK      :      GMD.JCL(EDDATE)                    *
+*                                                                     *
+*                                                                     *
+* <STATUS>:                                                           *
+*          CHANGE LEVEL - 1.0               26JAN80                   *
+*                         1.1               26JUN80                   *
+*                         2.0               08APR83                   *
+*                                                                     *
+* <NOTES>:  THE PROGRAM NEITHER CALLS ANY EXTERNAL ROUTINE            *
+*           NOR ISSUES ANY SVC INSTRUCTION.                           *
+*                                                                     *
+*           IF CONVERSION FROM GMD DAY STAMP TO IBM TIME STAMP        *
+*           IS PERFORMED, A TIME 0F 0.0 A.M. IS ASSUMED, TO AVOID     *
+*           A RESULT OF ZERO THE 12 LOW ORDER BITS ARE SET TO X'800'. *
+*                                                                     *
+*           THE PROGRAM USES LINKAGE CONVENTIONS                      *
+*           TO BE AVAILABLE IN FOLLOWING PROGRAMMING                  *
+*           LANGUAGES:                                                *
+*                                                                     *
+*              ASSEMBLER                                              *
+*              COBOL                                                  *
+*              FORTRAN IV                                             *
+*              PLI F                                                  *
+*              PLI OPTIMIZING                                         *
+*              SIMULA                                                 *
+*                                                                     *
+*           FOR DETAILS HOW TO USE THE PROGRAM FROM THESE             *
+*           LANGUAGES, WE REFER TO THE PROGRAMMER'S GUIDES.           *
+*                                                                     *
+*                                                                     *
+* <AUTHOR>:  P.SYLVESTER GMD-RZ.BN                                    *
+*                                                                     *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+         OPT   ,                   GENERATE OPTIMIZED CODE
+         SPACE
+         COPY  DECLARES            MACROS DSECTS EQUS
+         SPACE
+         SASLIST DATA
+         PRINT GEN
+EDDATE   $PROC (14,6),                                                 X
+               ID='EDDATE-2.0-08APR83-P.SYLVESTER',                    X
+               TYPE=(LOW,CSECT),                                       X
+               BASE=R6
+         SPACE
+         #USE  R13,SAVEAREA
+         SPACE
+         CONST ,
+         SPACE
+         COPY  SUBROUTS
+         SPACE
+         CODE  ,
+         SPACE
+         COPY MAINPROG
+         SPACE
+         PROC$ LTORG=NO    RETURN CODE IS IN SAVEAREA
+         SPACE
+         END
+./  ADD NAME=DECLARES
+         TITLE 'MACRO DEFINITIONS FOR THIS PROGRAM'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        SET RETURN CODE NOT OK                                       *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+         MACRO
+         SETFRETC
+         LET    FLAG,:,FLAG#ERR
+         MEND
+         SPACE
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        SET RETURN CODE OK                                           *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+         MACRO
+         SETSRETC
+         LET    FLAG,¬:,FLAG#ERR
+         MEND
+         SPACE 3
+         TITLE 'DSECT DEFINITIONS FOR THIS PROGRAM'
+         PRINT NOGEN                                                  *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        REGISTER SAVEAREA AND WORKAREA                               *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+SAVEAREA DSECT        WORKAREA FOR THIS PROGRAM
+         DS    3F     CHAIN WORDS, MAY NOT BE USED
+SAVE14   DS    F      REGISTER SAVEAREA
+FLAG     DS    0C     RETURN CODE FIELD
+FLAG#ERR EQUN  X'01'  ERROR FLAG
+FLAG#RWD EQUN  X'02'  RELATIVE WEEK DAY
+FLAG#LPY EQUN  X'04'  LEAP YEAR FLAG
+FLAG#EJD EQUN  X'08'  EXTERNAL FORM OF IDP WANTED
+FLAG#DAT EQUN  X'10'  EXTERNAL FORM OF IDP WANTED
+RETCODE  DS    F
+RETCODE0 DS    0F     SAME AS RETCODE, SET ON RETURN
+INPCODE  DS    H      INPUT CODE
+OUTPCODE DS    H      OUTPUT CODE
+SAVE1    DS    F
+SAVE2    DS    F
+SAVE3    DS    F
+SAVE4    DS    F
+SAVE5    DS    F
+SAVE6    DS    F
+TEMP8    DS    D
+WORK1    DS    D
+WORK2    DS    D
+         SPACE 3
+         TITLE 'EQU   DEFINITIONS FOR THIS PROGRAM'
+EDDATE   CSECT        <---- PLACED HERE IN ORDER TO AVOID PRIVATE CODE
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        REPRESENTATION CODES                                         *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+TODCODE  EQUN  1                   TIME OF DAY CLOCK
+GDSCODE  EQUN  2                   GMD DAY STAMP
+IDPCODE  EQUN  3                   INTERNAL DECIMAL PACKED
+DINCODE  EQUN  4                   EXTERNAL DIN
+GEXCODE  EQUN  5                   EXTERNAL GMD
+EJDCODE  EQUN  7                   EXTERNAL JULIAN
+RWDCODE  EQUN  6                   RELATIVE WEEK DAY NUMBER
+GTSCODE  EQUN  2                   GMD TIME STAMP
+GETCODE  EQUN  3                   GMD EXTERNAL TIME REPRESENTATION
+MAXICODE EQUN  GEXCODE
+MAXOCODE EQUN  RWDCODE
+MAXITCOD EQUN  GETCODE
+MAXOTCOD EQUN  GETCODE
+         SPACE
+         ENDCOPY DECLARES
+./ ADD NAME=SUBROUTS
+         TITLE 'SUBROUTINES'
+         COPY    CHECKDIG             CHECK DIGIT CHARACTERS
+         SPACE 3
+         COPY    CHCKPCKD             CHECK DECIMAL PACKED DIGITS
+         SPACE 3
+         COPY    TODGDS               CONVERT DATES : TOD --> GDS
+         SPACE 3
+         COPY    GDSTOD               CONVERT DATES : GDS --> TOD
+         SPACE 3
+         COPY    GDSIDP               CONVERT DATES : GDS --> IDP
+         SPACE 3
+         COPY    IDPGDS               CONVERT DATES : IDP --> GDS
+         SPACE 3
+         COPY    IDPDIN               CONVERT DATES : IDP --> DIN
+         SPACE 3
+         COPY    DINIDP               CONVERT DATES : DIN --> IDP
+         SPACE 3
+         COPY    DINGEX               CONVERT DATES : DIN --> GEX
+         SPACE 3
+         COPY    GEXDIN               CONVERT DATES : GEX --> DIN
+         SPACE 3
+         COPY    EJDIDP               CONVERT DATES : EJD --> IDP
+         SPACE 3
+         COPY    TODGTS               CONVERT TIMES : TOD --> GTS
+         SPACE 3
+         COPY    GTSTOD               CONVERT TIMES : GTS --> TOD
+         SPACE 3
+         COPY    GTSGEX               CONVERT TIMES : GTS --> GEX
+         SPACE 3
+         COPY    GEXGTS               CONVERT TIMES : GEX --> GTS
+         SPACE 3
+         COPY    ADDTOD               ADD DATE AND TIME TOD
+         SPACE 3
+         ENDCOPY   SUBROUTS
+./  ADD NAME=MAINPROG
+         TITLE 'THE MAIN PROGRAMME'
+         LET   RETCODE,=,0       INITIALIZE BUFFER
+         LET   RETCODE0,=,0
+         XC    TEMP8(L'TEMP8+L'WORK1+L'WORK2),TEMP8
+         SPACE
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        GET INPUT AND OUTPUT CODE                                    *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+         LET   FLAG,:,FLAG#ERR             ASSUME ERROR CODE
+         LET   R2,=,0(,R1):F               LOAD CODE POINTER
+         LET   R2,=,0(,R2):F               LOAD CODE VALUE
+         SRDA  R2,32                       EXTRACT DATE PART
+         D     R2,=F'100'
+         SRDA  R2,32                       SEPARATE INPUT/OUTPUT CODE
+         D     R2,=F'10'
+         SPACE
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        TO GET THE EXTERNAL FORM OF IDP, CONVERT TO IDP              *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+         $IF   R2,=,EJDCODE,THEN
+            LET R2,=,IDPCODE
+            LET FLAG,:,FLAG#EJD
+         ELSE
+            LET FLAG,¬:,FLAG#EJD
+         IF$
+         SPACE
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        TO GET RELATIVE WEEK DAY CONVERT TO GMD DAY STAMP            *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+         $IF   R2,=,RWDCODE,THEN
+            LET R2,=,GDSCODE
+            LET FLAG,:,FLAG#RWD
+         ELSE
+            LET FLAG,¬:,FLAG#RWD
+         IF$
+         LET   INPCODE,=,R3
+         LET   OUTPCODE,=,R2
+         SPACE
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        CHECK INPUT AND OUTPUT CODE FOR DATES                        *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+         $IF   R2,>,0
+         ANDTHEN R3,>,0
+         ANDTHEN R2,<=,MAXOCODE
+         ANDTHEN R3,<=,MAXICODE
+         ORELSE  R3,=,EJDCODE
+         THEN
+            LET   FLAG,¬:,FLAG#ERR
+         SPACE
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        MOVE DATE INPUT PARAMETER TO WORK AREA                       *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+            LET   R2,=,SAVE1
+            LET   R2,=,4(,R2):F            INPUT PARM POINTER?
+            $IF    R3,=,TODCODE,THEN       D
+               LET    (WORK1,8),=,0(R2)
+            ELSEIF R3,=,GDSCODE,THEN       F
+               LET    (WORK2,4),=,0(R2)
+            ELSEIF R3,=,IDPCODE,THEN       00YYDDDF
+               LET    (WORK1+4,4),=,0(R2)
+            ELSEIF R3,=,DINCODE,THEN       YY-MM-DD
+               LET    (WORK2,8),=,0(R2)
+            ELSEIF R3,=,GEXCODE,THEN       DDMMMYY
+               LET    (WORK1,7),=,0(R2)
+            ELSEIF R3,=,EJDCODE,THEN       YY.DDD
+               LET    (WORK2,6),=,0(R2)
+            ELSE
+            LET   FLAG,:,FLAG#ERR          THIS NEVER OCCURES
+            IF$ ,
+         IF$
+         SPACE
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        CONVERT DATE REPRESENTATIONS                                 *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+         $IF   FLAG,¬:,FLAG#ERR
+         ANDTHEN  INPCODE,=,EJDCODE
+         THEN
+            ICALL EJDIDP
+            LET INPCODE,=,IDPCODE
+         IF$
+         $IF   FLAG,¬:,FLAG#ERR,THEN
+            $IF   INPCODE,<,OUTPCODE
+            ORELSE INPCODE,=,TODCODE
+            THEN
+            SPACE
+               $IF   INPCODE,<=,TODCODE,THEN
+                  ICALL TODGDS
+               IF$
+               $IF   INPCODE,<=,GDSCODE
+               ANDTHEN OUTPCODE,>=,GDSCODE,
+               THEN
+                  ICALL GDSIDP
+               IF$
+               $IF   INPCODE,<=,IDPCODE
+               ANDTHEN OUTPCODE,>=,IDPCODE,
+               THEN
+                  ICALL IDPDIN
+               IF$
+               $IF   OUTPCODE,>=,DINCODE,THEN
+                  ICALL DINGEX
+               IF$
+            SPACE
+            ELSE
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*      IN THIS CASE WE HAVE INPUT CODE >= OUTPCODE                    *
+*                      AND INPUTCODE ¬= TODCODE                       *
+*      CONVERT TO "LOWER" REPR. AT LEAST ONCE                         *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+            SPACE 3
+               $IF    INPCODE,>=,GEXCODE,THEN
+                    ICALL GEXDIN
+               IF$
+               $IF    INPCODE,>=,DINCODE
+               ANDTHEN OUTPCODE,<=,DINCODE,THEN
+                    ICALL DINIDP
+               IF$
+               $IF   INPCODE,>=,IDPCODE
+               ANDTHEN OUTPCODE,<=,IDPCODE,THEN
+                    ICALL IDPGDS
+               IF$
+               $IF   OUTPCODE,<,GDSCODE,THEN
+                    ICALL GDSTOD
+               IF$
+            IF$
+         IF$
+         SPACE
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        MOVE REPRESENTATION FROM WORKAREA TO OUTPUT PARAMETER        *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+         $IF FLAG,¬:,FLAG#ERR,THEN
+*             MOVE TO OUTPUT AREA                                     *
+            LET   R1,=,SAVE1
+            LET   R2,=,8(,R1)              INPUT PARM POINTER?
+            LET    R3,=,OUTPCODE
+            $IF    R3,=,TODCODE,THEN       D
+               LET    (0(R2),8),=,WORK1
+            ELSEIF R3,=,GDSCODE,THEN       F
+               $IF  FLAG,:,FLAG#RWD,THEN
+                  LET    (0(R2),4),=,WORK2+4
+               ELSE
+                  LET    (0(R2),4),=,WORK2
+               IF$
+            ELSEIF R3,=,IDPCODE,THEN       00YYDDDF OR YY.DDD
+               $IF    FLAG,:,FLAG#EJD,THEN
+                  UNPK 1(5,R2),WORK1+5(3)
+                  MVC  0(2,R2),1(R2)
+                  MVI  2(R2),C'.'
+               ELSE
+                  LET    (0(R2),4),=,WORK1+4
+               IF$
+            ELSEIF R3,=,DINCODE,THEN       YY-MM-DD
+               LET    (0(R2),8),=,WORK2
+            ELSEIF R3,=,GEXCODE,THEN       DDMMMYY
+               LET    (0(R2),7),=,WORK1
+            ELSE
+            LET   FLAG,:,FLAG#ERR
+            IF$ ,
+         IF$ ,
+         SPACE
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        CONVERT TIME REPRESENTATIONS                                 *
+*        CHECK CODE SPECIFICATION                                     *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+         LET   R2,=,SAVE1
+         LET   R2,=,0(,R2):F               LOAD CODE POINTER
+         LET   R2,=,0(,R2):F               LOAD CODE VALUE
+         SRDA  R2,32                       EXTRACT DATE PART
+         D     R2,=F'100'
+         LR    R2,R3                       SEPARATE INPUT/OUTPUT CODE
+         SRDA  R2,32
+         D     R2,=F'10'
+         SPACE
+         $IF     R2,=,0
+         ANDTHEN OUTPCODE,=,TODCODE
+         THEN
+            LET  FLAG,:,FLAG#DAT
+         IF$
+         $IF FLAG,:,FLAG#ERR
+         ANDTHEN INPCODE,=,0
+         ANDTHEN OUTPCODE,=,0
+            LET  FLAG,¬:,FLAG#ERR
+         THEN
+         IF$
+         $IF FLAG,¬:,FLAG#ERR
+         ANDTHEN R3,>,0
+         ANDTHEN R3,<=,MAXITCOD
+         ANDTHEN R2,<=,MAXOTCOD
+         ANDTHEN R2,>,0
+         ORELSE  FLAG,:,FLAG#DAT
+         ANDTHEN R2,=,0
+         THEN
+            LET INPCODE,:=,R3
+            LET OUTPCODE,:=,R2
+         SPACE
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        COPY INPUT DATA TO WORK AREA                                 *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+            LET   R2,=,SAVE1
+            LET   R2,=,12(,R2):F          INPUT PARM POINTER?
+            $IF    R3,=,TODCODE,THEN       D
+               LET    (WORK1,8),=,0(R2)
+            ELSEIF R3,=,GTSCODE,THEN       F
+               LET    (WORK2,4),=,0(R2)
+            ELSEIF R3,=,GETCODE,THEN       HH:MM:SS.XX
+               $IF     (2(R2),1),=,':'
+               ANDTHEN (5(R2),1),=,':'
+               ANDTHEN (8(R2),1),=,'.'
+               THEN
+                  LET    (WORK1,2),=,0(R2)
+                  LET    (WORK1+2,2),=,3(R2)
+                  LET    (WORK1+4,2),=,6(R2)
+                  LET    (WORK1+6,2),=,9(R2)
+               ELSE
+                  LET   FLAG,:,FLAG#ERR
+               IF$
+            ELSE
+               LET   FLAG,:,FLAG#ERR          THIS NEVER OCCURES
+            IF$ ,
+            $IF FLAG,¬:,FLAG#ERR,THEN
+               $IF INPCODE,<=,OUTPCODE,THEN
+                  $IF INPCODE,<=,TODCODE,THEN
+                     ICALL TODGTS
+                  IF$
+                  $IF INPCODE,<=,GTSCODE
+                  ANDTHEN OUTPCODE,>=,GTSCODE
+                  THEN
+                     ICALL GTSGEX
+                  IF$
+                  $IF INPCODE,=,GETCODE
+                  THEN
+                     ICALL GEXGTS
+                  IF$
+               ELSE
+                  $IF INPCODE,>=,GETCODE,THEN
+                     ICALL GEXGTS
+                  IF$
+                  $IF OUTPCODE,<=,TODCODE,THEN
+                     ICALL GTSTOD
+                  IF$
+               IF$
+            IF$
+            $IF FLAG,¬:,FLAG#ERR
+            ANDTHEN FLAG,:,FLAG#DAT
+            THEN
+               ICALL ADDTOD
+            IF$
+         SPACE
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        COPY TIME REPRESENTATONS TO OUTPUT AREAS                     *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+            $IF FLAG,¬:,FLAG#ERR,THEN
+               LET   R1,=,SAVE1
+               LET   R2,=,16(R1)              OUTPUT PARM POINTER
+               LET    R3,=,OUTPCODE
+               $IF    R3,=,TODCODE,THEN
+                  LET    (0(R2),8),=,WORK1    TOD
+               ELSEIF R3,=,GTSCODE,THEN
+                  LET    (0(R2),4),=,WORK2    F
+               ELSEIF R3,=,IDPCODE,THEN       HHSSMMXX
+                  LET    (0(R2),2),=,WORK1
+                  LET    (2(R2),1),=,':'
+                  LET    (3(R2),2),=,WORK1+2
+                  LET    (5(R2),1),=,':'
+                  LET    (6(R2),2),=,WORK1+4
+                  LET    (8(R2),1),=,'.'
+                  LET    (9(R2),2),=,WORK1+6
+               ELSEIF R3,=,0,THEN
+                  LET    R2,=,8(R1)           OUTPUT PARM POINTER
+                  LET    (0(R2),8),=,WORK1    TOD
+               IF$ ,
+            IF$
+         IF$
+         SPACE
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        SET RETURN CODE AND RETURN                                   *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+         $IF FLAG,:,FLAG#ERR,THEN
+            LET   RETCODE,=,4
+         ELSE
+            LET   RETCODE,=,0
+         IF$
+         LET   RETCODE0,=,RETCODE
+         SPACE
+         #DROP R13
+         SPACE
+         ENDCOPY MAINPROG
+./ ADD NAME=CHECKDIG
+         TITLE 'CHECK DIGIT ROUTINE'
+CHECKDIG $PROC TYPE=(BASIC,INTERNAL),RETURN=R14
+         SPACE
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        R1 -> BYTE TO BE SCANNED                                     *
+*                                                                     *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+         $IF   0(R1):C,<,C'0' IS BYTE IN DIGIT RANGE ?
+         ORELSE 0(R1):C,>,C'9'
+         THEN
+            SETFRETC                           NO, SET RETURN CODE
+         IF$ ,
+         LET   R1,->,1(,R1)            INCREMENT TO NEXT BYTE
+         PROC$ ,
+         SPACE
+         ENDCOPY CHECKDIG
+./  ADD NAME=CHCKPCKD
+         TITLE 'CHECK PACKED DECIMAL'
+CHCKPCKD $PROC TYPE=(BASIC,INTERNAL),RETURN=R14
+         SPACE
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        R1->  WORD TO BE SCANNED                                     *
+*                                                                     *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+            SETFRETC                           NO, SET RETURN CODE
+            $IF  3(R1),O,B'00001100'         CHECK SIGN          , 1.1
+            ANDTHEN 3(R1),NM,B'00000011'                         , 1.1
+            THEN                                                 , 1.1
+               LET  3(R1):C,:,B'00001111'                        , 1.1
+            ELSE                                                 , 1.1
+               LEAVE CHCKPCKD                                    , 1.1
+            IF$                                                  , 1.1
+            UNPK TEMP8(8),0(4,R1)
+            LET  R1,->,TEMP8
+            $FOR (R0,=,8),TIMES,LOOP
+               IF   0(R1):C,<,C'0',LEAVE,CHCKPCKD
+               IF   0(R1):C,>,C'9',LEAVE,CHCKPCKD
+               LET   R1,->,1(,R1)            INCREMENT TO NEXT BYTE
+            FOR$
+            SETSRETC
+         PROC$ ,
+         SPACE
+         ENDCOPY   CHCKPCKD
+./ ADD NAME=TODGDS
+         TITLE 'CONVERSION TOD ---> GMD DAY STAMP,RELATIVE WEEK DAY'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        <WORK1> = TOD                                                *
+*        <WORK2> = GMD TIME STAMP , RELATIVE WEEK DAY                 *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+TODGDS   $PROC TYPE=(BASIC,INTERNAL),RETURN=R4
+         SPACE
+         $IF   FLAG,¬:,FLAG#ERR,THEN
+            SETFRETC
+            LM    R0,R1,WORK1
+            SRDL  R0,12
+            D     R0,=A(1000000*60)
+            LET   R0,=,0
+            D     R0,=A(60*24)
+            $IF   R1,<,=A(365*100+24),THEN
+               LET    WORK2:F,=,R1 THIS IS THE GMD DAY STAMP
+               LET    R0,=,0
+               D      R0,=F'7' RELATIVE WEEK DAY NUMBER
+               LET    R0,+,1
+               LET    WORK2+4:F,=,R0
+               SETSRETC
+            IF$ ,
+         IF$ ,
+         PROC$ ,
+         SPACE
+         ENDCOPY TODGDS
+./ ADD NAME=GDSTOD
+         TITLE 'CONVERSION TOD <--- GMD DAY STAMP,RELATIVE WEEK DAY'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        <WORK1> = TOD                                                *
+*        <WORK2> = GMD TIME STAMP , RELATIVE WEEK DAY                 *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+GDSTOD   $PROC TYPE=(BASIC,INTERNAL),RETURN=R4
+         SPACE
+         $IF   FLAG,¬:,FLAG#ERR,THEN
+            SETFRETC
+            LET   R1,=,WORK2:F
+            $IF   R1,>=,0,ANDTHEN,R1,<,=A(365*100+24),THEN
+               M     R0,=A(24*60)
+               M     R0,=A(1000000*60)
+               SLDL  R0,12
+               LET   R1,+,X'800'    ADD 1/2 MICROSECOND TO AVOID ZERO
+               STM   R0,R1,WORK1
+               SETSRETC
+            IF$ ,
+         IF$ ,
+         PROC$ ,
+         SPACE
+         ENDCOPY GDSTOD
+./ ADD NAME=GDSIDP
+ TITLE 'CONVERSION GMD DAY STAMP ---> INTERNAL DECIMAL PACKED'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        <WORK1> = INTERNAL DECIMAL PACKED                            *
+*        <WORK2> = GMD TIME STAMP , RELATIVE WEEK DAY                 *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+GDSIDP   $PROC TYPE=(BASIC,INTERNAL),RETURN=R4
+         $IF   FLAG,¬:,FLAG#ERR,THEN
+            SETFRETC
+            LET   R2,=,WORK2:F
+            $IF   R2,>=,0,ANDTHEN,R2,<,=A(365*100+24),THEN
+               $IF    R2,<,1460,THEN        DATE < 1.1.1904
+                   SRDA   R2,32
+                   D      R2,=F'365'
+               ELSE
+                   LET    R2,+,1            CALCULATE CURRENT LEAP
+                   SRDA   R2,32             YEAR GROUP
+                   D      R2,=F'1461'       DAYS IN A LEAP YEAR GROUP
+                   LET    R3,*,4            FOUR YEAR IN EACH GROUP
+                   $IF    R2,>=,1096,THEN
+                      LET   R3,+,3
+                      LET   R2,-,1096
+                   ELSEIF R2,>=,731,THEN
+                      LET   R3,+,2
+                      LET   R2,-,731
+                   ELSEIF R2,>=,366,THEN     FIRST YEAR IS LEAP YEAR
+                      LET   R3,+,1
+                      LET   R2,-,366
+                   IF$ ,
+               IF$
+               LET   R3,*,1000
+               LA    R3,1(R2,R3)
+               CVD   R3,WORK1
+               OI    WORK1+7,X'0F'
+               SETSRETC
+            IF$
+         IF$
+         PROC$ ,
+         ENDCOPY GDSIDP
+./ ADD NAME=IDPGDS
+ TITLE 'CONVERSION GMD DAY STAMP,REL W.D. <--- INTERNAL DECIMAL PACKED'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        <WORK1> = INTERNAL DECIMAL PACKED                            *
+*        <WORK2> = GMD TIME STAMP , RELATIVE WEEK DAY                 *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+IDPGDS   $PROC TYPE=(BASIC,INTERNAL),RETURN=R4
+         LET   R1,->,WORK1+4
+         ICALL CHCKPCKD
+         $IF   FLAG,¬:,FLAG#ERR,THEN
+            SETFRETC
+            $IF   WORK1+4:C,=,X'00'            00XXXXXX
+            ANDTHEN
+               $EX$ (WORK1+6,2),¬=,=X'000F'    00XX000F  NOT ALLOWED
+            ANDTHEN
+               $EX  (WORK1+6,2),<,=X'366F'     00XX366F  IS > MAXDAY
+               ORELSE
+                    $EX   WORK1+5,NO,X'01'     IF ODD NO LEAP YEAR
+                    ANDTHEN WORK1+5,NM,X'12'   IF MIXED NO LEAP YEAR
+                    ANDTHEN WORK1+5:C,¬=,X'00' 1900 IS NO LEAP YEAR
+                    ANDTHEN (WORK1+6,2),<=,=X'366F' 366 DAYS IN L. Y.
+                    EX$
+               EX$
+            THEN
+               CVB   R3,WORK1
+               LET   R2,=,0
+               D     R2,=F'1000'               <R2>=DDD,<R3>=YY
+               LET   R1,=,R3,*,365
+               $IF   R3,¬=,0,THEN               NUMBER OF
+                  LET   R3,-,1                  LEAP YEARS
+               IF$ ,                            SINCE 1900
+               LET   R3,/,4
+               LET   R3,+,R2,+,R1,-,1           +DAYS + YEARS
+               LET   WORK2:F,=,R3               SAVE GDS
+               LET   R2,=,0                     COMPUTE R.W.DAY
+               D     R2,=F'7'
+               LA    R2,1(,R2)                  01JAN1900 WAS
+               LET   WORK2+4:F,=,R2             MONDAY
+               SETSRETC
+            IF$
+         IF$
+         PROC$ ,
+         ENDCOPY IDPGDS
+./  ADD NAME=IDPDIN
+         TITLE 'CONVERSION INTERNAL PACKED DECIMAL ---> EXTERNAL DIN'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        <WORK1> = INTERNAL DECIMAL PACKED                            *
+*        <WORK2> = EXTERNAL DIN                                       *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+IDPDIN   $PROC TYPE=(BASIC,INTERNAL),RETURN=R4
+         LET   R1,->,WORK1+4
+         ICALL CHCKPCKD
+         $IF   FLAG,¬:,FLAG#ERR
+         ANDTHEN WORK1+4:C,=,X'00',THEN
+            XC    TEMP8(6),TEMP8
+            LET   TEMP8+6:H,=,WORK1+6:H
+            CVB   R15,TEMP8
+            LET   R1,=,0
+            LET   R14,=,0                 COUNTS THE MONTHS
+            $LOOP ,
+               IF    R14,>,H12,LEAVE,IDPDIN
+               LET   R1,=,IDPDIN1(R14):C  DAYS OF A MONTH
+               $IF   R14,=,1              FEBRUARY
+               ANDTHEN WORK1+5,NO,X'01'   IF ODD NO LEAP YEAR
+               ANDTHEN WORK1+5,NM,X'12'   IF MIXED NO LEAP YEAR
+               ANDTHEN WORK1+5:C,¬=,X'00'   1900 IS NO LEAP YEAR
+               THEN
+                  LA    R1,1(,R1)         UPDATE FEBRUARY
+               IF$ ,
+               LA    R14,1(,R14)
+               LET   R15,-,R1             THE RIGHT MONTH IS FOUND IF
+            UNTIL ,<=                     (15) LE 0, ELSE KEEP ON LOOKI
+            LOOP$ ,
+            LET   R15,+,R1                GET DAY OF THAT MONTH.
+            LET   R14,*,100,+,R15
+            CVD   R14,TEMP8               CONVERT DAY TO DECIMAL,
+            MVC   TEMP8+4(1),WORK1+5      MOVE DATE  YY0MMDDF
+            OI    TEMP8+7,X'0F'
+            UNPK  WORK2(8),TEMP8+3(5)     EDIT DATE C'0YY0MMDD'
+            MVC   WORK2(6),WORK2+1                  C'YY0MMMDD'
+            MVI   WORK2+2,C'-'
+            MVI   WORK2+5,C'-'
+            SETSRETC
+         IF$ ,
+         PROC$ ,
+IDPDIN1  DC    FL1'31,28,31,30,31,30,31,31,30,31,30,31'
+H12      DC    H'12'
+         ENDCOPY IDPDIN
+./ ADD NAME=DINIDP
+         TITLE 'CONVERSION INTERNAL PACKED DECIMAL <--- EXTERNAL DIN'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        <WORK1> = INTERNAL DECIMAL PACKED                            *
+*        <WORK2> = EXTERNAL DIN                                       *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+DINIDP   $PROC TYPE=(BASIC,INTERNAL),RETURN=R4
+         SETSRETC
+         LET   R1,->,WORK2             CHECK IF THE ARE ONLY DIGITS
+          SPACE
+         ICALL CHECKDIG DIGITS
+         ICALL CHECKDIG
+          SPACE
+         $IF   0(R1):C,¬=,C'-',THEN    AND - CHARS
+           SETFRETC
+         IF$ ,
+         LET   R1,->,1(,R1)
+          SPACE
+         ICALL CHECKDIG
+         ICALL CHECKDIG
+          SPACE
+         $IF   0(R1):C,¬=,C'-',THEN
+           SETFRETC
+         IF$ ,
+         LET   R1,->,1(,R1)
+          SPACE
+         ICALL CHECKDIG
+         ICALL CHECKDIG
+          SPACE
+         $IF   (WORK2+3,2),<=,=C'00'   CORRECT MONTHS ?
+         ORELSE (WORK2+3,2),>,=C'12'
+         THEN
+            SETFRETC                   NO ,SAY ERROR
+         ELSEIF FLAG,¬:,FLAG#ERR,THEN
+          SPACE
+            LET   WORK2+2:C,=,C'0'
+            PACK  WORK1(7),WORK2(3)          CONVERT YEAR TO DEC
+            LET   WORK2+2:C,=,C'-'
+            XC    TEMP8(6),TEMP8             CONVERT MONTH TO BIN
+            PACK  TEMP8+6(2),WORK2+3(2)
+            CVB   R2,TEMP8
+            PACK  TEMP8+6(2),WORK2+6(2)      CONVERT DAY TO BIN
+            CVB   R3,TEMP8
+            SPACE
+            $IF    WORK1+5,NO,X'01'          LEAP YEAR?
+            ANDTHEN WORK1+5,NM,X'12'
+            ANDTHEN WORK1+5:C,¬=,X'00'
+            THEN
+               LET   FLAG,:,FLAG#LPY         YES
+            ELSE
+               LET   FLAG,¬:,FLAG#LPY        NO
+            IF$
+            SPACE
+            $IF    FLAG,:,FLAG#LPY,ANDTHEN,R2,=,2 GET DAYS IN A MONTH
+            THEN
+               LET   R14,=,29                 LEAP YEAR AND FEBR.
+            ELSE
+               LET   R14,=,IDPDIN1-1(R2):C    ELSE FROM LIST
+            IF$ ,
+            SPACE
+            $IF    R14,<,R3,THEN
+               SETFRETC
+            ELSE
+               $IF    FLAG,:,FLAG#LPY,ANDTHEN,R2,>,2 CORRECT LEAP YEAR
+               THEN
+                  LA    R3,1(,R3)           ADD FEBR.29TH
+               IF$ ,
+               LET    R2,-,1
+               $FOR   R2,TIMES,LOOP         ADD ALL DAYS OF MONTHS
+                  IC     R14,IDPDIN1-1(R2)
+                  LET    R3,+,R14
+               FOR$
+               CVD    R3,TEMP8                    CONVERT DAY TO DEC
+               OI     TEMP8+7,X'0F'
+               LET    (WORK1+6,2),=,TEMP8+6       CONCATENATE TO YEAR
+            IF$ ,
+         IF$ ,
+         PROC$ ,
+         SPACE
+         ENDCOPY DINIDP
+./ ADD NAME=DINGEX
+         TITLE 'CONVERSION EXTERNAL DIN ---> EXTERNAL GMD'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        <WORK1> = EXTERNAL GMD                                       *
+*        <WORK2> = EXTERNAL DIN                                       *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+DINGEX   $PROC TYPE=(BASIC,INTERNAL),RETURN=R4
+         SETSRETC
+         LET   R5,=,R4
+         ICALL DINIDP
+         LET   R4,=,R5
+         $IF   FLAG,¬:,FLAG#ERR,THEN
+            LET   R3,=,WORK2+4:C
+            N     R3,=X'0000000F'
+            $IF   WORK2+3:C,=,C'1',THEN
+               LA   R3,10(,R3)
+            IF$
+            LET   R3,*,3
+            LA    R3,GEXMONTH-3(R3)
+            LET   (WORK1+2,3),=,0(R3)
+            LET   (WORK1,2),=,WORK2+6
+            LET   (WORK1+5,2),=,WORK2
+         IF$ ,
+         PROC$ ,
+         SPACE
+         ENDCOPY DINGEX
+./ ADD NAME=GEXDIN
+         TITLE 'CONVERSION EXTERNAL DIN <--- EXTERNAL GMD'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        <WORK1> = EXTERNAL GMD                                       *
+*        <WORK2> = EXTERNAL DIN                                       *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+GEXDIN   $PROC TYPE=(BASIC,INTERNAL),RETURN=R4
+         SETFRETC
+         LET   R2,->,GEXMONTH+33      FIND MONTH NAME
+GEXFMO   $FOR  (R3,=,12),TIMES,LOOP
+           IF   (WORK1+2,3),=,0(R2),LEAVE,GEXFMO
+           LET   R2,-,3
+         FOR$ ,
+         $IF   R3,>,0,THEN
+            SETSRETC
+            CVD   R3,TEMP8
+            UNPK  WORK2+3(2),TEMP8+6(2)
+            LET    WORK2+2:C,=,C'-'
+            LET    WORK2+4:C,:,X'F0'
+            LET    WORK2+5:C,=,C'-'
+            LET    (WORK2,2),=,WORK1+5
+            LET    (WORK2+6,2),=,WORK1
+            GOTO     DINGEX          ASSUME DIN AND CONVERT BACK
+         IF$
+         PROC$ ,
+GEXMONTH DC    C'JANFEBMARAPRMAYJUNJULAUGSEPOCTNOVDEC'
+         ENDCOPY GEXDIN
+./ ADD NAME=EJDIDP
+         TITLE 'CONVERSION JULIAN DAY ---> INTERNAL DECIMAL'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        <WORK1> INTERNAL DECIMAL                                     *
+*        <WORK2> JULIAN DAY                                           *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+EJDIDP   $PROC TYPE=(BASIC,INTERNAL),RETURN=R4
+         SETSRETC
+            LET   R1,->,WORK2
+            ICALL CHECKDIG
+            ICALL CHECKDIG
+            LET   R1,->,1(,R1)
+            ICALL CHECKDIG
+            ICALL CHECKDIG
+            ICALL CHECKDIG
+            $IF   FLAG,¬:,FLAG#ERR
+            ANDTHEN (WORK2+2,1),=,'.'
+            THEN
+               LET (WORK2+2,3),=,WORK2+3
+               PACK WORK1+5(3),WORK2(5)
+               MVI  WORK1+4,X'00'
+            ELSE
+               SETFRETC
+            IF$
+         PROC$ ,
+         ENDCOPY EJDIDP
+./ ADD NAME=TODGTS
+         TITLE 'CONVERSION GMD TIME STAMP <--- TOD'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        <WORK1> TOD                                                  *
+*        <WORK2> GMD TIME STAMP                                       *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+TODGTS   $PROC TYPE=(BASIC,INTERNAL),RETURN=R4
+         SETSRETC
+            LM    R0,R1,WORK1
+            SRDL  R0,12
+            STC   R1,WORK2
+            SRDL  R0,8
+            D     R0,=A(500000*15*15*3) = 1000000*60*60*24/256
+            SRDL  R0,24
+            IC    R1,WORK2
+            D     R0,=F'10000'
+            LET   WORK2:F,:=,R1
+         PROC$ ,
+         ENDCOPY TODGTS
+./ ADD NAME=GTSTOD
+         TITLE 'CONVERSION GMD TIME STAMP ---> TOD'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        <WORK1> TOD                                                  *
+*        <WORK2> GMD TIME STAMP                                       *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+GTSTOD   $PROC TYPE=(BASIC,INTERNAL),RETURN=R4
+         SETFRETC
+            LET   R0,:=,WORK2:F
+            $IF   R0,>=,0,ANDTHEN,R0,<=,=A(24*60*60*100),THEN
+               SRDL R0,32
+               M    R0,=F'10000'
+               SLDL R0,12
+               STM  R0,R1,WORK1
+               SETSRETC
+            IF$
+         PROC$ ,
+         ENDCOPY GTSTOD
+./ ADD NAME=GTSGEX
+         TITLE 'CONVERSION EXTERNAL GMD <--- GMD TIME STAMP'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        <WORK1> EXTERNAL TIME REPRESENTATION                         *
+*        <WORK2> GMD TIME STAMP                                       *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+GTSGEX   $PROC TYPE=(BASIC,INTERNAL),RETURN=R4
+         SETFRETC
+            LET  R0,:=,WORK2:F
+            $IF  R0,>=,0,ANDTHEN,R0,<=,=A(24*60*60*100),THEN
+               SRDL  R0,32
+               D     R0,=F'100'
+               CVD   R0,TEMP8
+               UNPK  WORK1+7(1),TEMP8+7(1)
+               OI    WORK1+7,X'F0'
+               LET   (WORK1+6,1),=,TEMP8+6
+               OI    WORK1+6,X'F0'
+               LET   R0,:=,0
+               D     R0,=F'60'
+               CVD   R0,TEMP8
+               UNPK  WORK1+5(1),TEMP8+7(1)
+               OI    WORK1+5,X'F0'
+               LET   (WORK1+4,1),=,TEMP8+6
+               OI    WORK1+4,X'F0'
+               LET   R0,:=,0
+               D     R0,=F'60'
+               CVD   R0,TEMP8
+               UNPK  WORK1+3(1),TEMP8+7(1)
+               OI    WORK1+3,X'F0'
+               LET   (WORK1+2,1),=,TEMP8+6
+               OI    WORK1+2,X'F0'
+               CVD   R1,TEMP8
+               UNPK  WORK1+1(1),TEMP8+7(1)
+               OI    WORK1+1,X'F0'
+               LET   (WORK1,1),=,TEMP8+6
+               OI    WORK1,X'F0'
+               SETSRETC
+            IF$
+         PROC$ ,
+         ENDCOPY GTSGEX
+./ ADD NAME=GEXGTS
+         TITLE 'CONVERSION EXTERNAL GMD ---> GMD TIME STAMP'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        <WORK1> EXTERNAL TIME REPRESENTATION                         *
+*        <WORK2> GMD TIME STAMP                                       *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+GEXGTS   $PROC TYPE=(BASIC,INTERNAL),RETURN=R4
+            LET   R1,->,WORK1
+            ICALL CHECKDIG
+            ICALL CHECKDIG
+            ICALL CHECKDIG
+            ICALL CHECKDIG
+            ICALL CHECKDIG
+            ICALL CHECKDIG
+            ICALL CHECKDIG
+            ICALL CHECKDIG
+            $IF   FLAG,¬:,FLAG#ERR,THEN
+               SETFRETC
+               NC    WORK1,=X'0F0F0F0F0F0F0F0F'
+               $IF   (WORK1,2),<=,=X'0204'
+               ANDTHEN (WORK1+2,2),<=,=X'0600'
+               ANDTHEN (WORK1+4,2),<=,=X'0600'
+               THEN
+                  LET   R1,:=,WORK1:C
+                  LET   R1,*,10
+                  LET   R1,+,WORK1+1:C
+                  LET   R2,:=,WORK1+2:C
+                  LET   R2,*,10
+                  LET   R2,+,WORK1+3:C
+                  LET   R1,*,60
+                  LET   R1,+,R2
+                  LET   R2,:=,WORK1+4:C
+                  LET   R2,*,10
+                  LET   R2,+,WORK1+5:C
+                  LET   R1,*,60
+                  LET   R1,+,R2
+                  LET   R1,*,10
+                  LET   R1,+,WORK1+6:C
+                  LET   R1,*,10
+                  LET   R1,+,WORK1+7:C
+                  LET   WORK2:F,:=,R1
+                  SETSRETC
+               IF$
+            IF$
+         PROC$ ,
+         ENDCOPY GEXGTS
+./ ADD NAME=ADDTOD
+         TITLE 'ADD DAY AND TIME TOD STAMPS'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        <WORK1> TOD                                                  *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE
+ADDTOD   $PROC TYPE=(BASIC,INTERNAL),RETURN=R4
+         SETSRETC
+         LET   R1,:=,SAVE1          GET DATE TOD VALUE
+         LET   R1,:=,8(R1)
+         LM    R0,R1,0(R1)
+         SRDL  R0,12                AND ROUND IT TO MIDNIGHT
+         D     R0,=A(1000000*60)
+         LET   R0,:=,0
+         D     R0,=A(24*60)
+         LET   R0,:=,0
+         M     R0,=A(24*60)
+         M     R0,=A(1000000*60)
+         SLDL  R0,12
+         STM   R0,R1,WORK2
+         BAL   R2,*+4                 SAVE OVERFLOW MASK
+         ICM   R3,8,=B'00000000'      DISABLE ARITHMETIC OVERFLOW
+         SPM   R3
+            LM    R0,R1,WORK1         TAKE MODULO OF DAY TOD
+            SRDL  R0,12
+            STC   R1,WORK1
+            SRDL  R0,8
+            D     R0,=A(500000*15*15*3) = 1000000*60*60*24/256
+            SRDL  R0,24
+            IC    R1,WORK1
+            SLDL  R0,12
+            AL    R1,WORK2+4
+            BNO   *+8
+            AL    R0,=A(1)
+            AL    R0,WORK2
+         SPM   R2                    RESTORE OVERFLOW MASK
+         LET   R1,+,X'800'    ADD 1/2 MICROSECOND TO AVOID ZERO
+         STM   R0,R1,WORK1
+         PROC$ ,
+         ENDCOPY ADDTOD

@@ -1,0 +1,41 @@
+         MACRO                                         STRUCT MACRO SET
+         DO
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                            PAHL (GMD-IST/RZ) 00JAN73
+.*  "(CASE" <"ON" COND "DO" BLOCK>* <"ELSE" BLOCK> "CASE)"      27MAR75
+.*       END CONDITION SETTING PART,
+.*       BEGIN "DO"   PART OF "CASE" CLAUSE
+.*
+         GBLA  &BLK,&BLKCC(30),&BLKDCNT(30)
+         GBLC  &BLKTYPE(30),&BLKID(30),&BLKNAME(30)
+         GBLB  &DEFER
+         LCLC  &DC,&B
+.SASLIST SASLIST MACRO,'DO'
+.*
+         AIF   ('&BLKTYPE(&BLK)' NE 'CX').YDO     NO "CASE"
+&DC      SETC  '&BLKDCNT(&BLK)'
+&B       SETC  '&BLKID(&BLK)&DC'
+       IF0BC   15-&BLKCC(&BLK),@@F&B               JUMP TO "ELSE"
+         AIF   ('&BLKNAME(&BLK)' EQ '').NOXREF
+         DS    0S(&BLKNAME(&BLK))
+.NOXREF  ANOP
+@@W&B      DS  0H
+@@T&B  EQU @@W&B+(@@Y&B-@@W&B)/(@@Y&B-@@W&B)*(@@Z&BLKID(&BLK)-@@W&B)
+         AIF   (NOT &DEFER).NODEFER
+@@F&BLKID(&BLK+1) EQU @@F&B
+@@T&BLKID(&BLK+1) EQU @@T&B
+@@W&BLKID(&BLK+1) EQU @@W&B
+@@Y&BLKID(&BLK+1) EQU @@Y&B
+@@V&BLKID(&BLK+1) EQU @@V&B
+@@X&BLKID(&BLK+1) EQU @@X&B
+&DEFER   SETB  0
+.NODEFER ANOP
+&BLKTYPE(&BLK) SETC 'CD'               NOW IN "DO"   PART
+         AGO  .MEND
+.**********************************************************************
+.YDO     MNOTE 12,'****** DO:   NOT EXPECTED.  IGNORED.'
+.MEND    SASLIST MACEND
+         MEND

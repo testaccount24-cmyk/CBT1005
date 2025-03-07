@@ -1,0 +1,1854 @@
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*                                                                     *
+* COPYRIGHT: COPYRIGHT BY GESELLSCHAFT FUER MATHEMATIK UND            *
+*                                      DATENVERARBEITUNG MBH BONN,    *
+*                         - RECHENZENTREN -                           *
+*                         SCHLOSS BIRLINGHOVEN                        *
+*                         5205 ST. AUGUSTIN 1                         *
+*                                                                     *
+*            FURTHER COPIES OF THIS PROGRAM MAY BE OBTAINED           *
+*            BY WRITING TO THE ABOVE ADDRESS.                         *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+*        P C P A R S E R                                              *
+*                                                                     *
+*                                                                     *
+* <CLASS>:                                                            *
+*        SYSTEM PROGRAMMER'S TOOL SET                                 *
+*                                                                     *
+*                                                                     *
+* <FUNCTION/OPERATION>:                                               *
+*   DAS PROGRAMM LIEST UND VERARBEITET PSEUDOCODE                     *
+*   AUS EINER EINGABEDATEI UND HINTERLEGT DIE                         *
+*   ERGEBNISSE SEINES 'PARSENS' IN DREI VER-                          *
+*   SCHIEDENEN AUSGABEDATEIEN:                                        *
+*                                                                     *
+*   - DIE FORMATIERTE AUSGABEDATEI ENTHAELT DEN                       *
+*     FORMATIERTEN INPUT                                              *
+*                                                                     *
+*   - DIE PRETTY-PRINT-DATEI ENTHAELT DEN                             *
+*     FORMATIERTEN INPUT IN AUFBEREITETER FORM                        *
+*     (MIT UEBERSCHRIFTEN, ZEILENNUMMERN, CROSS-                      *
+*     REFERENCE ETC.)                                                 *
+*                                                                     *
+*   - DIE CODEGERUEST-DATEI ENTHAELT DAS AUS                          *
+*     DEM PSEUDOCODE GENERIERTE CODEGERUEST                           *
+*     (ASSEMBLER-MAKROS ETC.)                                         *
+*                                                                     *
+*   BENUTZUNGSANLEITUNG:                                              *
+*                                                                     *
+*     GMD ARBEITSPAPIERE NR. 9, RZ.83.03.02                           *
+*                                                                     *
+*                                                                     *
+* <ENTRY POINTS>:                                                     *
+*     OSINT   (SPITBOL RUNTIME SYSTEM)                                *
+*                                                                     *
+*                                                                     *
+* <INPUT>:                                                            *
+*     PARM='R=256K' FUER SPITBOL RUNTIME SYSTEM                       *
+*                                                                     *
+* <OUTPUT>:                                                           *
+*     SIEHE DD-STATEMENTS                                             *
+*                                                                     *
+* <DD-STATEMENTS/DATA SETS>:                                          *
+*   INDS    - EINGABEDATEI                                            *
+*   OUTDS   - FORMATIERTE EINGABEDATEI                                *
+*   OUTPRNT - PRETTY-PRINT-DATEI                                      *
+*   OUTGEN  - CODEGERUEST-DATEI                                       *
+*                                                                     *
+*                                                                     *
+* <NORMAL EXIT>:                                                      *
+*        VIA SPITBOL END                                              *
+*                                                                     *
+* <ERROR EXIT>:                                                       *
+*        NONE                                                         *
+*                                                                     *
+*                                                                     *
+* <RETURN CODES>:                                                     *
+*        0    ALLES OK                                                *
+*        4    KLEINE FEHLER                                           *
+*        8    SCHLIMME FEHLER                                         *
+*                                                                     *
+* <EXTERNAL ROUTINES>:                                                *
+*        KEINE                                                        *
+*                                                                     *
+* <TABLES/WORK AREAS>:                                                *
+*                                                                     *
+*                                                                     *
+* <ATTRIBUTES>:                                                       *
+*        RENT,REUS                                                    *
+*                                                                     *
+* <RESTRICTIONS>:                                                     *
+*        GENERIERT Z. ZT. NUR CODE FUER SPTS APU.                     *
+*                                                                     *
+* <AUTHORIZATION REQUIRED>:                                           *
+*        KEINE                                                        *
+*                                                                     *
+* <RELATED PROGRAMS>:                                                 *
+*        SASLIST                                                      *
+*                                                                     *
+* <STORAGE>:                                                          *
+*        PROGRAM:  ?                                                  *
+*        DYNAMIC:  ?                                                  *
+*        BUFFER :  ?                                                  *
+*                                                                     *
+*                                                                     *
+* <LOAD MODULE CREATION>:                                             *
+*      SOURCE LANGUAGE      :               SPITBOL                   *
+*      COMPILE LIBRARIES    :               -                         *
+*      COMPILE PARAMETERS   :               -                         *
+*      LINK-EDIT LIBRARIES  :               PP1.LINKLIB               *
+*      LINK-EDIT PARAMETERS :                                         *
+*      LINK-EDIT INPUT      :                                         *
+*      DESTINATION LIBRARIES:          SYS2.SPTS.LINKLIB(PCPARSER)    *
+*                                                                     *
+*      GENERATING DECK      :          SYS2.SPTS.CNTL(PCPARSER)       *
+*                                                                     *
+*                                                                     *
+* <STATUS>:                                                           *
+*          CHANGE LEVEL - 2.1       83-04-20                          *
+* P. SYLVESTER GMD-Z1.BN  2.2       84-04-19 (KEYWORD-TRANSL. CHNGD)  *
+* P. SYLVESTER GMD-Z1.BN  2.3       84-10-30 (LABELS IN CODE TITLES)  *
+*                                                                     *
+*                                                                     *
+* <NOTES>:  PROCEDURE :                                               *
+*                                                                     *
+*           GMD.PROCLIB(PCPARSER):                                    *
+*                                                                     *
+*   //PCPARSER PROC PRINT='(A,,3)',INDS=                              *
+*   //PCPARSER EXEC PGM=PCPARSER,PARM='R=256K'                        *
+*   //INDS     DD   DISP=SHR,DSN=&INDS                                *
+*   //OUTPRNT  DD   SYSOUT=&PRINT,                                    *
+*   //              DCB=(BLKSIZE=23476,LRECL=137,RECFM=VBA)           *
+*   //STEPLIB  DD   DISP=SHR,DSN=GMD.GOLIB                            *
+*   //SYSIN    DD   DUMMY                                             *
+*   //SYSPRINT DD   SYSOUT=&PRINT                                     *
+*   //SYSPUNCH DD   DUMMY                                             *
+*   //*OUTDS   DD   AUSGABEDATEI FUER FORMATIERTEN PSEUDO-CODE        *
+*   //*OUTGEN  DD   AUSGABEDATEI FUER GENERIERTES CODE-GERUEST        *
+*                                                                     *
+*           SAMPLE JOB:                                               *
+*                                                                     *
+*   //%SYSIDPC JOB ,'PCPARSER',NOTIFY=%SYSID,PASSWORD=%SYSPSWD        *
+*   /*JOBPARM FORMS=3                                                 *
+*   //*-------                                                        *
+*   //PCTEST EXEC PCPARSER,                                           *
+*   //           INDS='.....'                                         *
+*   //OUTDS  DD SYSOUT=*                                              *
+*   //OUTGEN DD SYSOUT=*                                              *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+* <AUTHOR>:                                                           *
+*   BRIGITTE STUMM  GMD Z1.BN                                         *
+*                                                                     *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*-NOLIST
+*-COPY ERRORMSG
+*-LIST
+-IN80
+-NOERRORS
+-NOEXECUTE
+
+*--------------------------------------------------*
+*             SETEXIT-ROUTINE                      *
+*--------------------------------------------------*
+
+     SETEXIT(.NOFILE)      :(END.NOFILE)
+NOFILE
+     (IF EQ(&ERRTYPE,12002)
+     THEN
+        :(CONTINUE)
+     ELSE
+        :(ABORT)
+     IF)
+END.NOFILE
+
+*--------------------------------------------------*
+*             EIN- UND AUSGABE-DATEIEN             *
+*--------------------------------------------------*
+
+     INPUT(.IN,'INDS')              ;*  INPUT-DATEI (PSEUDOCODE)
+
+     &ERRLIMIT = 2
+
+     OUTPUT(.OUT,'OUTDS')           ;*  FORMATIERTE INPUT-DATEI
+     OUTPUT(.OUTPRNT,'OUTPRNT')     ;*  PRETTY-PRINT-DATEI
+     OUTPUT(.OUTGEN,'OUTGEN')       ;*  CODEGERUEST-DATEI
+
+*--------------------------------------------------*
+*             SNOBOL-VARIABELN                     *
+*--------------------------------------------------*
+
+     &STLIMIT = 16777215
+     &ANCHOR = 1
+     &FULLSCAN = 1
+     &TRIM = 1
+-EJECT
+*--------------------------------------------------*
+* CAPS: VERWANDELT KLEIN- IN GROSSBUCHSTABEN       *
+*--------------------------------------------------*
+
+ (PROC CAPS(STRING)
+    CAPS = REPLACE(STRING,&ALPHABET,CAPALPH)
+ PROC)
+
+*--------------------------------------------------*
+* SORT: PROZEDUR ZUM SORTIEREN VON ARRAYS DER FORM *
+*                A = ARRAY('N,2')                  *
+*       WOBEI A<I,1> EIN STRING IST, NACH DEM      *
+*       DER ARRAY SORTIERT WERDEN SOLL             *
+*       (BUBBLE-SORT)                              *
+*--------------------------------------------------*
+
+ (PROC SORT(A)I
+    I = 1
+    (LOOP
+    WHILE A<I + 1,1>
+       (IF LGT(A<I,1>,A<I + 1,1>)
+       THEN
+          A = EXCHNGE(A,I)
+          A = BUBBLE(A,I)
+       IF)
+       I = I + 1
+    LOOP)
+    SORT = A
+ PROC)
+
+ (PROC EXCHNGE(A,I)HELP1,HELP2
+    HELP1 = A<I,1>
+    HELP2 = A<I,2>
+    A<I,1> = A<I + 1,1>
+    A<I,2> = A<I + 1,2>
+    A<I + 1,1> = HELP1
+    A<I + 1,2> = HELP2
+    EXCHNGE = A
+ PROC)
+
+ (PROC BUBBLE(B,J)
+    (LOOP
+    WHILE GT(J,1)
+       J = J - 1
+       (IF LGT(B<J,1>,B<J + 1,1>)
+       THEN
+          B = EXCHNGE(B,J)
+       IF)
+    LOOP)
+    BUBBLE = B
+ PROC)
+-EJECT
+*--------------------------------------------------*
+* ENQUEUE: REIHT SAETZE, DIE ERST SPAETER AUSGEGE- *
+*    BEN WERDEN SOLLEN, IN DIE QUEUE EIN           *
+*--------------------------------------------------*
+
+ (PROC ENQUEUE(LINE)
+
+    (IF IDENT(HEAD,'')
+    THEN
+       WRT_QUEUE = ON
+       HEAD = QUEUE(LINE,'')
+       TAIL = HEAD
+    ELSE
+       NEXT(TAIL) = QUEUE(LINE,'')
+       TAIL = NEXT(TAIL)
+    IF)
+
+ PROC)
+
+*--------------------------------------------------*
+* DEQUEUE: HOLT DIE AUFGEHOBENEN SAETZE WIEDER     *
+*    NACHEINANDER AUS DER QUEUE HERAUS             *
+*--------------------------------------------------*
+
+ (PROC DEQUEUE()
+
+    (IF IDENT(HEAD,'')
+    THEN
+       WRT_QUEUE = OFF
+       FRETURN
+    ELSE
+       DEQUEUE = LINE(HEAD)
+       HEAD = NEXT(HEAD)
+       (IF IDENT(HEAD,'')
+       THEN
+          TAIL = ''
+       IF)
+    IF)
+
+ PROC)
+
+*--------------------------------------------------*
+* PRECEDE: SETZT EINEN SATZ AN DEN ANFANG DER      *
+*    QUEUE                                         *
+*--------------------------------------------------*
+
+ (PROC PRECEDE(LINE)
+
+    (IF IDENT(HEAD,'')
+    THEN
+       WRT_QUEUE = ON
+    IF)
+
+    HEAD = QUEUE(LINE,HEAD)
+
+    (IF IDENT(TAIL,'')
+    THEN
+       TAIL = HEAD
+    IF)
+
+ PROC)
+
+*--------------------------------------------------*
+* INIT_PROC: GIBT IN DER CODEGERUEST-DATEI AUF     *
+*    TOP-LEVEL VOR EINEM OEFFNENDEN (ERLAUBTEN)    *
+*    KEYWORD SPEZIELLE ZEILEN AUS                  *
+*--------------------------------------------------*
+
+ (PROC INIT_PROC(LABEL)TLAB,TEXT
+
+    (IF EQ(FIRST,ON)
+    THEN
+       TLAB = RPAD(LABEL,8)
+       TLAB POS(0) LEN(8) . TLAB
+    IF)
+
+    TEXT = "'" LABEL "'"
+
+    (IF DIFFER(HEAD,'')
+    THEN
+       (SELECT
+       WHEN LINE(HEAD) TITLE_COD REM . TEXT
+          HEAD = NEXT(HEAD)
+          (IF IDENT(HEAD,'')
+          THEN
+             TAIL = ''
+          IF)
+       WHEN LINE(HEAD) EJECT_COD
+          HEAD = NEXT(HEAD)
+          (IF IDENT(HEAD,'')
+          THEN
+             TAIL = ''
+          IF)
+       OTHER
+       SELECT)
+    IF)
+
+    (IF GT(SIZE(LABEL),8)
+    THEN
+       TRUNC = ON
+    IF)
+
+    LABEL = RPAD(LABEL,8)
+    LABEL POS(0) LEN(8) . LABEL
+
+    PRECEDE(CAPS(TLAB ' ' TITLE_COD TEXT))
+    PRECEDE(CAPS('./ ADD NAME=' LABEL))
+
+    COLLECT = OFF
+
+ PROC)
+
+*--------------------------------------------------*
+* TERM_PROC: GIBT IN DER CODEGERUEST-DATEI AUF     *
+*    TOP-LEVEL NACH EINEM SCHLIESSENDEN (ERLAUBTEN)*
+*    KEYWORD SPEZIELLE ZEILEN AUS                  *
+*--------------------------------------------------*
+
+ (PROC TERM_PROC(LABEL)
+
+    (IF DIFFER(LABEL,'')
+    THEN
+       LABEL = RPAD(LABEL,8)
+       LABEL POS(0) LEN(8) . LABEL
+    IF)
+
+    (IF EQ(FIRST,ON)
+    THEN
+*      FIRST = OFF
+       GENLINE = DUPL(' ',TABINIT) 'END ' LABEL
+    ELSE
+       GENLINE = DUPL(' ',TABINIT) 'ENDCOPY ' LABEL
+    IF)
+
+    CODELINE()
+    COLLECT = ON
+
+ PROC)
+-EJECT
+*--------------------------------------------------*
+*             KONSTANTEN                           *
+*--------------------------------------------------*
+
+ MAXLEN1 = 71       ;* MAX. ZEILENLAENGE IN DER FORMAT. INPUT-DATEI
+                    ;*      UND IN DER PRETTY-PRINT-DATEI
+ MAXLEN2 = 71       ;* MAX. ZEILENLAENGE IN DER CODEGERUEST-DATEI
+ MAXCNT1 = 54       ;* MAX. ZEILENZAHL FUER PRETTY-PRINT PSEUDOCODE
+ MAXCNT2 = 48       ;* MAX. ZEILENZAHL FUER PRETTY-PRINT CROSS-REF.
+ INCR    = 3        ;* EINRUECKUNG (INCR U. DECR)
+ TABINIT = 10       ;* ANFANGSPOSITION FUER FORMATIERUNG
+ TABTEXT = 39       ;* ANFANGSPOSITION FUER KOMMENTARE (CODEGERUEST)
+
+ ON  = 1            ;* SCHALTER-BIT:   AN
+ OFF = 0            ;*                 AUS
+
+ CMNT_CHAR = '*'       ;* LEITET KOMMENTARZEILEN EIN (IN SPALTE 1)
+ CMNT_BEG  = '@ *'     ;* ANF.- U. END-ZEICHEN FUER KOMMENTARE, DIE
+ CMNT_END  = ''        ;*   HINTER EINEM STMT STEHEN (CODEGERUEST-DATEI)
+ CONT_CHAR = '-'       ;* FORTSETZUNGSZEICHEN (IN DER LETZTEN SPALTE)
+ COMMA     = ','
+ EJECT     = '-EJECT ' ;* KONTROLLANWEISUNG EJECT, PSEUDOCODE
+ SPACE     = '-SPACE ' ;*         "         SPACE,      "
+ TITLE     = '-TITLE ' ;*         "         TITLE,      "
+ EJECT_COD = ' EJECT ' ;*         "         EJECT, CODEGERUEST
+ SPACE_COD = ' SPACE ' ;*         "         SPACE,      "
+ SPACE_COD2 =          ;*         "         SPACE,      "
+ TITLE_COD = ' TITLE ' ;*         "         TITLE,      "
+ TITLE_COD2 =          ;*         "         TITLE,      "
+ LABEL_DELIMITER = ' '
+
+ MAXLEN3 = MAXLEN2 - SIZE(CMNT_END) ;* ZEILENLAENGE AUSSCHLIESSLICH DES
+                    ;* KOMMENTAR-END-ZEICHENS IN DER CODEGERUEST-DATEI
+
+ UPPER = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+ LOWER = SUBSTR(&ALPHABET,130,9)
++        SUBSTR(&ALPHABET,146,9)
++        SUBSTR(&ALPHABET,163,8)
+ CAPALPH = REPLACE(&ALPHABET,LOWER,UPPER)
+
+ NL = SUBSTR(&ALPHABET,14,1)    ;* NEW LINE CHARACTER
+ &ALPHABET LEN(1) LEN(1) $ NPR  ;* NON-PRINTABLE CHARACTER (X'01')
+
+ HEAD0 = '1PSEUDOCODE-PROCESSOR  --- VERSION 2.3 ---  GMD/Z1.BN'
+ HEAD1 = '0LINE LVL PSEUDOCODE'
+ HEAD2 = '-C R O S S R E F E R E N C E   O F   L A B E L S'
+ HEAD3 = '-NAME                        LINE '
++         'BLKNAME                     TYPE'
+ HEAD4 = '-FINAL MESSAGES:'
+-EJECT
+*--------------------------------------------------*
+*             PATTERNS                             *
+*--------------------------------------------------*
+
+ OBLANKS         = SPAN(' ') | ''
+ LETTER          = UPPER LOWER '$@#'
+ ALPHANUM        = LETTER '0123456789_'
+ CONTROL         = EJECT | SPACE | TITLE
+ IS_EMPTY        = POS(0) OBLANKS RPOS(0)
+ IS_LABEL        = ANY(LETTER) (SPAN(ALPHANUM) | '') ':' RPOS(0)
+ IS_LABEL_REF    = ':' ANY(LETTER) (SPAN(ALPHANUM) | '') RPOS(0)
+ IS_KEYWORD      = *DIFFER(KWTAB<TOKEN>,'')
+ IS_COMMENT      = POS(0) CMNT_CHAR
+ IS_PRAGMA       = POS(0) CONTROL
+ IS_CMNT_OR_PRGM = *EQ(CMT_PRG,ON)
+ POSTPAT         = '(PROGRAM' | '(PROC' | 'THEN' | 'ELSE' | 'DO' |
++        '(FOR' | '(LOOP' | 'LOOP' | 'UNTIL' | '(BLOCK' | '(REFINE' |
++        'POSTLUDE'
+
+*--------------------------------------------------*
+*             DATENSTRUKTUREN                      *
+*--------------------------------------------------*
+
+ DATA('KEYWORD(CLAUSE,PRED,TYPE,TOP,NLB,NLA)')  ;* KEYWORD
+ DATA('TRANS(GENKW,NLB,NLA)')                   ;* UEBERSETZTES KEYWORD
+ DATA('STACK(CLAUSE,LABEL,LASTKW,LEVEL)')       ;* STACK
+ DATA('ERROR(ERRTKN,ERRMSG)')                   ;* FEHLERMELDUNG
+ DATA('LABREF(NAME,DEF,REF)')                   ;* LABEL-EINTRAG
+ DATA('DEFENTRY(STMT,BLKNAME)')                 ;* LABEL-DEFINITION
+ DATA('REFENTRY(STMT,BLKNAME,MODE,NEXT)')       ;* LABEL-REFERENZ
+ DATA('QUEUE(LINE,NEXT)')                       ;* SATZ-QUEUE
+
+*--------------------------------------------------*
+*             TABELLEN                             *
+*--------------------------------------------------*
+
+ KWTAB  = TABLE(40)  ;*  KEYWORD-TABELLE
+ TRTAB  = TABLE(40)  ;*  UEBERSETZUNGSTABELLE FUER KEYWORDS
+ LABTAB = TABLE(40)  ;*  TABELLE FUER LABEL-EINTRAEGE
+ STKTAB = TABLE(10)  ;*  TABELLE FUER STACK
+ ERRTAB = TABLE(5)   ;*  TABELLE FUER FEHLERMELDUNGEN
+-EJECT
+*--------------------------------------------------*
+*             KEYWORD-TABELLE                      *
+*--------------------------------------------------*
+
+ KWTAB<'(PROGRAM'> = KEYWORD('PROGRAM',                    ,'KO',3,1,1)
+ KWTAB<'PROGRAM)'> = KEYWORD('PROGRAM',
++                                   '(PROGRAM' | 'POSTLUDE','KS',0,1,0)
+ KWTAB<'(PROC'>   = KEYWORD('PROC'    ,                    ,'KO',0,1,1)
+ KWTAB<'PROC)'>   = KEYWORD('PROC'    ,'(PROC' | 'POSTLUDE','KS',0,1,0)
+ KWTAB<'(IF'>     = KEYWORD('IF'      ,                    ,'KO',0,1,1)
+ KWTAB<'THEN'>    = KEYWORD('IF'      ,
++                   '(IF' | 'ELSEIF' | 'ORELSE' | 'ANDTHEN','KT',0,1,1)
+ KWTAB<'ELSE'>    = KEYWORD('IF' | 'CASE','THEN' | 'DO'    ,'KT',0,1,1)
+ KWTAB<'ELSEIF'>  = KEYWORD('IF'      ,'THEN'              ,'KT',0,1,1)
+ KWTAB<'IF)'>     = KEYWORD('IF','THEN' | 'ELSE' | 'POSTLUDE','KS',0,1,0)
+ KWTAB<'(CASE'>   = KEYWORD('CASE'    ,                    ,'KO',0,1,1)
+ KWTAB<'ON'>      = KEYWORD('CASE'    ,'(CASE' | 'DO'      ,'KT',0,1,1)
+ KWTAB<'DO'>      = KEYWORD('CASE'    ,'ON'                ,'KT',0,1,1)
+ KWTAB<'CASE)'>   = KEYWORD('CASE','DO' | 'ELSE' | 'POSTLUDE','KS',0,1,0)
+ KWTAB<'(WHILE'>  = KEYWORD('WHILE'   ,                    ,'KO',0,1,1)
+ KWTAB<'WHILE)'>  = KEYWORD('WHILE'   ,'LOOP' | 'POSTLUDE' ,'KS',0,1,0)
+ KWTAB<'(LOOP'>   = KEYWORD('LOOP'    ,                    ,'KO',0,1,1)
+ KWTAB<'LOOP)'>   = KEYWORD('LOOP'    ,
++                   '(LOOP' | 'UNTIL' | 'LOOP' | 'POSTLUDE','KS',0,1,0)
+ KWTAB<'(FOR'>    = KEYWORD('FOR'     ,                    ,'KO',0,1,1)
+ KWTAB<'FOR)'>    = KEYWORD('FOR','(FOR' | 'LOOP' | 'POSTLUDE','KS',0,1,0)
+ KWTAB<'WHILE'>   = KEYWORD('WHILE' | 'LOOP' | 'FOR',
++                             'LOOP' | '(LOOP' | '(FOR'    ,'KT',0,1,1)
+ KWTAB<'UNTIL'>   = KEYWORD('WHILE' | 'LOOP' | 'FOR',
++                             'LOOP' | '(LOOP' | '(FOR'    ,'KT',0,1,1)
+ KWTAB<'LOOP'>    = KEYWORD('WHILE' | 'LOOP' | 'FOR',
++       '(WHILE' | 'WHILE' | 'UNTIL' | 'ORELSE' | 'ANDTHEN','KT',0,1,1)
+ KWTAB<'(BLOCK'>  = KEYWORD('BLOCK'   ,                    ,'KO',0,1,1)
+ KWTAB<'BLOCK)'>  = KEYWORD('BLOCK'  ,'(BLOCK' | 'POSTLUDE','KS',0,1,0)
+ KWTAB<'(REFINE'> = KEYWORD('REFINE'  ,                    ,'KO',2,1,1)
+ KWTAB<'REFINE)'> = KEYWORD('REFINE','(REFINE' | 'POSTLUDE','KS',0,1,0)
+ KWTAB<'POSTLUDE'> = KEYWORD(         ,POSTPAT             ,'KT',0,1,1)
+ KWTAB<'REFINE'>  = KEYWORD(          ,                    ,'KU',0,1,0)
+ KWTAB<'CALL'>    = KEYWORD(          ,                    ,'KU',0,1,0)
+ KWTAB<'GOTO'>    = KEYWORD(          ,                    ,'KU',0,1,0)
+ KWTAB<'LEAVE'>   = KEYWORD(          ,                    ,'KU2',0,1,0)
+ KWTAB<'REPEAT'>  = KEYWORD(          ,                    ,'KU2',0,1,0)
+ KWTAB<'SIGNAL'>  = KEYWORD(          ,                    ,'KU',0,0,0)
+ KWTAB<'IF'>      = KEYWORD(          ,                    ,'KU2',0,1,0)
+ KWTAB<'ORELSE'>  = KEYWORD('IF' | 'WHILE',
++        '(IF' | 'ELSEIF' | 'ORELSE' | 'ANDTHEN' | '(WHILE','KT',0,1,1)
+ KWTAB<'ANDTHEN'> = KEYWORD('IF' | 'WHILE',
++        '(IF' | 'ELSEIF' | 'ORELSE' | 'ANDTHEN' | '(WHILE','KT',0,1,1)
+-EJECT
+*--------------------------------------------------*
+*             TRANSLATE-TABELLE                    *
+*--------------------------------------------------*
+
+
+
+ (PROC TRANSLATE(KEYWORD,GENKW,NLB,NLA)
+
+   TRTAB<KEYWORD> =
++  TRANS(CODE(' TRANS_KW = ' GENKW ' :(XXXX)'),NLB,NLA)
+ PROC)
+
+ TRANSLATE('(PROGRAM', "'$PROC'"      ,1,1)
+ TRANSLATE('PROGRAM)', "'PROC$'"      ,1,0)
+ TRANSLATE('(PROC',    "'$PROC'"      ,1,1)
+ TRANSLATE('PROC)',    "'PROC$'"      ,1,0)
+ TRANSLATE('(IF',      "'$IF'"        ,1,1)
+ TRANSLATE('THEN',     "'THEN'"       ,1,1)
+ TRANSLATE('ELSE',     "'ELSE'"       ,1,1)
+ TRANSLATE('ELSEIF',   "'ELSEIF'"     ,1,1)
+ TRANSLATE('IF)',      "'IF$'"        ,1,0)
+ TRANSLATE('(CASE',    "'$CASE'"      ,1,1)
+ TRANSLATE('ON',       "'ON'"         ,1,1)
+ TRANSLATE('DO',       "'DO'"         ,1,1)
+ TRANSLATE('CASE)',    "'CASE$'"      ,1,0)
+ TRANSLATE('(WHILE',   "'$WHILE'"     ,1,1)
+ TRANSLATE('WHILE)',   "'WHILE$'"     ,1,0)
+ TRANSLATE('(LOOP',    "'$LOOP'"      ,1,1)
+ TRANSLATE('LOOP)',    "'LOOP$'"      ,1,0)
+ TRANSLATE('(FOR',     "'$FOR'"       ,1,1)
+ TRANSLATE('FOR)',     "'FOR$'"       ,1,0)
+ TRANSLATE('WHILE',    "'WHILE'"      ,1,1)
+ TRANSLATE('UNTIL',    "'UNTIL'"      ,1,1)
+ TRANSLATE('LOOP',     "'LOOP'"       ,1,1)
+ TRANSLATE('(BLOCK',   "'$BLOCK'"     ,1,1)
+ TRANSLATE('BLOCK)',   "'BLOCK$'"     ,1,0)
+ TRANSLATE('(REFINE',  "'$BLOCK'"     ,1,1)
+ TRANSLATE('REFINE)',  "'BLOCK$'"     ,1,0)
+ TRANSLATE('POSTLUDE', "'POSTLUDE'"   ,1,1)
+ TRANSLATE('REFINE',   "'COPY'"       ,1,0)
+ TRANSLATE('CALL',     "'ICALL'"      ,1,0)
+ TRANSLATE('GOTO',     "'GOTO'"       ,1,0)
+ TRANSLATE('LEAVE',    "'LEAVE'"      ,1,0)
+ TRANSLATE('REPEAT',   "'REPEAT'"     ,1,0)
+ TRANSLATE('SIGNAL',   "'SIGNAL'"     ,1,0)
+ TRANSLATE('IF',       "'IF'"         ,1,0)
+ TRANSLATE('ORELSE',   "'ORELSE'"     ,1,1)
+ TRANSLATE('ANDTHEN',  "'ANDTHEN'"    ,1,1)
+-EJECT
+*--------------------------------------------------*
+*             FEHLER-MELDUNGEN                     *
+*--------------------------------------------------*
+
+ LABEL_SCHON_DEF      =
++  '+---> PCPMSG01:  LABEL ALREADY DEFINED, WILL BE IGNORED'
+ KW_NUR_TOP_LEVEL     =
++  '+---> PCPMSG02:  KEYWORD ONLY ALLOWED ON TOP-LEVEL, '
++                                 'WILL BE IGNORED'
+ KEIN_TOP_LEVEL_KW    =
++  '+---> PCPMSG03:  NOT ALLOWED ON TOP-LEVEL; BLOCK WILL '
++                                 'BE OPENED, HOWEVER'
+ FALSCHES_TRENN_KW    =
++  '+---> PCPMSG04:  INVALID SEPARATING KEYWORD, WILL BE IGNORED'
+ FALSCHES_SCHLIESS_KW =
++  '+---> PCPMSG05:  INVALID CLOSING KEYWORD; CURRENT BLOCK '
++                                 'WILL BE CLOSED'
+ NOCH_KEIN_BLOCK      =
++  '+---> PCPMSG06:  NO BLOCK HAS BEEN OPENED YET, KEYWORD '
++                                 'WILL BE IGNORED'
+ FALSCHE_LAB_REF      =
++  '+---> PCPMSG07:  INVALID LABEL-REFERENCE'
+*- '+---> PCPMSG07:  INVALID LABEL-REFERENCE; SHOULD BE: ' *LABREF
+ FEHL_OEFFNEND_TOP_KW =
++  '+---> PCPMSG08:  OPENING TOP-LEVEL KEYWORD MISSING'
+ FEHL_TRENN_KW        =
++  '+---> PCPMSG09:  SEPARATING KEYWORD MISSING; '
++                                 'BLOCK WILL BE CLOSED'
+ FEHL_SCHLIESS_KW     =
++  '+---> PCPMSG10:  NOT ALL BLOCKS HAVE BEEN CLOSED YET'
+ LABEL_FEHLT          =
++  '+---> PCPMSG11:  LABEL MISSING IN FRONT OF OPENING TOP-LEVEL'
++                                 ' KEYWORD'
+ LAB_REF_FEHLT        =
++  '+---> PCPMSG12:  LABEL-REFERENCE WAS EXPECTED'
+
+*--------------------------------------------------*
+*             RETURN-CODES                         *
+*--------------------------------------------------*
+
+ OK = 0              ;* ALLES O.K.
+ CONTINUE = 1        ;* FEHLER, ABER NORMAL WEITERMACHEN
+ IGNORE = 2          ;* FEHLER, AKTUELLES TOKEN IGNORIEREN UND
+                     ;*                        WEITERMACHEN
+-EJECT
+*--------------------------------------------------*
+* INIT:       INITIALISIERUNG                      *
+*--------------------------------------------------*
+
+ (PROC INIT()
+
+    CUR       = 0        ;* AKTUELLE BLOCK-TIEFE (LEVEL)
+    PAGECNT   = 0        ;* SEITEN-ZAEHLER
+    STMTCNT   = 1        ;* ZAEHLER FUER ANWEISUNGEN
+    MAXCNT    = MAXCNT1  ;* MAX. ANZAHL D. ZEILEN PRO SEITE
+    LINECNT   = MAXCNT   ;* ZEILEN-ZAEHLER
+
+    OLD_CUR   = OFF      ;* NEUE ODER ALTE BLOCK-TIEFE (B. D. AUSGABE) ?
+    TXT_COL   = OFF      ;* STEHT TEXT IN KOMMENTAR-SPALTE ?
+    CMT_PRG   = OFF      ;* KOMMENTAR BZW. PRAGMA ?
+    LINES_OUT = ON       ;* SCHALTER FUER AUFRUF VON TERM-PROC (WIRD
+***   ENTWEDER IN DER ROUTINE COND_LABREF_OUT ODER IN POSTLUDE GESETZT)
+*   FIRST     = ON       ;* CODEGERUEST: 'END' ODER 'ENDCOPY' ?
+    COLLECT   = ON       ;* SCHALTER ZUM SAMMELN VON SAETZEN VOR PROCS
+    WRT_QUEUE = OFF      ;* SCHALTER ZUM ERKENNEN DES ENDES DER QUEUE
+    TRUNC     = OFF      ;* WURDEN LABELS IM CODEGERUEST ABGESCHNITTEN ?
+
+    HEAD      = ''       ;* KOPFZEILE DER QUEUE
+    TAIL      = ''       ;* LETZTE ZEILE DER QUEUE
+
+    RETCODE   = OK       ;* INTERNER RETURN-CODE
+    RC        = 0        ;* EXTERNER      "
+    ERRORS    = 0        ;* GLOBALER ERROR-COUNT
+    ERRCNT    = 0        ;* LOKALER       "
+
+    TABNEW  = TABINIT    ;* TABS:  - FUER KO'S, KU'S UND TEXT (FORMAT.)
+    TABOLD  = TABINIT    ;*        - FUER KT'S UND KS'S       (   "   )
+    TABNEWG = TABINIT    ;*        - FUER KO'S, KU'S UND TEXT (GERUEST)
+    TABOLDG = TABINIT    ;*        - FUER KT'S UND KS'S       (   "   )
+    LINEPTR = TABINIT    ;* POINTER INNERHALB DER TEXTZEILE (FORMAT.)
+    GENPTR  = TABTEXT    ;*    "        "      "      "     (GERUEST)
+
+    TITLE1 = '0'         ;* UEBERSCHRIFTEN
+    TITLE2 = HEAD1
+
+ PROC)
+
+*--------------------------------------------------*
+* READ: LIEFERT IMMER GENAU EIN TOKEN (BZW. EINE   *
+*    GANZE INPUT-ZEILE BEI KOMMENTAR ODER PRAGMA); *
+*    LIEST SOLANGE AUS DER EINGABE-DATEI, BIS 'EOF'*
+*    AUFTRITT (FRETURN)                            *
+*--------------------------------------------------*
+
+ (PROC READ()CS
+
+    (IF BUFFER IS_EMPTY
+    THEN
+READIT (IFNOT BUFFER = IN ' '
+       THEN
+          FRETURN
+       ELSE
+*-----
+*  IM FOLGENDEN IF-BLOCK WERDEN ZEILEN DER FORM '-CODE ...'
+*  EINGELESEN, UEBERSETZT, AUSGEFUEHRT UND NICHT GEDRUCKT
+*-----
+          (IF  BUFFER POS(0) '-CODE ' =
+          THEN
+             CS = CODE(BUFFER ':(READIT)') :S<CS>
+             BUFFER = '* ' BUFFER
+          IF)
+          (IF  BUFFER IS_COMMENT | IS_PRAGMA | IS_EMPTY
+          THEN
+             TOKEN = BUFFER
+             BUFFER = ''
+             CMT_PRG = ON
+             RETURN
+          IF)
+       IF)
+    IF)
+
+    BUFFER (OBLANKS BREAK(' ') . TOKEN) = ''
+
+ PROC)
+
+*--------------------------------------------------*
+* PERFORM: ZENTRALE VERARBEITUNGSROUTINE; PRUEFT   *
+*    WAS FUER EIN TOKEN GEFUNDEN WURDE UND VER-    *
+*    ZWEIGT IN ENTSPR. VERARBEITUNGSROUTINE        *
+*--------------------------------------------------*
+
+ (PROC PERFORM()
+
+    (IF TOKEN IS_LABEL_REF
+    THEN
+       PERFORM_LR()
+
+    ELSE
+       COND_LABREF_OUT()
+
+       (SELECT
+       WHEN TOKEN IS_CMNT_OR_PRGM
+          PERFORM_CP()
+       WHEN TOKEN IS_LABEL
+          PERFORM_LB()
+       WHEN TOKEN IS_KEYWORD
+          PERFORM_KW()
+       OTHER
+          PERFORM_TX()
+       SELECT)
+
+    IF)
+
+    POSTLUDE()
+
+ PROC)
+
+*--------------------------------------------------*
+* TERM:       ABSCHLUSSAKTIVITAETEN                *
+*--------------------------------------------------*
+
+ (PROC TERM()LINE
+
+    COND_LABREF_OUT()
+    WRITELINE()
+    CODELINE()
+
+    (IF NE(CUR,0)             ;* BLO(E)CK(E) WURDE(N) NICHT BEENDET
+    THEN
+       OUT = '+--->'
+       OUT = FEHL_SCHLIESS_KW
+       PRINT('+--->',1)
+       PRINT(FEHL_SCHLIESS_KW,1)
+       ERRORS = ERRORS + 1
+       RC = GT(4,RC) 4
+       &CODE = RC
+    IF)
+
+    (IF EQ(WRT_QUEUE,ON)      ;* ES SIND NOCH NICHT ALLE ZEILEN IM
+    THEN                      ;* CODEGERUEST AUSGEGEBEN (FEHLER!)
+       (LOOP
+       WHILE LINE = DEQUEUE()
+          PUTLINE('OUTGEN',LINE,MAXLEN2)
+       LOOP)
+       OUTGEN = ' '
+       OUTGEN =
++   '*******  ---> WARNING:  LAST LINES OF CODE ARE MISPLACED  *******'
+    IF)
+
+    MAXCNT = MAXCNT2
+    TITLE1 = HEAD2
+    TITLE2 = HEAD3
+    NEWPAGE()
+    CROSSREF()
+
+    TITLE1 = '0'
+    TITLE2 = HEAD4
+    NEWPAGE()
+    FINALMSGS()
+
+    COLLECT()
+
+ PROC)
+-EJECT
+*--------------------------------------------------*
+* PERFORM_LR: VERARBEITE LABEL-REFERENZ            *
+*--------------------------------------------------*
+
+ (PROC PERFORM_LR()LABEL,SLABEL,MODE
+
+    TOKEN_TYP = 'LR'
+
+    ADD_TO_LINE(TOKEN,'WRITE')
+    TOKEN SPAN(':') REM . LABEL
+
+*-----
+*  FALLS VORGAENGER SCHLIESSENDES KEYWORD AUF TOP-LEVEL ODER 'REFINE'
+*  WAR, DANN LABEL-REFERENZ IM CODEGERUEST AUF ACHT CHARS ABSCHNEIDEN;
+*  FALLS VORGAENGER KEIN KEYWORD WAR, DANN WIE TEXT FORMATIEREN
+*-----
+    (SELECT
+    WHEN PRETOKEN_TYP 'KS' EQ(CUR,0)
+       SLABEL = RPAD(LABEL,8)
+       SLABEL POS(0) LEN(8) . SLABEL
+       ADD_TO_LINE(SLABEL,'GEN',1)
+    WHEN IDENT(PRETOKEN,'REFINE')
+       SLABEL = RPAD(LABEL,8)
+       SLABEL POS(0) LEN(8) . SLABEL
+       ADD_TO_LINE(SLABEL,'GEN',1)
+    WHENNOT PRETOKEN_TYP 'K'
+       ADD_TO_LINE(TOKEN,'GEN',0)
+    OTHER
+       ADD_TO_LINE(LABEL,'GEN',1)
+    SELECT)
+
+    (IF PRETOKEN_TYP 'KS'
+    THEN
+       COND_NL = 1
+       COND_NL_GEN = 1
+       MODE = 'END-OF-BLOCK'
+       (IF DIFFER(CAPS(TOKEN),CAPS(LABREF))
+       THEN
+          MSG = FALSCHE_LAB_REF
+          RETCODE = CONTINUE
+       IF)
+
+    ELSE
+       COND_NL = 0
+       COND_NL_GEN = 0
+       (IF PRETOKEN_TYP 'KU'
+       THEN
+          MODE = PRETOKEN
+       ELSE
+          MODE = ''
+       IF)
+    IF)
+
+    ADDREF(LABEL,MODE)
+    LABREF SPAN(':') REM . LABREF    ;* LABREF OHNE ":", FALLS NOCH
+                           ;* TERM-PROC AUFGERUFEN WIRD (IN POSTLUDE)
+
+ PROC)
+
+*--------------------------------------------------*
+* COND_LABREF_OUT:  WENN VORGAENGER EIN UNAB-      *
+*    HAENGIGES KEYWORD WAR, DANN FEHLERMELDUNG     *
+*    EINTRAGEN, DENN DAS AKTUELLE TOKEN MUESSTE    *
+*    EINE LABEL-REFERENZ SEIN (IST ABER KEINE!);   *
+*    FALLS VORGAENGER EIN SCHLIESSENDES            *
+*    KEYWORD WAR, PRUEFE, OB NOCH EINE             *
+*    'END-OF-BLOCK' LABEL-REFERENZ VOM PARSER      *
+*    HINZUGENERIERT WURDE UND JETZT AUSGEGEBEN     *
+*    WERDEN SOLL; WENN AUSSERDEM NOCH AUF TOP-     *
+*    LEVEL, FUEHRE EINE FUNKTION ZUR AUSGABE VON   *
+*    SPEZIELLEN ZEILEN IN DIE CODEGERUEST-DATEI    *
+*    AUS                                           *
+*--------------------------------------------------*
+
+ (PROC COND_LABREF_OUT()LABEL,SLABEL,MODE
+
+    (IF IDENT(PRETOKEN_TYP,'KU')
+    THEN
+       MSG = LAB_REF_FEHLT
+       RETCODE = CONTINUE
+       ERRCNT = ERRCNT + 1
+       ERRTAB<ERRCNT> = ERROR(TOKEN,MSG)
+       ERRORS = ERRORS + 1
+       RC_NEW = RETCODE * 4
+       RC = GT(RC_NEW,RC) RC_NEW
+       &CODE = RC
+       RETCODE = OK
+    IF)
+
+    (IF PRETOKEN_TYP 'KS'
+    THEN
+
+       (SELECT
+
+       WHEN DIFFER(LABREF,'')
+***      LABEL-REFERENZ VORHANDEN
+          ADD_TO_LINE(LABREF,'WRITE')
+          LABREF SPAN(':') REM . LABEL
+*-----
+*       FALLS VORGAENGER SCHLIESSENDES KEYWORD AUF TOP-LEVEL WAR,
+*       DANN LABEL-REFERENZ IM CODEGERUEST AUF ACHT CHARS ABSCHNEIDEN
+*-----
+          (IF EQ(CUR,0)
+          THEN
+             SLABEL = RPAD(LABEL,8)
+             SLABEL POS(0) LEN(8) . SLABEL
+             ADD_TO_LINE(SLABEL,'GEN',1)
+          ELSE
+             ADD_TO_LINE(LABEL,'GEN',1)
+          IF)
+          MODE = 'END-OF-BLOCK, ADDED'
+          ADDREF(LABEL,MODE)
+          PRETOKEN = LABREF
+          PRETOKEN_TYP = 'LR'
+
+       WHEN DIFFER(ENDCHAR,'')
+***      END-CHARACTER VORGEGEBEN
+          ADD_TO_LINE(ENDCHAR,'GEN',1)
+          PRETOKEN = ENDCHAR
+          PRETOKEN_TYP = 'TX'
+
+       OTHER
+***      WEDER LABEL-REFERENZ NOCH END-CHARACTER
+
+       SELECT)
+
+       WRITELINE()
+       CODELINE()
+
+       (IF EQ(CUR,0)
+       THEN
+***      AUF TOP-LEVEL, TERM-PROC AUFRUFEN
+          TERM_PROC(LABEL)
+       IF)
+
+       LINES_OUT = OFF  ;* SCHALTER AUSDREHEN FUER POSTLUDE !!!
+       LABREF = ''
+       ENDCHAR = ''
+
+    IF)
+
+ PROC)
+
+*--------------------------------------------------*
+* PERFORM_CP: VERARBEITE KOMMENTAR BZW. PRAGMA     *
+*--------------------------------------------------*
+
+ (PROC PERFORM_CP()
+
+*** EVTL. VORHERGEHENDE ZEILE AUSGEBEN
+    WRITELINE()
+    CODELINE()
+
+    OUTLINE = TOKEN
+    GENLINE = TOKEN
+
+    (SELECT
+    WHEN GENLINE EJECT = EJECT_COD
+    WHEN GENLINE TITLE = TITLE_COD
+         GENLINE = GENLINE TITLE_COD2
+    WHEN GENLINE SPACE = SPACE_COD
+         GENLINE = GENLINE SPACE_COD2
+    SELECT)
+
+*** IMMER NEUE ZEILE NACH KOMMENTAR BZW. PRAGMA
+    COND_NL = 1
+    COND_NL_GEN = 1
+
+ PROC)
+-EJECT
+*--------------------------------------------------*
+* PERFORM_LB: VERARBEITE LABEL                     *
+*--------------------------------------------------*
+
+ (PROC PERFORM_LB()LABEL,CAPLAB,ENTRY
+
+    TOKEN_TYP = 'LB'
+
+*** IMMER NEUE ZEILE VOR AUSGABE EINES LABELS
+    WRITELINE()
+    CODELINE()
+
+    OUTLINE = TOKEN ' '
+    TOKEN BREAK(':') . LABEL
+    GENLINE = LABEL LABEL_DELIMITER
+    CAPLAB = CAPS(LABEL)
+
+    COND_NL = 0
+    COND_NL_GEN = 0
+
+    ENTRY = DEFENTRY(STMTCNT,GETNAME())
+
+    (IF IDENT(LABTAB<CAPLAB>,'')
+    THEN
+       LABTAB<CAPLAB> = LABREF(LABEL,ENTRY)
+    ELSE
+       (IF DIFFER(DEF(LABTAB<CAPLAB>),'')
+       THEN
+          MSG = LABEL_SCHON_DEF
+          RETCODE = IGNORE
+       ELSE
+          DEF(LABTAB<CAPLAB>) = ENTRY
+          NAME(LABTAB<CAPLAB>) = LABEL
+       IF)
+    IF)
+
+ PROC)
+
+*--------------------------------------------------*
+* PERFORM_KW: VERARBEITE KEYWORD                   *
+*--------------------------------------------------*
+
+ (PROC PERFORM_KW()TRANS_KW
+
+    TOKEN_TYP = TYPE(KWTAB<TOKEN>)
+
+    COND_NL = NLA(KWTAB<TOKEN>)
+    COND_NL_GEN = NLA(TRTAB<TOKEN>)
+
+    (IFNOT PRETOKEN_TYP 'LB'
+    THEN
+***  VORGAENGER KEIN LABEL:
+***    PRUEFE, OB KEYWORD IN NEUE ZEILE KOMMEN SOLL ODER NICHT
+       (IF EQ(NLB(KWTAB<TOKEN>),1)
+       THEN
+          WRITELINE()
+       IF)
+       (IF EQ(NLB(TRTAB<TOKEN>),1)
+       THEN
+          CODELINE()
+       IF)
+    ELSE
+***  VORGAENGER LABEL:
+***    WENN OEFFNENDES TOP-LEVEL KEYWORD, DANN LABEL IM CODEGERUEST
+***    AUF ACHT CHARS ABSCHNEIDEN
+       (IF TOKEN_TYP 'KO' EQ(CUR,0)
+       THEN
+          GENLINE = RPAD(GENLINE,8)
+          GENLINE = SUBSTR(GENLINE,1,8) ' '
+       IF)
+       L = TRIM(GENLINE)
+    IF)
+
+    TEST_CONTEXT()
+
+    (IF NE(RETCODE,IGNORE)
+    THEN
+       PROCESS_KW()
+    IF)
+
+    :<GENKW(TRTAB<TOKEN>)>
+XXXX
+
+    (IF TOKEN_TYP 'KO' | 'KU'
+    THEN
+       PUT_KO_KU(TRANS_KW)
+    ELSE
+       PUT_KT_KS(TRANS_KW)
+    IF)
+
+ PROC)
+
+*--------------------------------------------------*
+* PERFORM_TX: VERARBEITE SONSTIGE TOKENS (TEXT)    *
+*--------------------------------------------------*
+
+ (PROC PERFORM_TX()
+
+    TOKEN_TYP = 'TX'
+
+    (IF IDENT(SUBSTR(TOKEN,SIZE(TOKEN),1),';')
+    THEN
+       COND_NL = 1
+       COND_NL_GEN = 1
+    ELSE
+       COND_NL = 0
+       COND_NL_GEN = 0
+    IF)
+
+    ADD_TO_LINE(TOKEN,'WRITE')
+    ADD_TO_LINE(TOKEN,'GEN')
+
+ PROC)
+
+*--------------------------------------------------*
+* POSTLUDE:  SPEICHERE EVTL. VORHANDENE FEHLER-    *
+*    MELDUNG IN FEHLER-TABELLE AB; SETZE RETURN-   *
+*    CODE UND ZAEHLE ALLE FEHLER; GIB FORMATIERTE  *
+*    BZW. TRANSFORMIERTE ZEILE AUS, FALLS ENTSPR.  *
+*    NEWLINE-CONDITION GESETZT IST; WENN EIN       *
+*    SCHLIESSENDES KEYWORD AUF TOP-LEVEL WAR, RUFE *
+*    EINE FUNKTION AUF, DIE SPEZIELLE ZEILEN IN    *
+*    DIE CODEGERUEST-DATEI SCHREIBT;               *
+*    MERKE DIR DAS AKTUELLE TOKEN UND              *
+*    DESSEN TYP ALS VORGAENGER, FALLS ES KEIN      *
+*    PRAGMA ODER KOMMENTAR WAR                     *
+*--------------------------------------------------*
+
+ (PROC POSTLUDE()RC_NEW
+
+    (IF NE(RETCODE,OK)
+    THEN
+       ERRCNT = ERRCNT + 1
+       ERRTAB<ERRCNT> = ERROR(TOKEN,MSG)
+       ERRORS = ERRORS + 1
+       RC_NEW = RETCODE * 4
+       RC = GT(RC_NEW,RC) RC_NEW
+       &CODE = RC
+    IF)
+
+    (IF EQ(COND_NL,1)
+    THEN
+       WRITELINE()
+    IF)
+
+    (IF EQ(COND_NL_GEN,1)
+    THEN
+       CODELINE()
+    IF)
+
+    (IF PRETOKEN_TYP 'KS' EQ(CUR,0) EQ(LINES_OUT,ON)
+    THEN
+***   AUF TOP-LEVEL; TERM-PROC AUFRUFEN, FALLS DIES NOCH NICHT
+***                       IN COND_LABREF_OUT GESCHEHEN IST
+       TERM_PROC(LABREF)
+    IF)
+
+    (IF EQ(CMT_PRG,OFF)
+    THEN
+       (IF NE(RETCODE,IGNORE)
+       THEN
+          PRETOKEN = TOKEN
+          PRETOKEN_TYP = TOKEN_TYP
+       ELSE
+          PRETOKEN = ''
+          PRETOKEN_TYP = ''
+       IF)
+    ELSE
+       CMT_PRG = OFF
+    IF)
+
+    LINES_OUT = ON  ;* SCHALTER WIEDER ANMACHEN FUER NAECHSTEN DURCHGANG
+    RETCODE = OK
+
+ PROC)
+-EJECT
+*--------------------------------------------------*
+* ADDREF: EIN LABEL WURDE REFERIERT; TRAGE DIE     *
+*    REFERENZ IN DER ENTSPRECHENDEN TABELLE EIN    *
+*    BESTEHEND AUS DER ZEILENNUMMER, DEM NAMEN DES *
+*    UMGEBENDEN BLOCKS UND DER ART DER REFERENZ    *
+*--------------------------------------------------*
+
+ (PROC ADDREF(LABEL,MODE)ENTRY,STRU,CAPLAB
+
+    CAPLAB = CAPS(LABEL)
+    ENTRY = REFENTRY(STMTCNT,GETNAME(),MODE)
+
+    (IF IDENT(LABTAB<CAPLAB>,'')
+    THEN
+       LABTAB<CAPLAB> = LABREF(LABEL,'',ENTRY)
+
+    ELSE
+      (IF IDENT(REF(LABTAB<CAPLAB>),'')
+      THEN
+         REF(LABTAB<CAPLAB>) = ENTRY
+      ELSE
+         STRU = REF(LABTAB<CAPLAB>)
+         (LOOP
+         WHILE DIFFER(NEXT(STRU),'')
+            STRU = NEXT(STRU)
+         LOOP)
+         NEXT(STRU) = ENTRY
+      IF)
+    IF)
+
+ PROC)
+
+*--------------------------------------------------*
+* GETNAME: SUCHE AUS DEM STACK DEN NAMEN DES       *
+*    NAECHSTEN UMGEBENDEN BLOCKES, IN DEM DAS      *
+*    LABEL REFERIERT WURDE                         *
+*--------------------------------------------------*
+
+ (PROC GETNAME()CNT
+
+    (IF EQ(CUR,0)
+    THEN
+       GETNAME = '--- TOP ---'
+    ELSE
+       GETNAME = '--> MISSING <--'
+       CNT = CUR
+LOOP   (LOOP
+       WHILE GT(CNT,0)
+          (IF DIFFER(LABEL(STKTAB<CNT>),'')
+          THEN
+             GETNAME = LABEL(STKTAB<CNT>)
+             LEAVE LOOP
+          IF)
+          CNT = CNT - 1
+       LOOP)
+    IF)
+
+ PROC)
+
+*--------------------------------------------------*
+* ADD_TO_LINE: HAENGT EIN TOKEN ANS ENDE DER       *
+*    AKTUELLEN (FORMATIERTEN BZW. TRANSFORMIERTEN) *
+*    ZEILE AN;  FALLS ES NICHT MEHR DAHINTER       *
+*    PASST, WIRD DIE AKTUELLE ZEILE AUSGEGEBEN     *
+*    UND DAS TOKEN IN DIE NAECHSTE ZEILE GESETZT;  *
+*       (DIESE ROUTINE WIRD NICHT FUER KEYWORDS    *
+*    UND LABELS ETC., SONDERN NUR FUER TEXT UND    *
+*    LABEL-REFERENZEN AUFGERUFEN)                  *
+*--------------------------------------------------*
+
+ (PROC ADD_TO_LINE(TOKEN,TYPE1,TYPE2)TAB
+
+    (SELECT
+
+*** FUER FORMATIERTE ZEILE (FORMAT. AUSGABE UND PRETTY-PRINT):
+    WHEN IDENT(TYPE1,'WRITE')
+
+       TAB = TABNEW
+       (IF PRETOKEN_TYP 'LB' GE(SIZE(PRETOKEN),TAB)
+       THEN
+          TAB = SIZE(PRETOKEN) + 1
+          LINEPTR = TAB
+       IF)
+       (IF GT(LINEPTR + SIZE(TOKEN),MAXLEN1)
+       THEN
+          WRITELINE()
+          TAB = TABNEW
+       IF)
+       OUTLINE = RPAD(OUTLINE,TAB) TOKEN ' '
+       LINEPTR = SIZE(OUTLINE)
+
+*** FUER TRANSFORMIERTE ZEILE (CODEGERUEST):
+    WHEN IDENT(TYPE1,'GEN')
+
+       (SELECT
+
+       WHEN EQ(TYPE2,0)
+***      TOKEN IST TEXT UND STEHT IN KOMMENTAR- BZW. TEXT-SPALTE
+          (LOOP
+             (IF EQ(TXT_COL,OFF)
+             THEN
+***            ES HANDELT SICH UM DAS ERSTE TEXT-TOKEN IN DER ZEILE
+                TXT_COL = ON
+                (IF PRETOKEN_TYP 'LB' GE(SIZE(PRETOKEN),TABTEXT)
+                THEN
+                   CODELINE()
+                IF)
+                (IF LE(SIZE(TOKEN),MAXLEN3 - TABTEXT - SIZE(CMNT_BEG) - 1)
+                THEN
+***               TOKEN PASST NOCH IN ZEILE
+                   GENLINE = RPAD(GENLINE,TABTEXT) CMNT_BEG ' ' TOKEN ' '
+                   GENPTR = SIZE(GENLINE)
+                ELSE
+***               TOKEN PASST NICHT MEHR IN ZEILE
+                   GENLINE = LPAD(' ' CMNT_BEG ' ' TOKEN CMNT_END,
++                                 MAXLEN2)
+                   GENPTR = SIZE(GENLINE)
+                   CODELINE()
+                IF)
+                RETURN
+             ELSE
+***            ES GIBT SCHON TEXT-TOKENS IN DER ZEILE
+                (IF LE(GENPTR + SIZE(TOKEN),MAXLEN3)
+                THEN
+***               TOKEN PASST NOCH IN ZEILE
+                   GENLINE = GENLINE TOKEN ' '
+                   GENPTR = SIZE(GENLINE)
+                   RETURN
+                ELSE
+***               TOKEN PASST NICHT MEHR IN ZEILE
+                   CODELINE()   ;* GIB AKTUELLE ZEILE AUS
+                IF)
+             IF)
+          LOOP)                 ;* UND BEGINNE EINE NEUE ZEILE
+
+       WHEN EQ(TYPE2,1)
+***      TOKEN IST EINE LABEL-REFERENZ ODER EINE ABSCHL. KENNUNG
+***                                    AM ENDE EINES BLOCKES
+          TAB = TABNEWG
+          (IF PRETOKEN_TYP 'LB' GE(SIZE(PRETOKEN),TAB)
+          THEN
+             TAB = SIZE(PRETOKEN) + 1
+             GENPTR = TAB
+          IF)
+          GENLINE = RPAD(GENLINE,TAB) TOKEN ' '
+          GENPTR = SIZE(GENLINE)
+
+       SELECT)
+
+    SELECT)
+
+ PROC)
+-EJECT
+*--------------------------------------------------*
+* TEST_CONTEXT: TESTET, OB DAS KEYWORD IM AKTUEL-  *
+*    LEN KONTEXT ERLAUBT IST, UND LIEFERT EINEN    *
+*    ENTSPRECHENDEN RETURN-CODE                    *
+*--------------------------------------------------*
+
+ (PROC TEST_CONTEXT()SW
+
+    SW = OFF
+
+*** BEFINDET SICH PARSER AUF TOP-LEVEL ?
+    (IF EQ(CUR,0)
+
+    THEN
+***   IST KEYWORD AUF TOP-LEVEL ERLAUBT ?
+       (IF GE(TOP(KWTAB<TOKEN>),1)
+       THEN
+***      KEYWORD IST ERLAUBT, O.K.
+          RETCODE = OK
+***      FALLS OEFFNENDES KEYWORD, IST LABEL VORHANDEN ?
+          (IF TOKEN_TYP 'KO'
+          THEN
+             (IFNOT PRETOKEN_TYP 'LB'
+             THEN
+                MSG = LABEL_FEHLT
+                RETCODE = CONTINUE
+             IF)
+             FIRST = OFF
+             (IF GE(TOP(KWTAB<TOKEN>),3)
+             THEN
+             FIRST = ON
+             IF)
+          IF)
+       ELSE
+***      KEYWORD NICHT AUF TOP-LEVEL ERLAUBT,
+          (SELECT
+***      BEI 'KT' UND 'KS' KEYWORD IGNORIEREN
+          WHEN TOKEN_TYP 'KT' | 'KS'
+             MSG = NOCH_KEIN_BLOCK
+             RETCODE = IGNORE
+***      BEI 'KO' UND 'KU' TROTZDEM WEITERMACHEN
+          WHEN TOKEN_TYP 'KO'
+             MSG = KEIN_TOP_LEVEL_KW
+             RETCODE = CONTINUE
+          OTHER
+             MSG = FEHL_OEFFNEND_TOP_KW
+             RETCODE = CONTINUE
+          SELECT)
+       IF)
+
+    ELSE
+***   IST KEYWORD AUF NICHT-TOP-LEVEL ERLAUBT ?
+       (IF GT(TOP(KWTAB<TOKEN>),1)
+       THEN
+***      NEIN, KEYWORD NUR AUF TOP-LEVEL ERLAUBT, IGNORIERE ES
+          MSG = KW_NUR_TOP_LEVEL
+          RETCODE = IGNORE
+       ELSE
+***      KEYWORD IST ERLAUBT:
+          (IF TOKEN_TYP 'KO' | 'KU'
+          THEN
+***         BEI 'KO' UND 'KU' KEIN WEITERER TEST NOETIG, O.K.
+             RETCODE = OK
+          ELSE
+***         BEI 'KT' UND 'KS' CLAUSE UND VORGAENGER (KONTEXT) PRUEFEN:
+             (IF CLAUSE(STKTAB<CUR>) CLAUSE(KWTAB<TOKEN>)
+             THEN
+                (IF LASTKW(STKTAB<CUR>) PRED(KWTAB<TOKEN>) RPOS(0)
+                THEN
+***               ALLES O.K.
+                   RETCODE = OK
+                   RETURN
+                IF)
+                SW = ON
+             IF)
+***         KEYWORD IN DIESEM KONTEXT NICHT ERLAUBT,
+             (IF TOKEN_TYP 'KT'
+             THEN
+***            BEI 'KT' KEYWORD IGNORIEREN
+                MSG = FALSCHES_TRENN_KW
+                RETCODE = IGNORE
+             ELSE
+***            BEI 'KS' WEITERMACHEN
+                MSG = EQ(SW,OFF) FALSCHES_SCHLIESS_KW
+                MSG = EQ(SW,ON) FEHL_TRENN_KW
+                RETCODE = CONTINUE
+             IF)
+          IF)
+       IF)
+
+    IF)
+
+ PROC)
+-EJECT
+*--------------------------------------------------*
+* PROCESS_KW: BEI OEFFNENDEN KEYWORDS, DIE AUF     *
+*    TOP-LEVEL STEHEN, WIRD EINE FUNKTION ZUR AUS- *
+*    GABE VON SPEZIELLEN ZEILEN IN DIE CODE-       *
+*    GERUEST-DATEI AUSGEFUEHRT;                    *
+*    BEI OEFFNENDEN, SCHLIESSENDEN UND             *
+*    TRENNENDEN KEYWORDS WIRD EIN UPDATE AUF DEN   *
+*    STACK GEMACHT;  AUSSERDEM WIRD BEI EINEM      *
+*    SCHLIESSENDEN KEYWORD EINE LABEL-REFERENZ     *
+*    GENERIERT, FALLS VOR DEM ZUGEHOERIGEN OEFF-   *
+*    NENDEN EIN LABEL STAND;                       *
+* NOTE:  DA ALS ZIELSPRACHE VORERST DIE STRUCT.-   *
+*    MACRO-SPRACHE VON ASSEMBLER ANGENOMMEN        *
+*    WIRD, SOLL HINTER SCHLIESSENDEN KEYWORDS      *
+*    (MACROS) EIN KOMMA GENERIERT WERDEN,          *
+*    WENN ES KEINE LABEL-REFERENZ GIBT             *
+*--------------------------------------------------*
+
+ (PROC PROCESS_KW()LABEL
+
+    (SELECT
+
+    WHEN TOKEN_TYP 'KO'
+       (IF PRETOKEN_TYP 'LB'
+       THEN
+          PRETOKEN BREAK(':') . LABEL
+       IF)
+
+       (IF EQ(CUR,0)
+       THEN
+***      AUF TOP-LEVEL, INIT-PROC AUFRUFEN
+          INIT_PROC(LABEL)
+       IF)
+
+       CUR = CUR + 1
+       STKTAB<CUR> = STACK(CLAUSE(KWTAB<TOKEN>),,TOKEN,CUR)
+***           ES GIBT BEI OEFFNENDEN KEYWORDS NUR EIN CLAUSE
+       LABEL(STKTAB<CUR>) = LABEL
+
+    WHEN TOKEN_TYP 'KS'
+       (IF DIFFER(LABEL(STKTAB<CUR>),'')
+       THEN
+          LABREF = ':' LABEL(STKTAB<CUR>)
+          ENDCHAR = ''
+       ELSE
+          LABREF = ''
+          ENDCHAR = COMMA
+       IF)
+
+       STKTAB<CUR> = ''
+       CUR = CUR - 1
+       OLD_CUR = ON
+
+    WHEN TOKEN_TYP 'KT'
+       LASTKW(STKTAB<CUR>) = TOKEN
+
+    OTHER
+
+    SELECT)
+
+ PROC)
+
+*--------------------------------------------------*
+* PUT_KO_KU: GIB OEFFNENDE UND UNABHAENGIGE        *
+*    KEYWORDS AUS, SETZE EVTL. TABULATOREN NEU     *
+*--------------------------------------------------*
+
+ (PROC PUT_KO_KU(TRANS_KW)
+
+    PUT_KW('WRITE',TABNEW,TOKEN)
+
+    PUT_KW('GEN',TABNEWG,TRANS_KW)
+
+    (IF TOKEN_TYP 'KO' NE(RETCODE,IGNORE)
+    THEN
+       TABOLD  = TABNEW
+       TABNEW  = TABOLD + INCR
+       LINEPTR = TABNEW
+       TABOLDG = TABNEWG
+       TABNEWG = TABOLDG + INCR
+    IF)
+
+ PROC)
+
+*--------------------------------------------------*
+* PUT_KT_KS: GIB TRENNENDE UND SCHLIESSENDE        *
+*    KEYWORDS AUS, SETZE EVTL. TABULATOREN NEU     *
+*--------------------------------------------------*
+
+ (PROC PUT_KT_KS(TRANS_KW)
+
+    PUT_KW('WRITE',TABOLD,TOKEN)
+
+    PUT_KW('GEN',TABOLDG,TRANS_KW)
+
+    (IF TOKEN_TYP 'KS' NE(RETCODE,IGNORE)
+    THEN
+       (IF NE(CUR,0)
+       THEN
+          TABNEW  = TABOLD
+          TABOLD  = TABNEW - INCR
+          LINEPTR = TABNEW
+          TABNEWG = TABOLDG
+          TABOLDG = TABNEWG - INCR
+       ELSE
+          TABNEW  = TABINIT
+          TABOLD  = TABINIT
+          LINEPTR = TABINIT
+          TABNEWG = TABINIT
+          TABOLDG = TABINIT
+       IF)
+    IF)
+
+ PROC)
+
+*--------------------------------------------------*
+* PUT_KW: SCHREIBT DAS TOKEN BZW. KEYWORD AN DER   *
+*    RICHTIGEN POSITION IN DIE AKTUELLE ZEILE;     *
+*    FALLS ES NICHT MEHR HINEIN PASST,             *
+*    WIRD ES RECHTSBUENDIG IN DER NAECHSTEN        *
+*    ZEILE AUSGEGEBEN                              *
+*--------------------------------------------------*
+
+ (PROC PUT_KW(TYPE,TAB,TKN)TKN_SUB
+
+
+    (SELECT
+
+    WHEN IDENT(TYPE,'WRITE')
+       (IF PRETOKEN_TYP 'LB' GE(SIZE(PRETOKEN),TAB)
+       THEN
+          WRITELINE()
+       IF)
+       (IF GT(TAB + SIZE(TKN),MAXLEN1)
+       THEN
+          WRITELINE()
+          OUTLINE = LPAD(TKN,MAXLEN1)
+       ELSE
+          OUTLINE = RPAD(OUTLINE,TAB) TKN ' '
+       IF)
+       LINEPTR = SIZE(OUTLINE)
+
+    WHEN IDENT(TYPE,'GEN')
+       (IF PRETOKEN_TYP 'LB'
+       THEN
+          (IF TOKEN_TYP 'KO' EQ(CUR,1)
+          THEN
+***         OEFFNENDES TOP-LEVEL KEYWORD:
+***         LABEL WURDE AUF ACHT CHARS ABGESCHNITTEN
+             TAB = TABINIT
+          ELSE
+             (IF GE(SIZE(PRETOKEN) - 1,TAB)
+             THEN
+                TAB = SIZE(PRETOKEN)
+             IF)
+          IF)
+       IF)
+       (LOOP
+          WHILE TKN (BREAK(NL) . TKN_SUB NL) =
+          (IF GT(TAB + SIZE(TKN_SUB),MAXLEN2)
+          THEN
+             CODELINE()
+             GENLINE = LPAD(TKN_SUB,MAXLEN2)
+          ELSE
+             GENLINE = RPAD(GENLINE,TAB) TKN_SUB ' '
+          IF)
+          CODELINE()
+          GENLINE = RPAD(' ',TAB)
+       LOOP)
+       (IF GT(TAB + SIZE(TKN),MAXLEN2)
+       THEN
+          CODELINE()
+          GENLINE = LPAD(TKN,MAXLEN2)
+       ELSE
+          GENLINE = RPAD(GENLINE,TAB) TKN ' '
+       IF)
+       GENPTR = SIZE(GENLINE)
+
+    SELECT)
+
+ PROC)
+
+*--------------------------------------------------*
+* WRITELINE: SCHREIBT DIE AKTUELLE - FORMATIERTE - *
+*    ZEILE IN DIE AUSGABE-DATEI UND IN DIE         *
+*    PRINT-DATEI, ZUSAMMEN MIT EVTL. VORHANDENEN   *
+*    FEHLERMELDUNGEN                               *
+*--------------------------------------------------*
+
+ (PROC WRITELINE()
+
+    (IF DIFFER(OUTLINE,'')
+    THEN
+
+       OUT = OUTLINE
+       PRINT(OUTLINE)
+
+       (LOOP
+       WHILE GT(ERRCNT,0)
+          OUT = '+---> ' ERRTKN(ERRTAB<ERRCNT>) ' <---'
+          PRINT('+---> ' ERRTKN(ERRTAB<ERRCNT>) ' <---',1)
+          OUT = ERRMSG(ERRTAB<ERRCNT>)
+          PRINT(ERRMSG(ERRTAB<ERRCNT>),1)
+          OUT = ' '
+          PRINT(' ',1)
+          ERRCNT = ERRCNT - 1
+       LOOP)
+
+       OUTLINE = ''
+       LINEPTR = TABNEW
+
+    IF)
+
+ PROC)
+-EJECT
+*--------------------------------------------------*
+* CODELINE: ENTSCHEIDET, OB DIE AKTUELLE           *
+*    - TRANSFORMIERTE -  ZEILE                     *
+*    ERST GESAMMELT ODER GLEICH IN DIE             *
+*    CODEGERUEST-DATEI AUSGEGEBEN WERDEN SOLL      *
+*--------------------------------------------------*
+
+ (PROC CODELINE()LINE
+
+    (IF DIFFER(GENLINE,'')
+    THEN
+
+       (IF EQ(TXT_COL,ON)
+       THEN
+          GENLINE = RPAD(GENLINE,MAXLEN3) CMNT_END
+          TXT_COL = OFF
+       IF)
+
+       (IF EQ(COLLECT,ON)
+       THEN
+          ENQUEUE(CAPS(GENLINE))
+*??       ENQUEUE(GENLINE)
+       ELSE
+          (IF EQ(WRT_QUEUE,ON)
+          THEN
+             (LOOP
+             WHILE LINE = DEQUEUE()
+                PUTLINE('OUTGEN',LINE,MAXLEN2)
+             LOOP)
+          IF)
+          PUTLINE('OUTGEN',CAPS(GENLINE),MAXLEN2)
+*??       PUTLINE('OUTGEN',GENLINE,MAXLEN2)
+       IF)
+
+       GENLINE = ''
+       GENPTR = TABNEWG
+
+    IF)
+
+ PROC)
+
+*--------------------------------------------------*
+* PUTLINE: SCHREIBT EINE ZEILE - EVTL. MIT EINER   *
+*    ODER MEHREREN FORTSETZUNGSZEILEN - IN DIE     *
+*    CODEGERUEST-DATEI                             *
+*--------------------------------------------------*
+
+ (PROC PUTLINE(OUTVAR,LINE,LENGTH)SPLIT
+
+    LINE = TRIM(LINE)
+
+    (LOOP
+    WHILE  GT(SIZE(LINE),LENGTH)
+       LINE LEN(LENGTH) . SPLIT = DUPL(' ',15)
+       $OUTVAR = SPLIT CONT_CHAR
+    LOOP)
+
+    $OUTVAR = LINE
+
+ PROC)
+-EJECT
+*--------------------------------------------------*
+* PRINT: AUSGABEROUTINE FUER DIE PRINT-DATEI;      *
+*    GIBT PSEUDOCODE-ZEILEN, FEHLERMELDUNGEN UND   *
+*    CROSSREFERENCE-ZEILEN AUS UND NIMMT JEWEILS   *
+*    ENTSPR. FORMATIERUNG VOR                      *
+*--------------------------------------------------*
+
+ (PROC PRINT(LINE,TYPE)LEVEL,NUM
+
+    (IF LINE EJECT
+    THEN
+       NEWPAGE()
+       RETURN
+    IF)
+
+    (IF LINE TITLE = ''
+    THEN
+***   DOPPELTE QUOTES IM TITEL DURCH EINZELNE ERSETZEN,
+***        ERSTES UND LETZTES QUOTE ABMONTIEREN:
+       LINE OBLANKS "'" RTAB(2) . LINE "'" :F(CONT)
+       &ANCHOR = 0
+REP1   LINE "''" = NPR :S(REP1)
+REP2   LINE NPR  = "'" :S(REP2)
+       &ANCHOR = 1
+CONT   TITLE1 = '0' LINE
+       NEWPAGE()
+       RETURN
+    IF)
+
+    (IF EQ(LINECNT,MAXCNT)
+    THEN
+       NEWPAGE()
+    IF)
+
+    LINECNT = LINECNT + 1
+
+    (IF LINE SPACE = ''
+    THEN
+       LINE OBLANKS SPAN('123456789') . NUM ' '
+       (IF GT(NUM,1)
+       THEN
+          (LOOP
+             OUTPRNT = ' '
+             NUM = NUM - 1
+          WHILE GT(NUM,0)
+             (IF EQ(LINECNT,MAXCNT)
+             THEN
+                NEWPAGE()
+             IF)
+             LINECNT = LINECNT + 1
+          LOOP)
+       ELSE
+          OUTPRNT = ' '
+       IF)
+       RETURN
+    IF)
+
+    (SELECT
+
+    WHEN EQ(TYPE,0)
+***   AUSGABE EINER PSEUDOCODE-ZEILE
+       (IF EQ(OLD_CUR,ON)
+       THEN
+          LEVEL = CUR + 1
+          OLD_CUR = OFF
+       ELSE
+          LEVEL = CUR
+       IF)
+       OUTPRNT = ' ' LPAD(STMTCNT,4,'0') LPAD(LEVEL,4) ' ' LINE
+       STMTCNT = STMTCNT + 1
+
+    WHEN EQ(TYPE,1)
+***   AUSGABE EINER FEHLERMELDUNG / PSEUDOCODE
+       OUTPRNT = DUPL(' ',11) LINE
+
+    WHEN EQ(TYPE,2)
+***   AUSGABE EINER CROSS-REF.-ZEILE
+       OUTPRNT = ' ' LINE
+
+    SELECT)
+
+ PROC)
+
+*--------------------------------------------------*
+* NEWPAGE: MACHT SEITEN-VORSCHUB, DRUCKT TITEL-    *
+*          ZEILEN (PRINT-DATEI)                    *
+*--------------------------------------------------*
+
+ (PROC NEWPAGE()
+
+    PAGECNT = PAGECNT + 1
+    LINECNT = 0
+
+    OUTPRNT = HEAD0 DUPL(' ',80 - 60) 'PAGE ' LPAD(PAGECNT,3)
+    OUTPRNT = TITLE1
+    OUTPRNT = TITLE2
+    OUTPRNT = '-'
+
+ PROC)
+-EJECT
+*--------------------------------------------------*
+* CROSSREF: GIBT CROSSREFERENCE-TABELLE UEBER ALLE *
+*           VERWENDETEN LABELS AUS (PRINT-DATEI)   *
+*--------------------------------------------------*
+
+ (PROC CROSSREF()LABELS,I,REFNXT
+
+    (IF LABELS = CONVERT(LABTAB,'ARRAY')
+    THEN
+       LABELS = SORT(LABELS)
+       I = 1
+       (LOOP
+       WHILE LABELS<I,1>
+          OUTLINE = GETSTR('NAME',LABELS,I) ' ' GETSTR('DEF',LABELS,I)
++                                           ' DEFINITION'
+          PRINT(OUTLINE,2)
+          REFNXT = REF(LABELS<I,2>)
+          (LOOP
+          WHILE DIFFER(REFNXT,'')
+             OUTLINE = GETSTR('REF',,,REFNXT) ' ' MODE(REFNXT)
+             PRINT(OUTLINE,2)
+             REFNXT = NEXT(REFNXT)
+          LOOP)
+          I = I + 1
+          PRINT(' ',2) LABELS<I,1>
+       LOOP)
+    IF)
+
+ PROC)
+
+*--------------------------------------------------*
+* GETSTR: HOLT SICH FUER DIE CROSSREFERENCE-TABELLE*
+*    DIE JEWEILIGEN STRINGS AUS DEN ANGELEGTEN     *
+*    DATENSTRUKTUREN UND BAUT DAMIT DIE AUSGABE-   *
+*    ZEILEN AUF                                    *
+*--------------------------------------------------*
+
+ (PROC GETSTR(TYPE,FIELD,I,STRU)
+
+    (SELECT
+    WHEN IDENT(TYPE,'NAME')
+       GETSTR = RPAD(NAME(FIELD<I,2>),27)
+       GETSTR POS(0) LEN(27) . GETSTR
+    WHEN IDENT(TYPE,'DEF')
+       STRU = DEF(FIELD<I,2>)
+       (IF DIFFER(STRU,'')
+       THEN
+          GETSTR = LPAD(STMT(STRU),4,'0') ' ' RPAD(BLKNAME(STRU),27)
+          GETSTR POS(0) LEN(32) . GETSTR
+       ELSE
+          GETSTR = DUPL('*',32)
+       IF)
+    WHEN IDENT(TYPE,'REF')
+       GETSTR = DUPL(' ',28) LPAD(STMT(STRU),4,'0') ' '
++                               RPAD(BLKNAME(STRU),27)
+       GETSTR POS(0) LEN(60) . GETSTR
+    SELECT)
+
+ PROC)
+
+*--------------------------------------------------*
+* FINALMSGS: GIBT ABSCHLUSSMELDUNGEN AUS           *
+*            (PRINT-DATEI)                         *
+*--------------------------------------------------*
+
+ (PROC FINALMSGS()
+
+    PRINT('RETURN-CODE = ' RC,1)
+    PRINT(' ',1)
+
+    (IF EQ(ERRORS,0)
+    THEN
+       PRINT('NO SYNTACTICAL ERRORS FOUND',1)
+    ELSE
+       PRINT(ERRORS ' SYNTACTICAL ERRORS FOUND',1)
+    IF)
+
+    (IF EQ(TRUNC,ON)
+    THEN
+       PRINT(' ',1)
+       PRINT(' ',1)
+       PRINT('WARNING:  THE NAMES OF PROGRAM- AND REFINE-CLAUSES HAVE BEEN',1)
+       PRINT('          TRUNCATED TO 8 CHARACTERS IN THE GENERATED CODE',1)
+       PRINT('          DATASET.',1)
+    IF)
+
+ PROC)
+
+*==================================================*
+*                                                  *
+*             PROGRAMM-START                       *
+*                                                  *
+*==================================================*
+
+PARSER
+
+   INIT()
+
+   (LOOP
+   WHILE READ()
+      PERFORM()
+   LOOP)
+
+   TERM()
+
+ (PROC COPYRIGHT()
+
+   GMD('COPYRIGHT GMD-Z1.BN 1984                               ',1)
+
+ PROC)
+
+END

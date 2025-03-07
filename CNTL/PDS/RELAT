@@ -1,0 +1,10 @@
+//*--------------------------------------------------------------------
+//*
+//* DER JOB IN  SYS2.CNTL(PROCLIB)  KOPIERT DAS/DIE MEMBER
+//*
+//* DER SYS2.SPTS.PROCLIB IN DIE SAMMELDATEI SYS2.PROCLIB
+//*
+//*--------------------------------------------------------------------
+//* CAUTION: CASMX PROCEDURES ARE ALSO IN SYS2.ASMS.PROCLIB .
+//*
+//*--------------------------------------------------------------------

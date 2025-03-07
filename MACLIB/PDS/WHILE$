@@ -1,0 +1,74 @@
+         MACRO                                         STRUCT MACRO SET
+         WHILE$ &LABEL
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                            PAHL (GMD-IST/RZ) 00JUL73
+.*  CONDITIONAL LOOP:                                           27MAR75
+.*  "(WHILE" CONDITION "LOOP" BLOCK "WHILE)"
+.*       END "WHILE" CLAUSE.
+.*
+         GBLA  &BLK
+         GBLB  &OPT
+         GBLC  &BLKTYPE(30),&BLKNAME(30),&BLKID(30)
+         GBLB  &BLKXCPT(30)
+         LCLC  &T,&C
+&LABEL   SASLIST MACRO,'WHILE)'
+.*  PLACEMENT VERIFICATION
+&C       SETC  '&BLKTYPE(&BLK)'
+         AIF   ('&C'(1,1) NE 'W' AND '&C'(1,1) NE 'U').NOWU
+         LOOP ,                        TERMINATE WHILE/UNTIL BLOCK
+&C       SETC  '&BLKTYPE(&BLK)'
+.NOWU    AIF   ('&LABEL' NE '' AND '&LABEL' NE '&BLKNAME(&BLK)').Y0
+         AIF   ('&C'NE 'LX').Y0
+.*
+.OK      AIF   (NOT &BLKXCPT(&BLK)).NOXCPT
+         CODEX ,
+&BLKXCPT(&BLK) SETB 0
+         IF0BC 15,@@Z&BLKID(&BLK)
+         CODEX ,
+.NOXCPT ANOP
+         AIF   ('&BLKNAME(&BLK)' EQ '').NOXREF
+         DS    0S(&BLKNAME(&BLK))
+.NOXREF  ANOP
+@@Y&BLKID(&BLK) B     @@A&BLKID(&BLK)
+@@V&BLKID(&BLK) DS  0H
+@@X&BLKID(&BLK) DS  0H
+@@F&BLKID(&BLK) EQU @@Z&BLKID(&BLK)
+&BLK     SETA  &BLK-1                  POP-UP BLOCK STRUCTURE
+         AIF   (&OPT EQ 0).NOOUTER
+         AIF   (&BLK EQ 0).NOOUTER
+&T       SETC  '&BLKID(&BLK)-*'
+&C       SETC  '&BLKTYPE(&BLK)'
+         AIF   ('&C' NE 'IT').CDTEST
+.* $IF .. THEN .. $IF .. THEN .. ELSE .. IF$ .. ELSE .. IF$
+@@Z&BLKID(&BLK+1) EQU @@Z&BLKID(&BLK)-(@@Y&T)/(@@Y&T)*(@@Z&T)
+         AGO  .MEND
+.CDTEST  AIF   ('&C' NE 'CD').IETEST
+.* $IF .. THEN .. $IF .. THEN .. ELSE .. IF$ .. ELSE .. IF$
+&T       SETC  '&BLKID(&BLK)&BLKDCNT(&BLK)-*'
+@@Z&BLKID(&BLK+1) EQU @@Z&BLKID(&BLK)-(@@Y&T)/(@@Y&T)*(@@Z&T)
+         AGO  .MEND
+.IETEST  AIF   ('&C' NE 'IE').WTEST
+.* $IF .. THEN .. $IF .. THEN .. ELSE .. IF$ .. ELSE .. IF$
+@@Z&BLKID(&BLK+1) EQU @@Z&BLKID(&BLK)-(@@X&T)/(@@X&T)*(@@Z&T)
+         AGO  .MEND
+.WTEST   AIF   ('&C' NE 'WD').LTEST
+.* $WHILE .. LOOP .. $WHILE .. LOOP .. WHILE$ .. WHILE$
+@@Z&BLKID(&BLK+1) EQU @@A&BLKID(&BLK)-(@@Y&T)/(@@Y&T)*(@@A&T)
+         AGO  .MEND
+.LTEST   AIF   ('&C' NE 'L ').BTEST
+@@Z&BLKID(&BLK+1) EQU @@A&BLKID(&BLK)-(@@Y&T)/(@@Y&T)*(@@A&T)
+         AGO  .MEND
+.BTEST   AIF   ('&C'(1,1) NE 'B').NOOUTER
+@@Z&BLKID(&BLK+1) EQU @@Z&BLKID(&BLK)-(@@Y&T)/(@@Y&T)*(@@Z&T)
+         AGO  .MEND
+.NOOUTER ANOP
+@@Z&BLKID(&BLK+1) DS  0H               END OF WHILE CLAUSE.
+         AGO  .MEND
+.*
+.**********************************************************************
+.Y0      BLK0TEST WHILE,LX,&LABEL
+.MEND    SASLIST MACEND
+         MEND

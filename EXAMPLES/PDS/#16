@@ -1,0 +1,226 @@
+         #TEST   $EX,EX$,$EX$,TRUECC
+         AIF   (&NOTFND).$EX
+         PRINT ON
+         TITLE 'EXAMPLES FOR MACROS  $EX EX$ $EX$'
+         SPACE 3
+         PROC$
+         SPACE 3
+XX       $PROC TYPE=(S,INTERNAL),BASE=R10
+         EJECT
+**********************************************************************
+*        $IF
+*           TS   0(R5)
+*           TRUECC 8
+*        THEN
+*           LET  R1,=,0
+*        ELSEIF
+*           ALR  R1,R2
+*           TRUECC 1
+*        THEN
+*           LET  R3,+,1
+*        IF$
+**********************************************************************
+         $IF
+            TS   0(R5)
+            TRUECC 8
+         THEN
+            LET  R1,=,0
+         ELSEIF
+            ALR  R1,R2
+            TRUECC 1
+         THEN
+            LET  R3,+,1
+         IF$ ,
+         EJECT
+**********************************************************************
+*        $IF
+*           TS   0(R5)
+*           TRUECC FALSCH
+*        THEN
+*           LET  R1,=,0
+*        ELSEIF
+*           ALR  R1,R2
+*           TRUECC O
+*           TRUECC DOPPEL
+*        THEN
+*           LET  R3,+,1
+*        IF$
+**********************************************************************
+         $IF
+            TS   0(R5)
+            TRUECC FALSCH
+         THEN
+            LET  R1,=,0
+         ELSEIF
+            ALR  R1,R2
+            TRUECC O
+            TRUECC DOPPEL
+         THEN
+            LET  R3,+,1
+         IF$ ,
+         EJECT
+**********************************************************************
+*        $IF
+*           $EX$ @15,=,0
+*        THEN
+*           LET  @1,=,0
+*           $IF
+*              $EX  @15,=,0,AND,@14,=,0,EX$
+*           ORELSE
+*              $EX  @15,=,0,AND,@14,=,0,EX$
+*           ORELSE
+*              $EX  @15,=,0,AND,@14,=,0,EX$
+*           THEN
+*              LET  @1,=,0
+*           ELSE
+*              LET  @0,=,0
+*           IF$ ,
+*              LET  @1,=,0
+*        ELSE
+*           LET  @0,=,0
+*        IF$ ,
+**********************************************************************
+         $IF
+            $EX$ @15,=,0
+         THEN
+            LET  @1,=,0
+            $IF
+               $EX  @15,=,0,AND,@14,=,0,EX$
+            ORELSE
+               $EX  @15,=,0,AND,@14,=,0,EX$
+            ORELSE
+               $EX  @15,=,0,AND,@14,=,0,EX$
+            THEN
+               LET  @1,=,0
+            ELSE
+               LET  @0,=,0
+            IF$ ,
+               LET  @1,=,0
+         ELSE
+            LET  @0,=,0
+         IF$ ,
+         EJECT
+**********************************************************************
+*        $IF
+*           $EX
+*        $EX$ @15,=,0
+*           ORELSE
+*        $EX$ @14,=,0
+*           EX$
+*        ANDTHEN
+*           $EX
+*             $EX$ @15,=,0
+*           ORELSE
+*             $EX$ @14,=,0
+*           EX$
+*        ANDTHEN
+*           $EX$ @14,=,0
+*        THEN
+*           LET  @1,=,0
+*        ELSE
+*           LET  @0,=,0
+*        IF$ ,
+**********************************************************************
+         $IF
+            $EX
+               $EX$ @15,=,0
+            ORELSE
+               $EX$ @14,=,0
+            EX$
+         ANDTHEN
+            $EX
+              $EX$ @15,=,0
+            ORELSE
+              $EX$ @14,=,0
+            EX$
+         ANDTHEN
+            $EX$ @14,=,0
+         THEN
+            LET  @1,=,0
+         ELSE
+            LET  @0,=,0
+         IF$ ,
+         EJECT
+**********************************************************************
+*        $WHILE
+*           $EX
+*              $EX$ @15,=,0
+*           ORELSE
+*              $EX$ @14,=,0
+*           EX$
+*        ANDTHEN
+*           $EX
+*              $EX$ @15,=,0
+*           ORELSE
+*              $EX$ @14,=,0
+*           EX$
+*        ANDTHEN
+*           $EX
+*              $EX  @15,=,0,AND,@14,=,0,EX$
+*           ORELSE
+*              $EX  @15,=,0,AND,@14,=,0,EX$
+*           EX$
+*        ANDTHEN
+*           $EX
+*              $EX$ @15,=,0
+*           ORELSE
+*              $EX$ @14,=,0
+*           EX$
+*        LOOP ,
+*           LET  @1,=,0
+*        WHILE$ ,
+**********************************************************************
+         $WHILE
+            $EX
+               $EX$ @15,=,0
+            ORELSE
+               $EX$ @14,=,0
+            EX$
+         ANDTHEN
+            $EX
+               $EX$ @15,=,0
+            ORELSE
+               $EX$ @14,=,0
+            EX$
+         ANDTHEN
+            $EX
+               $EX  @15,=,0,AND,@14,=,0,EX$
+            ORELSE
+               $EX  @15,=,0,AND,@14,=,0,EX$
+            EX$
+         ANDTHEN
+            $EX
+               $EX$ @15,=,0
+            ORELSE
+               $EX$ @14,=,0
+            EX$
+         LOOP ,
+            LET  @1,=,0
+         WHILE$ ,
+         EJECT
+**********************************************************************
+*        $LOOP ,
+*           LET  @1,=,0
+*        UNTIL ,
+*           $EX
+*              $EX$ @15,=,0
+*           ORELSE
+*              $EX$ @14,=,0
+*           EX$
+*        LOOP$ ,
+**********************************************************************
+         $LOOP ,
+            LET  @1,=,0
+         UNTIL ,
+            $EX
+               $EX$ @15,=,0
+            ORELSE
+               $EX$ @14,=,0
+            EX$
+         LOOP$ ,
+            LET @15,=,0
+         PROC$ ,
+         PRINT OFF
+&PRCCODE(1) SETC ''
+PROC99   $PROC BASE=(R10)              TO SET UP
+.$EX     ANOP

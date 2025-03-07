@@ -1,0 +1,346 @@
+         MACRO                                         COMPUT MACRO SET
+&LABEL   LET   &A,&EQ,&B,&WORK=@0
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                            PAHL (GMD-IST/RZ) 00MAR73
+.*  (ARITHMETIC) ASSIGNMENT                                     27MAR75
+.*                                        MODIF GEIST (GMD-IST) 03AUG78
+.*                                          BIRKENBIHL (GMD-RZ)  7FEB79
+.*                                           SYLVESTER (GMD-RZ) 23MAI79
+.*                                                              13MAI80
+.*                                                              16JUL81
+.*  "LET A,=,B"
+.*  "LET A,=,B,+-,C,..."
+.*  "LET A,+-*/,B,..."
+.*  "LET A,->,B"
+.*  "LET A,:,B"  (SETON FLAG BITS)   "LET A,¬:,B" (SETOFF FLAG BITS)
+.*  (STRING) ASSIGNMENT
+.*  "LET (A,L),=,B"       (L MUST BE SELF DEF. TERM OR REGISTER,
+.*                         A,B NOT REGISTER )
+.*
+.*        THIS MACRO IS USED FOR ARITHMETIC ASSIGMENT STATEMENTS
+.*        ADDRESS ASSIGNMENTS AND STRING ASSIGNMENTS.
+.*
+.*  &A      : DESTINATION, MAY BE A REGISTER-SYMBOL (CF. EQUR MACRO);
+.*            OR DENOTE A STORAGE FULLWORD, HALFWORD, OR BYTE (CF.
+.*            LET0Q MACRO FOR VALID NOTATIONS).
+.*            THE ADDRESSED GPR/STORAGE RECEIVES THE ARITHMETIC VALUE
+.*            OF THE RIGHT-SIDE TERM/EXPRESSION,
+.*            RESP. THE ADDRESS OF THE SINGLE RIGHT-SIDE TERM IF THE
+.*            ASSIGNMENT OPERATOR IS "->".
+.*  &EQ     : ASSIGMENT OPERATOR:
+.*            ":=" OR "=" FOR ARITHMETIC AND STRING ASSIGNMENT
+.*            "->" FOR ADDRESS ASSIGNMENT
+.*            THE FORM "LET A,+,B" IS SHORTHAND FOR "LET A,=,A,+,B"
+.*  &B      : FIRST (OR ONLY) TERM OF EXPRESSION;
+.*            IS A REGISTER-SYMBOL (CF. EQUR)
+.*            OR DENOTES A STORAGE FIELD (VALID NOTATIONS: LET0Q MACRO)
+.*            OR DENOTES AN IMMEDIATE/ADDRESS VALUE (VALID NOTATIONS:
+.*              LET0Q MACRO).
+.*            THE CONTENTS OF THE ADDRESSED GPR/STORAGE RESP. THE IMME-
+.*            DIATE VALUE/ADDRESS ARE USED FOR COMPUTATION/ASSIGNMENT.
+.*  AFTER &B, ANY NUMBER OF  OPERATOR,TERM  PAIRS MAY FOLLOW.
+.*            VALID OPERATORS ARE "+" AND "-" ONLY;
+.*            EACH TERM OBEYS THE SAME RULES AS THE &B OPERAND.
+.*  BETWEEN THE ASSIGNMENT OPERATOR AND THE FIRST RIGHT-SIDE TERM, AN
+.*            UNARY "-" MAY BE INSERTED:
+.*            "LET A,=,-,B,..." BEING EQUIVALENT TO "LET A,=,0,-,B,..."
+.*            (HOWEVER LESS CODE).
+.*  EVALUATION IS GENERALLY FROM LEFT TO RIGHT, NO OPERATOR PRECEDENCE
+.*            IS HONOURED.
+.*  WORK= MAY BE USED AS WORK REGISTER, NO ASSUMPTION MUST BE MADE ****
+.*            ABOUT THE CONTENT OF WORK= FOLLOWING A "LET" MACRO,  ****
+.*            UNLESS IT IS THE DESTINATION OPERAND (WHICH IS LEGAL)****
+.*            IF WORK= IS OMITTED, WORK=@0 IS ASSUMED. IF WORK= WITH A
+.*            NULL STRING AS ARGUMENT IS SPECIFIED, LET WILL TRY TO
+.*            GENERATE MVC-TYPE CODE IN CASE OF SIMPLE ASSIGNMENTS.
+.*            FAILURE OF THIS OFFORT WILL BE DETECTED BY THE ASSEMBLER.
+.*
+.*
+         GBLA  &LETL(3) ,&LENA(3)<--- WAS NEVER SET BIRKENBIHL
+         GBLB  &LETLA
+         GBLC  &LETA(3),&LETM(3),&LET0M1
+         LCLA  &K
+         LCLB  &AREG,&BITOFF
+         LCLC  &REG,&OP,&C
+&LABEL   SASLIST MACRO,'LET'
+&LETLA   SETB  ('&EQ' EQ '->')       'LA' ALLOWED FOR ADD
+.*
+         AIF   ('&LABEL' EQ '').GO
+&LABEL   DS    0S(&LABEL)
+.*
+.GO      AIF   (N'&A EQ 2).STRING      STRING ASSIGNMENT --> .STRING
+         LET0Q &A,1                    ANALYSE DESTINATION
+&AREG    SETB  ('&LETM(1)' EQ 'R')
+&REG     SETC  '&A(1)'
+         AIF   (&AREG).TSTCOMP         DESTINATION IS (GPR)
+&REG     SETC  '&WORK'                 WORK GPR REQUIRED
+.*
+.TSTCOMP ANOP
+         AIF   (&LETLA).LA
+         AIF   ('&EQ' EQ ':=' OR '&EQ' EQ '=').QCOMP
+         AIF   ('&EQ' EQ '+' OR '&EQ' EQ '-').SHORT
+         AIF   ('&EQ' EQ '*' OR '&EQ' EQ '/').SHORT
+.*       AIF   ('&EQ' EQ ':' OR '&EQ' EQ '¬:').BIT  SYLVESTER 13.5.80
+         AIF   ('&EQ' EQ ':' OR '&EQ' EQ 'ON').BITON            "
+         AIF   ('&EQ' EQ '¬:' OR '&EQ' EQ 'OFF').BITOFF         "
+&K       SETA  3
+         AGO   .YOP
+.QCOMP   AIF   (N'&SYSLIST GT 3).QUNARY
+.**********************************************************************
+.*
+.*  NO COMPUTATION, JUST 'LET A,=,B'
+.*
+.NOCOMP  LET0Q &B,2                    ANALYSE RIGHT-SIDE OPERAND
+         AIF   ('&LETM(2)' EQ 'R').BREG   IS GPR
+         AIF   (&AREG).LET0F
+         AIF   (&LETL(1) EQ 1).TSTMVI  B.IF L'A = 1
+         AIF   ('&B' EQ '0' AND                                        X
+               '&LETA(1)'(K'&LETA(1),1) NE ')').NULLSTR
+.LED0F   AIF   ('&WORK' NE '').LET0F
+.*   NO WORK REGISTER AVAILABLE, TRY MVC
+         AIF   (&LETL(2) NE 0).LET0M
+         LET0M1 &LETA(1),&LETL(1),&LETA(1) CONSTRUCT XC OPERAND LIST
+         XC    &LET0M1
+&K       SETA  &LETL(1)-1
+         MVI   &K+&LETA(1),&LETA(2)
+         AGO  .MEND
+.NULLSTR LET0M1 &LETA(1),&LETL(1),&LETA(1) CONSTRUCT XC OPERAND LIST
+         XC    &LET0M1
+         AGO  .MEND
+.* GENERATE (XC AND) MVC
+.LET0M   LET0M
+         AGO  .MEND
+.LET0F   LET0F &REG,&B,2
+         AGO   .STORE
+.*  DESTINATION IS BYTE, SEE IF MVI OR MVC CAN BE USED.
+.TSTMVI  AIF   (T'&B EQ '#').MVIEQUN
+         AIF   (K'&B LE 2).MVINO#
+         AIF   ('&B'(K'&B-1,2) EQ ':N').MVI#
+         AIF   ('&B'(K'&B-1,2) EQ ':#').MVI#
+.MVINO#  AIF   (&LETL(2) EQ 1).MVC1    RIGHT-SIDE HAS L'=1
+         AIF   (&LETL(2) NE 0).LED0F   RIGHT-SIDE IS NOT IMMEDIATE
+.*       AIF   ('&LETA(1)'(&LENA(1),1) EQ ')').LEDOF <-- LENA NEVER SET
+         MVI   &LETA(1),&LETA(2)
+         AGO  .MEND
+.MVC1 ANOP ,   ('&LETA(2)'(&LENA(1),1) EQ ')').LED0F <-- LENA NEVER SET
+         AIF   ('&LETA(1)'(K'&LETA(1),1) EQ ')').LED0F
+         MVC   &LETA(1)(1),&LETA(2)
+         AGO  .MEND
+.MVIEQUN ANOP
+         MVI   &LETA(1),&B
+         AGO  .MEND
+.MVI# ANOP
+&LETA(2) SETC  '&B'(1,K'&B-2)
+         MVI   &LETA(1),&LETA(2)
+         AGO  .MEND
+.*
+.*  "LET A,=,GPRB"
+.*
+.BREG    AIF   (&AREG).BLR
+         ST&LETM(1) &LETA(2),&LETA(1)
+         AGO  .MEND
+.BLR     AIF   ('&A(1)' EQ '&B(1)').MEND
+         LR    &A,&LETA(2)
+         AGO  .MEND
+.*
+.*  "LET A,->,B"
+.*
+.LA      AIF   (T'&B EQ '@').YREG
+.*-      AIF   ('&LETM(2)' EQ 'R').YREG
+         LA    &REG,&B
+         AIF   (N'&SYSLIST LE 3).STORE
+         MNOTE 08,'****** LET: NO COMPUTATION WITH ADDRESS ASSIGNMENT --
+               - POS 4 FF. IGNORED'
+         AGO   .STORE
+.**********************************************************************
+.*
+.*  SHORT INCR/DECR NOTATION: 'LET A,+-,B'  ==  'LET A,=,A,+-,B'
+.*
+.SHORT   ANOP
+&K       SETA  3
+&OP      SETC  '&EQ'
+         AIF   (&AREG).COMP2           SPEED IT UP
+         AGO   .COMP1
+.**********************************************************************
+.*
+.*  UNARY - :  "LET A,=,-,B,.."
+.*
+.QUNARY  AIF   ('&B' NE '-').COMP      NO, ISN'T
+         LET0F &REG,&SYSLIST(4)
+         LCR   &REG,&REG
+&K       SETA  4
+         AGO   .NEXT
+.**********************************************************************
+.*
+.*   COMPUTATION: 'LET A,=,B,+-,C' OR 'LET A,->,B,+-,C'
+.*
+.COMP    ANOP
+&K       SETA  5
+&OP      SETC  '&SYSLIST(&K-1)'
+         AIF   (NOT &AREG).COMP1
+.*   DESTINATION IS GPR (NO WORK    USED): EXTRA CARE
+         AIF   ('&SYSLIST(&K-2,1)' EQ '&A(1)').COMP2  "LET A,=,A,+,B"
+         AIF   ('&SYSLIST(&K,1)' NE '&A(1)').COMP1
+         AIF   ('&OP' NE '+' AND '&OP' NE '-').COMP1
+.*  "LET GPRA,=,B,+-,GPRA,..." :  COMMUTATE
+         LET0X &REG,&OP,&SYSLIST(&K-2) ADD/SUB 1ST OPERAND
+         AIF   ('&OP' NE '-').NEXT     DONE IF COMMUTATIVE
+         LCR   &REG,&REG
+         AGO   .NEXT
+.*  NORMAL OPERATION
+.COMP1   LET0F &REG,&SYSLIST(&K-2)     FETCH 1ST OPERAND
+         AGO   .COMP2
+.**********************************************************************
+.*
+.*  SEE IF MORE OPERATIONS ARE TO BE DONE
+.*
+.NEXT    AIF   (N'&SYSLIST LE &K).STORE NO OPERANDS LEFT
+&K       SETA  &K+2                    NEXT OPERATION/OPERAND PAIR
+&OP      SETC  '&SYSLIST(&K-1)'
+.COMP2   AIF   ('&OP' EQ '*' OR  '&OP' EQ '/').NEXT0X   ONLY * / OR
+         AIF   ('&OP' NE '+' AND '&OP' NE '-').YOP      + - HERE
+.NEXT0X  ANOP
+&LETA(3) SETC  ''
+         LET0X &REG,&OP,&SYSLIST(&K)   ADD/SUB 2ND OPERAND
+         AIF   (&AREG).NEXTQR
+         AIF   ('&LETA(3)' NE '&REG').NEXT
+         MNOTE 08,'****** LET: INVALID USE OF WORK REG (&REG) IN POS &K-
+               '
+         AGO   .NEXT
+.NEXTQR  AIF   ('&LETA(3)' NE '&A(1)').NEXT
+         MNOTE 08,'****** LET: INVALID REF TO LEFT-SIDE (&A(1)) IN POS -
+               &K'
+         AGO   .NEXT                   LOOP
+.**********************************************************************
+.*
+.*  STORE RESULT
+.*
+.STORE   AIF   (&AREG).MEND            SKIP IF RESULT IN REGA
+         ST&LETM(1) &REG,&LETA(1)
+         AGO  .MEND
+.**********************************************************************
+.*
+.*  BIT OPERATIONS
+.*
+.BITON   ANOP                                     SYLVESTER 13.5.80
+&BITOFF  SETB  0                                          "
+         AGO   .BIT                                       "
+.BITOFF  ANOP                                             "
+&BITOFF  SETB  1                                          "
+.BIT     AIF   (N'&SYSLIST NE 3).YOPND "&A,:,&B" OR "&A,¬:,&B" ONLY
+         AIF   (&AREG).YNYI
+         LET0Q &B,2
+         AIF   ('&LETM(2)' EQ 'R').YNYI
+.*-      AIF   ('&LETM(2)' NE '').YNYI            BIRKENBIHL 7.2.79
+.*       AIF   ('&EQ' NE ':').BITNI1              SYLVESTER 13.5.80
+         AIF   ('&B'(1,1) NE ':').BIT2
+         AIF   ('&B' EQ ':').YNYI
+&LETA(2) SETC  '&B'(2,K'&B-1)
+         AGO   .BITWHAT
+.BIT2    AIF   (T'&B NE '#').BIT3
+&LETA(2) SETC  '&B'
+         AGO   .BITWHAT
+.BIT3    AIF   (K'&B LT 2).BITWHAT
+         AIF  ('&B'(K'&B-1,1) NE ':' OR  '&B'(K'&B,1) EQ '''').BITWHAT
+&LETA(2) SETC  '&B'(1,K'&B-2)
+.BITWHAT AIF   (&BITOFF).BITNI1
+.*       OI    &A,&LETA(2)                        SYLVESTER 23.5.79
+         OI    &LETA(1),&LETA(2)                  SYLVESTER 23.5.79
+         AGO  .MEND
+.*ITNI1  NI   &A,255-(&LETA(2))                   SYLVESTER 23.5.79
+.BITNI1  NI    &LETA(1),B'11111111'-(&LETA(2))    SYLVESTER 23.5.79
+         AGO  .MEND
+.**********************************************************************
+.*
+.*  STRING ASSIGNMENTS
+.*
+.STRING  AIF   ('&EQ' NE '=' AND '&EQ' NE ':=').YNYI ASSIGNMENTS ONLY
+         AIF   (N'&SYSLIST GT 3).YOPND ONLY 3 OPERANDS
+         LET0Q &A(2),2                 ANALYZE LENGTH OPERAND
+         AIF   (K'&A(2)  LT 2).STRCONT
+         AIF   ('&A(2)'(K'&A(2)-1,2) EQ ':N').STR2#
+         AIF   ('&A(2)'(K'&A(2)-1,2) EQ ':#').STR2#
+         AIF   ('&A(2)'(1,2) EQ 'L''').STR#
+.STRCONT AIF   (T'&A(2) EQ '#').STR#
+         AIF   (T'&B EQ '@' OR '&B'(1,1) EQ '(').YNYI
+         AIF   (T'&A(1) EQ '@' OR '&A(1)'(1,1) EQ '(').YNYI
+         AIF   ('&LETM(2)' EQ 'R').STR3
+         AIF   ('&LETM(2)' NE '').YNYI LENGTH MUST BE SELF DEF. TERM
+.STRDIR  ANOP
+&C       SETC  ''
+         AIF   ('&B'(1,1) NE '''').STR2
+&C       SETC  '=C'                    BUILD STRING LITERAL
+.STR2    LET0M1 &A(1),&LETA(2),&C&B
+         MVC   &LET0M1
+         AGO   .MEND
+.STR#    ANOP
+&LETA(2) SETC  '&A(2)'
+         AGO   .STRDIR
+.STR2#   ANOP
+&LETA(2) SETC  '&A(2)'(1,K'&A(2)-2)
+         AGO   .STRDIR
+.*              STRING ASSIGNMENT WITH LENGTH IN REGISTER
+.STR3  ANOP
+&C       SETC  ''
+         AIF   ('&B'(1,1) NE '''').STR4
+&C       SETC  '=C'                    BUILD STRING LITERAL
+.STR4    AIF   (&LETL(2) EQ 1).STRREG1
+.*       B     *+10                    BRANCH AROUND MVC
+         LET0M1 &A(1),*-*,&C&B
+         MVC   &LET0M1
+.*       MVC   0(*-*,0),&C&B           MVC FOR EXECUTE
+.*       ORG   *-4
+.*       DC    S(&A(1))                ADDRESS IN MVC
+.*       ORG   *+2
+         BCTR  &A(2),0                 SUBTRACT 1 FOR EXECUTE
+         EX    &A(2),*-2-6             MOVE
+         LA    &A(2),1(,&A(2))         RESTORE REGISTER
+         AGO  .MEND
+.STRREG1 MNOTE 0,'*** WARNING: @1 USED'
+         LR    @1,R0
+.*TROBJ  B     *+10                    BRANCH AROUND MVC
+.STROBJ  LET0M1 &A(1),*-*,&C&B
+         MVC   &LET0M1
+         BCTR  @1,0                    SUBTRACT 1 FOR EXECUTE
+         EX    @1,*-2-6                MOVE
+         AGO  .MEND
+.*                                     TO-STRING IS REGISTER ARRAY
+.STR6    ANOP NOT USED IN CURRENT VERSION
+&K       SETA  &A(2)
+         AIF   (&K LT 4).YNYI
+         AIF   (&K/4*4 NE &K).YNYI     LENGTH ONLY MULTPLE OF 4
+         LET0Q &A(1),1
+         LET0R &B,&A(2)
+         AIF   (&K EQ 4).STR8
+         STM   &LET0M1,&LETA(1)
+         AGO  .MEND
+.STR8    ST    &LET0M1,&LETA(1)
+         AGO  .MEND
+.STR7    ANOP                          FROM STRING IS REGISTER ARRAY
+&K       SETA  &A(2)
+         AIF   (&K LT 4).YNYI
+         AIF   (&K/4*4 NE &K).YNYI     LENGTH ONLY MULTPLE OF 4
+         LET0Q &B,1
+         LET0R &A(1),&A(2)
+         AIF   (&K EQ 4).STR9
+         LM    &LET0M1,&LETA(1)
+         AGO  .MEND
+.STR9    ANOP
+         L     &LET0M1,&LETA(1)
+         AGO  .MEND
+.**********************************************************************
+.*
+.*  ERROR MESSAGES
+.*
+.YNYI    MNOTE 12,'LET: OPERATOR/OPERAND CONSTELLATION NOT YET IMPLEMEN-
+               TED.       MACRO ABORTED'
+         AGO   .MEND
+.YOPND   MNOTE 12,'LET: TOO MANY OPERANDS FOR OP "&EQ"'
+         AGO   .MEND
+.YOP     MNOTE 12,'****** LET: INVALID OPERATOR IN POS &K-1'
+.YREG    MNOTE 12,'LET: INVALID OPERATOR/OPERAND CONSTELLATION'
+.MEND    SASLIST MACEND
+         MEND

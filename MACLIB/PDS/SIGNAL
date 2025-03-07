@@ -1,0 +1,31 @@
+         MACRO
+&NAME    SIGNAL &LABEL
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                                   03NOV80-SYLVESTER
+.*
+         GBLA  &BLK,&BLKCC(10),&EQUR
+         GBLC  &BLKTYPE(30),&BLKID(30)
+         LCLA  &CC                                                   IF
+         LCLC  &LAB
+&LABEL   SASLIST MACRO,'SIGNAL'
+         AIF   ('&LABEL' EQ '').YSIGNAL
+&CC      SETA  15                                                    IF
+.*
+         AIF   ('&BLKTYPE(&BLK)' NE 'JX').NOIF                       IF
+.*  CONDITIONAL GOTO:  "IF" CONDITION "SIGNAL"                       IF
+.*
+&CC      SETA  &BLKCC(&BLK)                                          IF
+&NAME    IF0BC &CC,&LABEL
+@@F&BLKID(&BLK)  DS  0H
+&BLK     SETA  &BLK-1                  POP-UP BLOCK STRUCTURE        IF
+         AGO  .MEND
+.NOIF    ANOP
+&NAME    IF0BC &CC,&LABEL
+         AGO  .MEND
+.**********************************************************************
+.YSIGNAL MNOTE 08,'****** SIGNAL: EXCEPTION-NAME MISSING, IGNORED.'
+.MEND    SASLIST MACEND
+         MEND

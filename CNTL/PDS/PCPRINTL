@@ -1,0 +1,36 @@
+//*-------------------------------------------------------------------
+//*
+//* FOR PRINTING THE PCP DOCUMENTATION ON THE LASER PRINTER,
+//* PLEASE USE THE LASER OPTION L.1 WITH THE INPUT-PARAMETERS
+//* AS LISTED BELOW.
+//*
+//* (THE PRINTED DOCUMENTATION DOES NOT INCLUDE THE FORMATTED PSEUDO
+//* CODE, THE CODE SKELETON AND THE PRETTY PRINT LIST OF THE EXAMPLE;
+//* THEY WILL BE PRINTED SEPARATELY ON THE LASER PRINTER.)
+//*
+//*-------------------------------------------------------------------
+//********************************************
+//**
+//** ****************************************
+//** *
+//** * USER-IDENTIFICATION:   GRZ013
+//** *
+//** ****************************************
+//**
+//** PRINTFILE:   SYS2.SPTS.INFO(PCPDOCL)
+//** USED PANEL:  L.1
+//** DATE:  ......
+//** TIME:  ......
+//**
+//********************************************
+//**
+//** PANEL INPUT-PARAMETERS:
+//**
+//**  CHARACTER SET:      STD
+//**  LINES/INCH:         8
+//**  CHARACTERS/INCH:    10
+//**  ADDITIONAL COPIES:  0
+//**  CUT PAPER (DIN-A4): NO
+//**  HANDLE BOXES:       YES
+//**
+//********************************************

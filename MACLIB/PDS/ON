@@ -1,0 +1,65 @@
+         MACRO ,                                       STRUCT MACRO SET
+&LABEL   ON    &A,&REL,&B,&DO
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                      ADAPTED FROM $IF      PAHL (GMD-IST/RZ) 00MAR73
+.*  "(CASE" <"ON" COND "DO" BLOCK>* <"ELSE" BLOCK> "CASE)"      27MAR75
+.*       TEST CONDITION
+.*
+         GBLA  &BLK,&BLKDCNT(30)
+         GBLC  &BLKTYPE(30),&BLKNAME(30),&BLKID(30)
+&LABEL   SASLIST MACRO,'ON'
+.*
+         AIF   ('&BLKTYPE(&BLK)' EQ 'CB').YINDEX
+         AIF   ('&BLKTYPE(&BLK)'(1,1) NE 'C').YNOCASE
+         AIF   ('&BLKTYPE(&BLK)' EQ 'C ').TSTLBL
+         ELSE  CALLER=ON                    TERMINATE LAST ON/DO-PAIR
+@@X&BLKID(&BLK)&BLKDCNT(&BLK) DS 0H
+.TSTLBL  AIF   ('&LABEL' EQ '').AFTRLBL
+&LABEL   DS    0H
+.AFTRLBL AIF   ('&BLKNAME(&BLK)' EQ '').NOXREF
+         DS    0S(&BLKNAME(&BLK))
+.NOXREF  ANOP
+&BLKDCNT(&BLK) SETA &BLKDCNT(&BLK)+1
+.*
+.*  EVALUATE CONDITIONAL EXPRESSION
+.*
+         AIF   ('&A&REL&B' NE '').IF0CE
+&BLKTYPE(&BLK) SETC 'CC'               BEING IN CONDITION PART OF CASE
+         AGO  .MEND
+.IF0CE   IF0CE &A,&REL,&B
+&BLKTYPE(&BLK) SETC 'CX'               BEING IN CONDITION PART OF CASE
+.*
+.*  SEE WHAT TO BE DONE AFTER COMPARISON
+.*
+         AIF   ('&DO'   EQ '').MEND
+.*
+.*  "DO"
+.*
+         AIF   ('&DO'   NE 'DO').OR
+         DO    ,
+         AGO  .MEND
+.*
+.*  "OR CONDITION,..."
+.*
+.OR      AIF   ('&DO' NE '$OR$' AND '&DO' NE 'OR'                      -
+               AND '&DO' NE 'ORELSE').AND
+         ORELSE  &SYSLIST(5),&SYSLIST(6),&SYSLIST(7),&SYSLIST(8)
+         AGO  .MEND
+.*
+.*  "AND CONDITION,..."
+.*
+.AND     AIF   ('&DO'   NE '$AND$' AND '&DO'   NE 'AND'                -
+               AND '&DO' NE 'ANDTHEN').YDO
+         ANDTHEN &SYSLIST(5),&SYSLIST(6),&SYSLIST(7),&SYSLIST(8)
+         AGO  .MEND
+.YDO     MNOTE 08,'****** ON:    ASSUMED "DO" INSTEAD OF INVALID "&DO"'
+         AGO  .MEND
+.YINDEX  MNOTE 08,'****** ON:    INVALID "ON" IN INDEXED (CASE'
+         AGO  .MEND
+.YNOCASE MNOTE 08,'****** ON:    NOT IN "(CASE" ENVIRONMENT'
+         DO
+.MEND    SASLIST MACEND
+         MEND

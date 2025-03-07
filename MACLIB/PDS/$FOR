@@ -1,0 +1,75 @@
+         MACRO ,                                       STRUCT MACRO SET
+&LABEL   $FOR  &GPR,&STEP,&INCR,&TO,&LIMIT,&LOOP
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                            PAHL (GMD-IST/RZ) 00JAN74
+.*  "(FOR" GPR "TIMES" "LOOP" BLOCK "FOR)"                      27MAR75
+.*  OR:
+.*  "(FOR" GPR "STEP" N "LOOP" BLOCK "FOR)"
+.*
+.*
+.*
+.*
+.*
+         GBLA  &BLK,&BLKAUXN
+         GBLC  &LETM(3)                                          COMPUT
+         GBLC  &BLKTYPE(30),&BLKNAME(30),&BLKID(30),&BLKAUX(30)
+         LCLA  &A
+.*
+&LABEL   SASLIST MACRO,'(FOR'
+&BLK     SETA  &BLK+1                  PUSH BLOCK DEPTH
+&BLKTYPE(&BLK) SETC 'FX'
+&BLKNAME(&BLK) SETC '&LABEL'
+         SPTSNDX F
+         AIF   ('&LABEL' EQ '').NOLABEL
+&LABEL   DS    0H
+.NOLABEL ANOP
+.**********************************************************************
+.*
+.*  LOOP MASTER REGISTER
+.*
+&BLKAUXN SETA  &BLKAUXN+3              PUSH AUXILIARY STACK
+&BLKAUX(&BLKAUXN) SETC '&GPR(1)'       LOOP REGISTER
+&BLKAUX(&BLKAUXN-1) SETC ''            INCREMENT
+&BLKAUX(&BLKAUXN-2) SETC ''            LIMIT
+         LET0Q &GPR(1),2               ANALYSE OPERAND TYPE
+         AIF   ('&LETM(2)' EQ 'R').LOADGPR O.K. IS REGISTER
+         STRERMAC FOR,20,GPR,&GPR
+.LOADGPR AIF   (N'&GPR LE 1).TIMES
+         LET   &GPR(1),&GPR(2),&GPR(3)
+.*
+.*  "(FOR" N "TIMES" ...
+.*
+.TIMES   AIF   ('&STEP'  NE 'TIMES').STEP
+         LTR   &GPR(1),&GPR(1)
+      IF0BC    13,@@Z&BLKID(&BLK)       NULL TIMES IF ZERO.
+&A       SETA  3                       'LOOP' POSITION
+         AGO   .LOOP
+.*
+.*  "(FOR" GPR "STEP" ...
+.*
+.STEP    AIF   ('&STEP' EQ 'STEP').STEP1
+         MNOTE 08,'******(FOR: INVALID STEP OPERAND.'
+.*
+.*  "(FOR" GPR "STEP" N ...
+.*
+.STEP1   ANOP
+&BLKAUX(&BLKAUXN-1) SETC '&INCR'       NOTE INCREMENT
+&A       SETA  4                       'LOOP' POSITION
+         AIF   ('&TO' NE 'TO').LOOP
+&BLKAUX(&BLKAUXN-2) SETC '&LIMIT'
+&A       SETA  6                       'LOOP' POSITION
+.*
+.*
+.*
+.LOOP    AIF   ('&SYSLIST(&A)' EQ 'LOOP').LOOP1
+         AIF   ('&SYSLIST(&A)' NE '').LOOP2
+         MNOTE 08,'****** (FOR: "LOOP" MISSING'
+         AGO   .LOOP1
+.LOOP2   MNOTE 08,'****** (FOR: "&LOOP" INVALID -- ASSUMED "LOOP"'
+.LOOP1   ANOP
+@@A&BLKID(&BLK) DS 0H                    "(FOR" REPETITION START
+.MEND    SASLIST MACEND
+         MEND

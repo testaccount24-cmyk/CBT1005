@@ -1,0 +1,79 @@
+         MACRO
+&LABEL   XCALL &EP,&ARG1,&ARG0,&ARG2
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*             COPYRIGHT GMD-I6 1970,1973, GMD-RZ.BN 1979
+.*                                                         18MAR70-PAHL
+.*  CALL EXTERNAL SUBROUTINE (BOUND TO LOAD MODULE* BY LINK-EDIT)
+.*                                                         07NOV72-PAHL
+.*                                                    06NOV79-SYLVESTER
+.*  &EP     : ENTRY POINT AND OFFSET.  FOLLOWING FORMS ARE VALID:
+.*              EPNAME
+.*              EPNAME+OFFSET
+.*              EPNAME(REG)
+.*              EPNAME+OFFSET(REG)     WHERE EPNAME IS EXTERNAL SYMBOL
+.*            NOTE: (15) ALWAYS WILL CONTAIN EPNAME ADDR
+.*  &ARG1   : VALID LET OPERAND             PARAMETER VALUE REGISTER 1
+.*  &ARG0   : VALID LET OPERAND             PARAMETER VALUE REGISTER 0
+.*  &ARG2   : VALID LET OPERAND             PARAMETER VALUE REGISTER 2
+         LCLA  &K,&N
+         LCLC  &REG,&OFF,&EPNAME
+&LABEL   SASLIST MACRO,'XCALL'
+.*
+         AIF   ('&LABEL' EQ '').LDARG0
+&LABEL   DS    0S(&LABEL)
+.LDARG0  AIF   ('&ARG0' EQ '').LDARG1
+         LET   @0,=,&ARG0
+.LDARG1  AIF   ('&ARG1' EQ '').LDARG2
+         LET   @1,=,&ARG1
+.LDARG2  AIF   ('&ARG2' EQ '').ARGSOK
+         LET   @2,=,&ARG2
+.ARGSOK  AIF   ('&EP' EQ '').YEP
+.*
+.*  ANALYSE &EP OPERAND: BREAK INTO COMPONENTS
+.*
+&N       SETA  K'&EP
+         AIF   ('&EP'(&N,1) NE ')').QOFFS
+.*  INDEX REGISTER SPECIFIED
+&K       SETA  &N-2
+.SINDEX  AIF   ('&EP'(&K,1) EQ '(').INDEX
+&K       SETA  &K-1
+         AIF   (&K GT 1).SINDEX
+         AIF   ('&EP'(1,1) EQ '(').EPR
+         AGO   .YINDEX
+.INDEX   ANOP
+&REG     SETC  '&EP'(&K+1,&N-&K-1)
+&N       SETA  &K-1
+.*
+.QOFFS   ANOP                      BEFORE: 'AIF   (&N LE 1).CALL'
+&K       SETA  &N-1
+.SOFFS   AIF   ('&EP'(&K,1) EQ '+').OFFS
+&K       SETA  &K-1
+         AIF   (&K GT 1).SOFFS
+         AGO   .CALL
+.OFFS    ANOP
+&OFF     SETC  '&EP'(&K+1,&N-&K)
+&N       SETA  &K-1
+.*  FINALLY GENERATE CALL
+.CALL    ANOP                     BEFORE: 'AIF  ('&EP'(1,1) EQ '(').EPR
+&EPNAME  SETC  '&EP'(1,&N)
+         L    @15,=V(&EPNAME)
+         AGO   .QBAL
+.EPR     ANOP
+&EPNAME  SETC  '&EP'(2,&N-2)
+         LET   @15,=,&EPNAME
+.QBAL    AIF   ('&REG&OFF' NE '').BAL
+         BALR  @14,@15
+         AGO  .MEND
+.BAL     AIF   ('&OFF' NE '').BAL1
+&OFF     SETC  '0'
+.BAL1    BAL  @14,&OFF.(&REG,@15)
+         AGO  .MEND
+.*
+.YEP     STRERMAC XCALL,10,FIRST(EP)
+         AGO  .MEND
+.YINDEX  STRERMAC ECALL,20,FIRST,&EP,DETAIL=BAD_INDEX_SPEC
+.MEND    SASLIST MACEND
+         MEND

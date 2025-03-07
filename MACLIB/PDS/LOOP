@@ -1,0 +1,63 @@
+         MACRO                                         STRUCT MACRO SET
+         LOOP
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                            PAHL (GMD-IST/RZ) 00JAN74
+.*  "(WHILE" CONDITION "LOOP" BLOCK "WHILE)"                    27MAR75
+.*       END CONDITION SETTING PART,
+.*       BEGIN LOOP BODY OF "WHILE" CLAUSE.
+.*
+         GBLA  &BLK,&BLKCC(30)
+         GBLC  &BLKTYPE(30),&BLKID(30),&BLKNAME(30)
+         GBLB  &DEFER
+         LCLA  &B
+.SASLIST SASLIST MACRO,'LOOP'
+.*
+         AIF   ('&BLKTYPE(&BLK)' NE 'WX' AND                           -
+               '&BLKTYPE(&BLK)' NE 'UX').YLOOP   NO "WHILE" NO "UNTIL"
+&B       SETA  &BLK
+.FLOOP   ANOP
+&B       SETA  &B-1
+         AIF   (&B LE 0).NFOUND
+         AIF   ('&BLKTYPE(&B)' EQ 'LX').FOUND
+         AIF   ('&BLKTYPE(&B)' EQ 'FX').FOUND
+         AIF   ('&BLKTYPE(&B)' NE 'PX').FLOOP
+         MNOTE 4,'****** LOOP: LEAVING PROC STRUCTURE '
+         AGO   .FLOOP
+.NFOUND  MNOTE 8,'****** LOOP: NO REPEATABLE BLOCK FOUND'
+&BLK     SETA   &BLK-1                 POP BLOCK STRUCTURE
+         AGO   .MEND
+.FOUND   AIF   ('&BLKTYPE(&BLK)' EQ 'WX').WHILE
+.*     TERMINATE UNTIL BLOCK
+       IF0BC   &BLKCC(&BLK),@@Z&BLKID(&B)
+         AIF   (NOT &DEFER).NODEFEU
+@@T&BLKID(&BLK+1) EQU @@Z&BLKID(&B)
+@@F&BLKID(&BLK+1) DS 0H
+&DEFER   SETB  0
+.NODEFEU AIF   ('&BLKNAME(&BLK)' EQ '').NOXREF1
+         DS    0S(&BLKNAME(&BLK))
+.NOXREF1 ANOP
+@@T&BLKID(&BLK) EQU @@Z&BLKID(&B)
+@@F&BLKID(&BLK) DS 0H
+&BLK     SETA   &BLK-1                 POP BLOCK STRUCTURE
+         AGO   .MEND
+.WHILE IF0BC   15-&BLKCC(&BLK),@@Z&BLKID(&B)
+         AIF   (NOT &DEFER).NODEFER
+@@T&BLKID(&BLK+1) DS 0H
+@@F&BLKID(&BLK+1) EQU @@Z&BLKID(&B)
+&DEFER   SETB  0
+.NODEFER AIF   ('&BLKNAME(&BLK)' EQ '').NOXREF
+         DS    0S(&BLKNAME(&BLK))
+.NOXREF  ANOP
+@@F&BLKID(&BLK) EQU @@Z&BLKID(&B)
+@@T&BLKID(&BLK) DS 0H
+&BLK     SETA   &BLK-1                 POP BLOCK STRUCTURE
+*
+         AGO  .MEND
+.**********************************************************************
+.YLOOP   ANOP
+         MNOTE 12,'****** LOOP: NOT EXPECTED. IGNORED.'
+.MEND    SASLIST MACEND
+         MEND

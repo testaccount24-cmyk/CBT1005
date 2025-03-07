@@ -1,0 +1,45 @@
+         MACRO                                         STRUCT MACRO SET
+         BLOCK$ &LABEL
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                            PAHL (GMD-IST/RZ) 00JUL73
+.*  "(BLOCK" BLOCK "BLOCK)"                                     27MAR75
+.*       END BLOCK.
+.*
+         GBLA  &BLK,&BLKDCNT(30)
+         GBLC  &BLKTYPE(30),&BLKNAME(30),&BLKID(30)
+         GBLB  &BLKXCPT(30)
+&LABEL   SASLIST MACRO,'BLOCK)'
+.*  PLACEMENT VERIFICATION
+         AIF   ('&BLKTYPE(&BLK)'(1,1) NE 'B').Y0
+         AIF   ('&LABEL' NE '' AND '&LABEL' NE '&BLKNAME(&BLK)').Y0
+.*
+         AIF   (NOT &BLKXCPT(&BLK)).NOXCPT
+         CODEX ,
+&BLKXCPT(&BLK) SETB 0
+         IF0BC 15,@@Z&BLKID(&BLK)
+         CODEX ,
+.NOXCPT ANOP
+         AIF   ('&BLKNAME(&BLK)' EQ '').NOXREF
+         DS    0AL4(&BLKNAME(&BLK))
+.NOXREF  ANOP
+@@X&BLKID(&BLK) DS  0H
+@@Y&BLKID(&BLK) DS  0H
+&BLK     SETA  &BLK-1                   POP UP BLOCK DEPTH.
+         AIF   (&BLK EQ 0).NOCASE
+         AIF   ('&BLKTYPE(&BLK+1)' NE 'BC').NOCASE
+         AIF   ('&BLKNAME(&BLK)' EQ '').NOXREF1
+         DS    0AL4(&BLKNAME(&BLK))
+.NOXREF1 ANOP
+         IF0BC 15,@@Z&BLKID(&BLK+1)
+@@Z&BLKID(&BLK+1) EQU @@Z&BLKID(&BLK)       END OF BLOCK.
+         AGO  .MEND
+.NOCASE  ANOP
+@@Z&BLKID(&BLK+1) DS  0H                  END OF BLOCK.
+         AGO  .MEND
+.**********************************************************************
+.Y0      BLK0TEST BLOCK,B,&LABEL
+.MEND    SASLIST MACEND
+         MEND

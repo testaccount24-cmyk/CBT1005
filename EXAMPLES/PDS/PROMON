@@ -1,0 +1,2440 @@
+./ ADD NAME=PROMON
+PROMON TITLE 'PROCESS MONITOR -- DESCRIPTION'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*                                                                     *
+* COPYRIGHT: COPYRIGHT BY GESELLSCHAFT FUER MATHEMATIK UND            *
+*                                      DATENVERARBEITUNG MBH,         *
+*                         INSTITUT FUER                               *
+*                         INFORMATIONSTECHNISCHE INFRASTRUKTUREN,     *
+*                         SCHLOSS BIRLINGHOVEN                        *
+*                         D-5205 ST. AUGUSTIN 1                       *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+*        P R O M O N / P R O R E Q                                    *
+*                                                                     *
+*                                                                     *
+* <CLASS>: SUBROUTINE                                                 *
+*                                                                     *
+*                                                                     *
+* <FUNCTION/OPERATION>:                                               *
+*                                                                     *
+*        PROMON IS A SUBROUTINE TO INITIALIZE AND TO TERMINATE A      *
+*        MONITOR THAT ALLOWS:                                         *
+*                                                                     *
+*        1: CREATING OF MVS-SUBTASKS,                                 *
+*        2: SENDING "MESSAGES" TO TASKS MANAGED BY THE MONITOR,       *
+*        3: RECEIVE MESSAGES FROM THOSE TASKS WITH OR                 *
+*           WITHOUT WAITING FOR THEM,                                 *
+*        4: RETURNING STATUS INFORMATION ABOUT PROCESSES AND MESSAGES.*
+*                                                                     *
+*        REQUESTS TO THE MONITOR ARE MADE BY SUBROUTINE PROREQ.       *
+*                                                                     *
+*        A TASK CREATED BY THE MONITOR IS CALLED PROCESS IN THE       *
+*        FOLLOWING DESCRIPTION. EACH PROCESS CAN BE REFERENCED BY A   *
+*        PROCESS IDENTIFICATION (PID). A PID IS AN INTEGER.  THE      *
+*        CALLER OF PROMON WILL BE THE FIRST PROCESS MANAGED BY THE    *
+*        PROCESS MONITOR, CALLED THE MAIN-PROCESS. ITS PID IS         *
+*        ALWAYS ZERO. ALL OTHER PROCESSES GET A PID BETWEEN 1 AND     *
+*        THE MAXIMUM NUMBER OF PROCESSES.                             *
+*                                                                     *
+*        WHEN A PROCESS IS CREATED, THE SCHEDULER GENERATES A NEW     *
+*        PID FOR THAT PROCESS AND RETURNS IT TO THE CREATING PROCESS. *
+*        THE NEW PID OF A NEW PROCESS IS ONE HIGHER THAN THE PID OF   *
+*        THE LAST ONE CREATED.  PROCESS CREATION IS DONE WITH A       *
+*        "PROREQ CREATE" REQUEST.  THIS IS A CALL TO A SUBROUTINE     *
+*        PROREQ.                                                      *
+*                                                                     *
+*        COMMUNICATION BETWEEN PROCESSES MUST BE DONE WITH A          *
+*        MESSAGE EXCHANGE VEHICLE MANAGED BY THE MONITOR.  A          *
+*        MAILBOX IS CONNECTED TO EACH PROCESS. MESSAGES ARE SENT      *
+*        FROM ANY PROCESS TO ANY OTHER PROCESS VIA A "PROREQ SEND"    *
+*        REQUEST TO THE MONITOR. MESSAGE TRANSFER IS SYNCHRONOUS IN   *
+*        THE FOLLOWING SENSE: IF THE MAILBOX OF THE TARGET PROCESS    *
+*        IS NOT FULL THE MESSAGE IS COPIED INTO THE MAILBOX. THE      *
+*        TARGET PROCESS IS NOT NOTIFIED OF THAT EXCEPT WHEN THE       *
+*        MAIL BOX IS EMPTY AND THE PROCESS IS WAITING FOR A           *
+*        MESSAGE.  AFTER COMPLETION OF THE SEND REQUEST THE MESSAGE   *
+*        AREA CAN BE REUSED BY THE SENDER. IF THE TARGET MAILBOX IS   *
+*        FULL THE SEND REQUEST ENDS WITH AN ERROR CODE.               *
+*                                                                     *
+*        RECEIVING MESSAGES IS DONE WITH A "PROREQ RECEIVE"           *
+*        REQUEST.  IF THE MAILBOX OF THE PROCESS IS NOT EMPTY, ONE    *
+*        MESSAGE IS TAKEN FROM THE MAILBOX. THE ORDER IN WHICH        *
+*        MESSAGES ARE SELECTED IS NOT DEFINED, EVEN IN THE CASE       *
+*        THAT ONE PROCESS SENDS TWO MESSAGES TO ANOTHER PROCESS.      *
+*                                                                     *
+*        IF THE MAILBOX IS EMPTY THE PROCESS WILL GO INTO A WAIT      *
+*        STATE UNTIL A MESSAGE ARRIVES FROM ANOTHER PROCESS.          *
+*                                                                     *
+*        A FURTHER ENHANCEMENT OF MESSAGE EXCHANGE IS THE             *
+*        FOLLOWING:  MESSAGES HAVE CLASSES. THE CLASS OF A MESSAGE    *
+*        IS AN INTEGER THAT IS TRANSFERRED TOGETHER WITH THE          *
+*        MESSAGE TEXT AND THE MESSAGE LENGTH.  THE PROREQ RECEIVE     *
+*        REQUEST CAN BE MADE WITH A SET OF CLASSES. THIS INDICATES    *
+*        THAT THE REQUESTS ONLY RETURNS WITH A MESSAGE OF THE         *
+*        SPECIFIED CLASS.                                             *
+*                                                                     *
+*        SPECIAL MESSAGES MAY HAVE CLASS OF ZERO. THESE MESSAGES      *
+*        CANNOT BE SENT BY PROCESSES BUT ARE CREATED BY THE MONITOR   *
+*        TO INDICATE SPECIAL CONDITIONS: CURRENTLY ONLY ONE SPECIAL   *
+*        MESSAGE IS GENERATED. WHEN A PROCESS TERMINATES A SPECIAL    *
+*        MESSAGE WITH LENGTH 0 IS SENT TO THE CREATING PROCESS.       *
+*        WHEN A PROCESS TERMINATES, ALL MESSAGES IN ITS MAILBOX ARE   *
+*        LOST.                                                        *
+*                                                                     *
+*        EACH PROCESS CAN SEND MESSAGES TO ITSELF. SENDING MESSAGES   *
+*        TO ONESELF CAN ALSO BE DONE IN ROUTINES THAT RUN UNDER AN    *
+*        MVS INTERRUPT REQUEST BLOCK. I. E. A PROGRAM CAN WAIT FOR    *
+*        A MESSAGE FROM ITSELF THAT MIGHT BE SENT LATER BY AN         *
+*        INTERRUPT ROUTINE.                                           *
+*                                                                     *
+*        THE PROCESS MONITOR IS LOADED BELOW THE 16MB BOUNDARY.  IT   *
+*        MAY BE CALLED IN 24- OR 31-BIT-ADDRESSING MODE AND RETURNS   *
+*        IN THE ADDRESSING MODE OF THE CALLER (CALLED CAPPING, SEE    *
+*        MVS/XA:  31-BIT-ADDRESSING GC28-1158-0).  ALL PARAMETERS     *
+*        AND THE SAVEAREA OF THE CALLER MUST BE ADDRESSABLE IN THE    *
+*        ADDRESSING MODE OF THE CALLER.  THE MONITOR MAY ALLOCATE     *
+*        IT'S INTERNAL TABLES AND WORKAREAS BEYOND THE 16MB           *
+*        BOUNDARY.  THE PROCESS MONITOR IS DOWNWARD COMPATIBLE TO     *
+*        MVS/370. IN THIS CASE ALL STORAGE IS ALLOCATED BELOW 16MB.   *
+*                                                                     *
+*                                                                     *
+* <ENTRY POINTS>:                                                     *
+*        PROMON                                                       *
+*                                                                     *
+*        (PROREQ IS A SEPARATE SUBROUTINE TO BE USED IN               *
+*        SUBPROCESSES.  IF NEW VERSIONS OF PROMON ARE USED, THE       *
+*        SUBPROCESS PROGRAMS NEED NOT TO BE REPROCESSED BY THE        *
+*        LINKAGE EDITOR FOR THE PROREQ ROUTINE IS DESIGNED AS A       *
+*        DRIVER ROUTINE FOR SOME INTERNAL FUNCTION OF PROMON)         *
+*                                                                     *
+* <INPUT>: IF NOT SPECIFIED ALL ARGUMENTS OF PROMON AND PROREQ        *
+*        ARE INTEGER VARIABLES OR CONSTANTS (FOUR BYTES).             *
+*                                                                     *
+*        THE FOLLOWING CALL IS TO INITIALIZE THE MONITOR:             *
+*                                                                     *
+*        RC = PROMON(COMVAR,1,MAXP,MBUFS,MSGLEN,MAXCLS,WAITOP)        *
+*                                                                     *
+*        COMVAR IS A VARIABLE THAT IS USED IN CALLS TO PROREQ IN      *
+*        THE MAIN PROCESS AND IN THE CALL TO TERMINATE THE MONITOR.   *
+*        THE VALUE RETURNED BY THE INITIALIZATION CALL MUST NOT BE    *
+*        MODIFIED IN ANY WAY.                                         *
+*                                                                     *
+*        MAXP IS THE MAXIMUM NUMBER OF (SUB-PROCESSES) THAT CAN BE    *
+*        CREATED BY THE PROREQ CREATE CALLS. PIDS ARE NEVER           *
+*        RE-USED.                                                     *
+*                                                                     *
+*        MBUFS IS THE NUMBER OF MESSAGE BUFFERS FOR THE MAIN          *
+*        PROCESS. THE NUMBER IS LIMITED TO 32767.                     *
+*                                                                     *
+*        MSGLEN IS THE MAXIMUM LENGTH OF A MESSAGE.  IF A PROCESS     *
+*        ATTEMPTS TO SEND A MESSAGE WITH A LARGER SIZE THE SEND IS    *
+*        REJECTED.                                                    *
+*                                                                     *
+*        MAXCLS IS THE MAXIMUM MESSAGE CLASS NUMBER (WITH NEGATIV     *
+*        CLASS NUMBERS INVERTED TO POSITIV) THAT CAN BE SENT TO ANY   *
+*        PROCESS (SEE "SEND" BELOW).                                  *
+*                                                                     *
+*        WAITOP SPECIFIES THE ACTION TO BE PERFORMED IF ALL TASKS     *
+*        ARE "HANGING" IN THE RECEIVE-STATE. WAITOP 0 TAKES NO        *
+*        ACTION (A TASK MAY BE AWAKED BY A INTERRUPT ROUTINE IN       *
+*        THIS CASE). WAITOP 1 CAUSES THE TERMINATION OF THE MAIN      *
+*        PROCESS TO BE SIGNALED TO THE MAIN PROCESS ITSELF (A         *
+*        TERMINATION MESSAGE WITH A PID OF ZERO IS SENT TO THE MAIN   *
+*        PROCESS).                                                    *
+*                                                                     *
+*        RC IS THE RETURN CODE OF PROMON.                             *
+*                                                                     *
+*        RC = PROMON(COMVAR,2)                                        *
+*                                                                     *
+*        THIS CALL TERMINATES ALL SUBPROCESSES OF THE MAIN PROCESS    *
+*        AND FREES ALL MONITOR CONTROL BLOCKS. COMVAR IS RESET TO     *
+*        ZERO.  THIS REQUEST MAY ONLY BE ISSUED BY THE MAIN           *
+*        PROCESS.                                                     *
+*                                                                     *
+*        ALL OTHER REQUESTS ARE MADE VIA CALLS TO THE FUNCTION        *
+*        PROREQ. THE GENERAL PARAMETER STRUCTURE OF PROREQ IS         *
+*                                                                     *
+*        RC = PROREQ(COMVAR,REQCOD,PID,.....)                         *
+*                                                                     *
+*        IN THE MAIN PROCESS COMVAR MUST BE THE COMVAR RETURNED BY    *
+*        THE INITIAL PROMON CALL. IN A SUBPROCESS IT MUST BE          *
+*        INITIALIZED TO 0 BEFORE THE FIRST CALL TO PROREQ AND THAT    *
+*        SHOULD BE USED IN ALL FURTHER CALLS.  THE FIRST CALL TO      *
+*        PROREQ IN A SUBPROCESS CHANGES THE VALUE OF COMVAR.          *
+*                                                                     *
+*        REQCOD DETERMINES THE REQUEST. CURRENTLY THE FOLLOWING       *
+*        REQUESTS ARE SUPPORTED:                                      *
+*                                                                     *
+*        REQCOD=1 : "CREATE", A NEW PROCESS IS CREATED.               *
+*                                                                     *
+*        RC = PROREQ(COMVAR,1,NEWPID,MODULE,PCLASS,MBUFS,MSGLEN,      *
+*                                           NPARM,PARM1,..,PARMN)     *
+*                                                                     *
+*        NEWPID WILL BE THE PID OF THE NEW PROCESS AFTER RETURN OF    *
+*        THE FUNCTION.                                                *
+*                                                                     *
+*        MODULE IS AN EIGHT BYTE CHARACTER STRING SPECIFYING THE      *
+*        MEMBER NAME OF A LOAD MODULE THAT MUST BE DYNAMICALLY        *
+*        LOADABLE IN THAT ENVIRONMENT, I.E. IT MUST BE CONTAINED IN   *
+*        THE STEPLIB, JOBLIB OR SYSTEM WIDE LINKLIB.                  *
+*                                                                     *
+*        MBUFS IS THE NUMBER OF MAILBOX BUFFERS. IT IS LIMITED TO     *
+*        32767.                                                       *
+*                                                                     *
+*        MSGLEN IS THE MAXIMUM LENGTH OF A MESSAGE THAT CAN BE        *
+*        RECEIVED. IF MBUFS AND/OR MSGLEN IS ZERO THE CORRESPONDING   *
+*        VALUE FROM THE MONITOR INITIALISATION CALL IS USED.          *
+*                                                                     *
+*        PCLASS IS THE TYPE OF THE NEW CLASS. 0 MEANS THE NEW         *
+*        PROCESS HAS NO USER INITIATED I/O ACTIVITY, 1 MEANS IT       *
+*        HAS.  THIS PARAMETER IS NOT YET IMPLEMENTED IN THE CURRENT   *
+*        VERSION.                                                     *
+*                                                                     *
+*        NPARM SPECIFIES THE NUMBER OF THE FOLLOWING PARAMETERS.      *
+*        THE PARAMETERS ARE TRANSFERRED TO THE CALLED PROGRAM IN A    *
+*        TRANSPARENT WAY. IF NPARM IS ZERO, THE CALLED PROGRAMS       *
+*        GETS A PARAMETER STRUCTURE AS IF IT WOULD HAVE BEEN CALLED   *
+*        FROM A JOB STEP: // EXEC PGM=MODULE                          *
+*                                                                     *
+*        IF STANDARD OS CONVENTIONS ARE USED IN THE CALLED PROGRAMS   *
+*        THERE ARE NORMALLY ONE OR TWO PARAMETERS POSSIBLE. THE FIRST *
+*        PARAMETER IN THIS CASE IS A VARIABLE LENGTH CHARACTER STRING.*
+*        THE SECOND PARAMETER IS A LIST OF OVERRIDING DD-NAMES.       *
+*        REVIEW THE LANGUAGE DEPENDANT DOCUMENTATION FOR DETAILS.     *
+*        THE NECESSARY INFORMATION CAN NORMALLY BE FOUND IS THE       *
+*        PROGRAMMER'S GUIDE FOR THE PROGRAMMING LANGUAGE.             *
+*                                                                     *
+*                                                                     *
+*        REQCOD=2 : "SEND" A MESSAGE                                  *
+*                                                                     *
+*        RC = PROREQ(COMVAR,2,PID,MSGLEN,MSG,MCLASS)                  *
+*                                                                     *
+*        PID IS THE PROCESS IDENTIFICATION OF THE TARGET PROCESS.     *
+*                                                                     *
+*        MSGLEN IS THE ACTUAL LENGTH OF THE MESSAGE. THIS MAY BE AN   *
+*        INTEGER BETWEEN 0 AND THE MAXIMUM MESSAGE LENGTH SPECIFIED   *
+*        IN THE PROCESS CREATION CALL.                                *
+*                                                                     *
+*        MSG IS A DATA AREA OF MSGLEN BYTES.                          *
+*                                                                     *
+*        MCLASS, THE MESSAGE CLASS, IS AN INTEGER VALUE THAT MUST     *
+*        NOT BE ZERO FOR NORMAL PROCESS TO PROCESS MESSAGES. MCLASS   *
+*        ZERO IS USED FOR COMMUNICATION WITH THE MONITOR. CURRENT     *
+*        ONLY ONE MESSAGE OF MCLASS 0 HAS ANY EFFECT - A REQUEST TO   *
+*        TERMINATE THE PROCESS. THIS REQUEST CAN ONLY BE MADE TO      *
+*        TERMINATE A SUBPROCESS.  SUBPROCESSES OF A PROCESS ARE ALL   *
+*        PROCESSES THAT ARE CREATED BY THE PROCESS OR BY ITS          *
+*        SUBPROCESSES.  THE MONITOR WILL TERMINATE THE "SUBPROCESS"   *
+*        INDICATED BY THE PID AND ALL ITS SUBPROCESSES.               *
+*                                                                     *
+*                                                                     *
+*        REQCOD=3 : "RECEIVE" A MESSAGE                               *
+*                                                                     *
+*        RC = PROREQ(COMVAR,3,PID,MSGLEN,MSG,MCLASS,NCLASS,CLASES)    *
+*                                                                     *
+*        PID IS THE PROCESS IDENTIFICATION OF THE PROCESS THAT SENT   *
+*        THE RECEIVED MESSAGE (OUTPUT).                               *
+*                                                                     *
+*        MSGLEN ON INPUT IS THE AVAILABLE SIZE IN THE MSG DATAAREA.   *
+*        ON OUTPUT IT IS THE ACTUAL SIZE OF THE MESSAGE.  IF MSGLEN   *
+*        WAS 0 ON INPUT, ONLY THE MCLASS OF THE MESSAGE IS            *
+*        TRANSFERRED.                                                 *
+*                                                                     *
+*        MCLASS WILL CONTAIN THE CLASS OF THE RECEIVED MESSAGE.       *
+*                                                                     *
+*        NCLASS IS THE NUMBER OF CLASSES IN THE LIST "CLASES". IF     *
+*        NCLASS EQUALS ZERO, THEN PROREQ WILL RETURN ANY MESSAGE IN   *
+*        THE MAIL BOX. IF NCLASS IS GREATER THAN ZERO, IT SPECIFIES   *
+*        THE NUMBER OF CLASSES IN THE INTEGER ARRAY CLASES. THE       *
+*        PROGRAM ONLY RETURNS WITH MESSAGES THAT HAVE A CLASS THAT    *
+*        IS IN CLASS LIST.                                            *
+*                                                                     *
+*        AFTER TERMINATION OF A PROCESS THE PROCESS IS DELETED AND    *
+*        A TERMINATION MESSAGE (LENGTH ZERO, MCLASS ZERO) IS SEND     *
+*        TO IT'S ORGINATING TASK.  NO EXTRA BUFFERS MUST BE           *
+*        RESERVED FOR THIS KIND OF MESSAGES.                          *
+*                                                                     *
+*                                                                     *
+*        REQCOD=4 : "STATUS" RETURN STATUS INFORMATION.               *
+*                                                                     *
+*        RC = PROREQ(COMVAR,4,TYPE,PID,TOKEN,NPARM,PARM1,PARM2,....)  *
+*                                                                     *
+*        THE STATUS-REQUEST RETURNS STATUS INFORMATION CONCERNING     *
+*        MONITOR, PROCESSES AND MAILBOXES.  THE INFORMATION TO BE     *
+*        RETURNED AND THE MEANING OF THE FOLLOWING PARAMETERS IS      *
+*        DEFINED BY THE TYPE PARAMETER.  NPARM SPECIFIES THE NUMBER   *
+*        OF THE FOLLOWING PARAMETERS. NPARM MUST NOT BE HIGHER THAN   *
+*        THE NUMBER OF PARAMETERS DESCRIBED, BUT IT MAY BE LOWER IF   *
+*        YOU DON'T WANT RETURNED ALL.  FURTHER VERSIONS OF PROMON     *
+*        MAY ALLOW MORE PARAMETERS.  ALL PARAMETERS ARE INTEGERS IF   *
+*        NOT SPECIFIED OTHERWISE.                                     *
+*                                                                     *
+*        TYPE=0 :  THE MONITOR RETURNS INFORMATION CONCERNING ALL     *
+*        PROCESSES. PID WILL CONTAIN THE CALLER'S PID. TOKEN MUST     *
+*        BE ZERO.                                                     *
+*                                                                     *
+*           PARM1 =    RELEASE NUMBER.                                *
+*           PARM2 =    VERSION NUMBER.                                *
+*           PARM3 =    MAXIMUM NUMBER OF PROCESSES THAT CAN BE        *
+*                      CREATED (NOT INCLUDE MAIN PROCESS).            *
+*           PARM4 =    NUMBER OF PROCESSES CREATED.                   *
+*           PARM5 =    NUMBER OF PROCESSES CREATED BUT NOT TERMINATED.*
+*           PARM6 =    NUMBER OF PROCESSES WAITING FOR MESSAGE.       *
+*           PARM7 =    MAXIMUM NUMBER OF MESSAGE CLASSES ALLOWED.     *
+*           PARM8 =    ACTION TO BE PERFORMED IF ALL PROCESSES ARE    *
+*                      WAITING FOR MESSAGE. THE MEANING OF THE        *
+*                      RETURNED VALUE IS THE SAME AS PASSED TO THE    *
+*                      MONITOR IN THE INITIALISATION CALL.            *
+*           PARM9 =    DEFAULT MAXIMUM BUFFER SIZE.                   *
+*                                                                     *
+*        TYPE=1:  THE MONITOR RETURNS INFORMATION ABOUT A SINGLE      *
+*        PROCESS. PID IS IT'S PROCESS IDENTIFICATION. TOKEN MUST BE   *
+*        ZERO.                                                        *
+*                                                                     *
+*           PARM1 =    PROCESS STATUS. 0: PROCESS CREATED BUT NOT     *
+*                      YET ACTIVATED. 1: PROCESS ACTIVATED.           *
+*                      2: PROCESS WAITING FOR MESSAGE. 3: PROCESS     *
+*                      ENDED. 4: PROCESS ABENDED.                     *
+*           PARM2 =    RETURN CODE IF PROCESS ENDED NORMALLY.         *
+*           PARM3 =    SYSTEM ABEND CODE IF PROCESS ENDED ABNORMALLY. *
+*           PARM4 =    USER ABEND CODE IF PROCESS ENDED ABNORMALLY.   *
+*           PARM5 =    REASON CODE IF PROCESS ENDED ABNORMALLY.       *
+*           PARM6 =    PID OF FATHER PROCESS.                         *
+*           PARM7 =    MAXIMUM MESSAGE LENGTH IN MAILBOX.             *
+*           PARM8 =    MAXIMUM NUMBER OF MESSAGES IN MAILBOX.         *
+*           PARM9 =    PROCESS CLASS.                                 *
+*                                                                     *
+*                                                                     *
+*        TYPE=2:  THE MONITOR RETURNS INFORMATION ABOUT A MESSAGE     *
+*        IN A MAILBOX. PID IS THE PROCESS ID OF THE PROCESS THAT      *
+*        OWNS THE MAILBOX.  TOKEN MUST BE SET TO ZERO TO REFER TO     *
+*        THE FIRST MESSAGE IN THAT MAILBOX.  THE NEXT MESSAGES ARE    *
+*        OBTAINED BY SUCESSIVE CALLS. IF TOKEN IS ZERO AFTER CALL     *
+*        NO MORE MESSAGE COULD BE OBTAINED.                           *
+*                                                                     *
+*           PARM1 =    ON INPUT:  MAXIMUM NUMBER OF BYTES MOVED       *
+*                                 TO PARM2.                           *
+*                      ON OUTPUT: MESSAGE LENGTH.                     *
+*           PARM2 =    MESSAGE (ANY DATA TYPE).                       *
+*           PARM3 =    MESSAGE CLASS.                                 *
+*           PARM4 =    PID OF SENDER.                                 *
+*                                                                     *
+*                                                                     *
+*        REQCOD=5 : "RECEIVE" A MESSAGE WITH TIMEOUT                  *
+*                                                                     *
+*        RC = PROREQ(COMVAR,5,PID,MSGLEN,MSG,MCLASS,NCLASS,CLASES,    *
+*                                                              HSECS) *
+*                                                                     *
+*        RECEIVE WITH TIMEOUT WORKS LIKE RECEIVE BUT WITH THE         *
+*        ADDITIONAL OPTION OF LIMITING WAITING TIME.  HSECS           *
+*        SPECIFIES THE MAXIMUM WAIT TIME IN HUNDREDTHS OF SECONDS.    *
+*        IF NO MESSAGE ARRIVES IN THIS PERIOD THE MONITOR RETURNS     *
+*        WITH RETURN CODE 80. HSECS MAY BE ZERO.  ONLY A TEST IS      *
+*        MADE IN THIS CASE.                                           *
+*                                                                     *
+*        KEEP IN MIND THAT A PROCESS TESTING FOR MESSAGES IN A LOOP   *
+*        (SECS=0.0) ON A SINGLE PROCESSOR SYSTEM MAY MONOPOLIZE       *
+*        PROCESSOR TIME BECAUSE NO OTHER PROCESSES MAY BE             *
+*        DISPATCHED AND THERE IS NO WAY TO ENTER MESSAGES IN THE      *
+*        MAILBOX.                                                     *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+* <OUTPUT>:                                                           *
+*        SEE INPUT.                                                   *
+*                                                                     *
+* <DD-STATEMENTS/DATA SETS>:                                          *
+*        NONE                                                         *
+*                                                                     *
+* <NORMAL EXIT>:                                                      *
+*        VIA RETURN                                                   *
+*                                                                     *
+* <ERROR EXIT>:                                                       *
+*        NONE                                                         *
+*                                                                     *
+* <RETURN CODES>:                                                     *
+*                                                                     *
+*    0   =  OPERATION SUCCESSFUL                                      *
+*    4   =  INVALID COMMUNICATION VARIABLE (E.G. MODIFIED BY PRGRM.)  *
+*    8   =  MONITOR NOT INITIALIZED                                   *
+*   12   =  MONITOR ALREADY INITIALIZED                               *
+*   16   =  INVALID PROMON REQUEST                                    *
+*   20   =  INVALID PROREQ REQUEST                                    *
+*   24   =  INVALID MESSAGE LENGTH                                    *
+*   28   =  INVALID MESSAGE CLASS                                     *
+*   32   =  MAILBOX FULL                                              *
+*   36   =  INVALID PROCESS IDENTIFICATION                            *
+*   40   =  INVALID TERMINATE REQUEST                                 *
+*   44   =  MAXIMUM NUMBER OF PROCESSES EXCEEDED                      *
+*   48   =  RECEIVE REENTERED WHILE ACTIV                             *
+*   52   =  PROCESS NOT YET ACTIVATED                                 *
+*   56   =  PROCESS IS TERMINATED                                     *
+*   60   =  INVALID NUMBER OF MESSAGE BUFFERS                         *
+*   64   =  INVALID WAIT OPTION                                       *
+*   68   =  INVALID NUMBER OF PARAMETERS                              *
+*   72   =  INVALID NUMBER OF CLASSES                                 *
+*   76   =  INVALID STATUS REQUEST TYPE                               *
+*   80   =  NO MESSAGE FOUND                                          *
+*                                                                     *
+*   THE RETURN CODE IS RETURNED TO THE CALLER IN REGISTERS 0 AND 15.  *
+*                                                                     *
+* <EXTERNAL ROUTINES>:                                                *
+*                                                                     *
+*    NONE                                                             *
+*                                                                     *
+* <TABLES/WORK AREAS>:                                                *
+*                                                                     *
+*    PROMON USES LARGE WORKAREAS FOR THE PROCESS AND MAILBOX          *
+*    MANAGEMENT.                                                      *
+*                                                                     *
+* <ATTRIBUTES>:                                                       *
+*                                                                     *
+*    RENT, REFR                                                       *
+*                                                                     *
+* <RESTRICTIONS>:                                                     *
+*                                                                     *
+*    THERE MAY BE ARBITRARY STORAGE RESTRICTIONS IF LARGE PROGRAMS,   *
+*    LARGE MAIL BOXES ARE USED. THESE CANNOT BE PREDICTED IN ANY WAY. *
+*                                                                     *
+* <AUTHORIZATION REQUIRED>:                                           *
+*                                                                     *
+*    NONE                                                             *
+*                                                                     *
+* <RELATED PROGRAMS>:                                                 *
+*        PROREQ    THE REQUEST SUBROUTINE FOR SUB PROCESSES           *
+*                                                                     *
+* <STORAGE>:                                                          *
+*        PROGRAM:  THE PROGRAM ITSELF IS RATHER SMALL(<8K) COMPARED   *
+*                  WITH THE DATA STORAGE USED TO HOLD THE MONITOR     *
+*                  CONTROL BLOCKS. IF PROCESSES WITH THE SAME PROGRAM *
+*                  NAME ARE CREATED AND THE PROGRAM IS NOT REENTRANT  *
+*                  EACH PROCESS GETS A DIFFERENT COPY OF THE MODULE.  *
+*                  IF 31 BIT MODE IS NOT AVAILABLE ON THE MACHINE     *
+*                  ARBITARY STORAGE PROBLEMS WILL OCCUR IF MANY       *
+*                  NON REENTRANT PROGRAMS ARE USED.                   *
+*        DYNAMIC:  NONE                                               *
+*        BUFFER :  THE MONITOR REQUIRES A LARGE AMOUNT OF STORAGE     *
+*                  TO BE USED FOR PROCESS CONTROL BLOCKS AN FOR       *
+*                  THE MAILBOXES. IF 31 BIT ADDRESSING MODE IS        *
+*                  AVAILABLE, THESE CONTROL BLOCKS ARE CREATED IN     *
+*                  THE PRIVATE AREA ABOVE 16M. IF 31 BIT ADDRESSING   *
+*                  MODE IS NOT AVAILABLE PROGRAMS MUST BE WRITTEN     *
+*                  CAREFULLY NOT TO USE LARGE BLOCK SIZE OR TOO MANY  *
+*                  PROCESSES.                                         *
+*                                                                     *
+* <LOAD MODULE CREATION>:                                             *
+*      SOURCE LANGUAGE      : ASSEMBLER H                             *
+*      PSEUDO CODE LOGIC    : RZ.PSEUDO.CODE(PROMON)                  *
+*      COMPILE LIBRARIES    : SYS1.MACLIB, SYS2.SPTS.MACLIB,          *
+*                             SYS1.AMODGEN                            *
+*                                                                     *
+*      COMPILE PARAMETERS   :                                         *
+*      LINK-EDIT LIBRARIES  :                                         *
+*      LINK-EDIT PARAMETERS : RENT,REFR                               *
+*      LINK-EDIT INPUT      :                                         *
+*      DESTINATION LIBRARIES: GMD.LINKLIB                             *
+*                                                                     *
+*      GENERATING DECK      : GMD.JCL(PROMON)                         *
+*                                                                     *
+* <STATUS>:                                                           *
+*          CHANGE LEVEL - 1.0  OCT85    - SAND                        *
+*                         1.1  26FEB86  - SYLVESTER                   *
+*                         1.2  05MAY86  - SAND: 0C4 ABEND WHEN CALLED *
+*                                         IN 24BIT-MODE AND R13 HIGH  *
+*                                         ORDER BYTE NOT ZERO         *
+*                         1.3  13NOV86  - SAND: WAIT TIME LIMIT WAS   *
+*                                         TWICE AS LONG AS REQUESTED  *
+*                         1.4  08AUG87  - SYLVESTER: DEADLOCK LOGIC   *
+*                                         IS WRONG.                   *
+*                         1.5  07DEC88  - SAND: ERROR IN DEADLOCK     *
+*                                         DETECTION REMOVED. PAGING   *
+*                                         RATE DECREASED.             *
+*                                                                     *
+* <NOTES>:                                                            *
+*        THE PROCESS AND COMMUNICATION VEHICLE IMPLEMENTED BY THIS    *
+*        PROGRAM IS INSPIRED BY THE IDEA OF A MULTIPROCESSOR          *
+*        MULTIDATA COMPUTER. SUCH A MACHINE WOULD HAVE MANY STORAGE   *
+*        MODULES WITH A SMALL NUMBER (ONE OR TWO) PROCESSORS          *
+*        ATTACHED TO EACH STORAGE MODULE. PROGRAM COMMUNICATE VIA     *
+*        SOME IO-MESSAGE PASSING VEHICLE. A BASIC (DISTRIBUTED)       *
+*        OPERATING SYSTEM WOULD PROVIDED SERVICES SIMILAR TO          *
+*        PROMON.                                                      *
+*                                                                     *
+*        THE MOST IMPORTANT CONCEPT OF THAT COMPUTER MODEL IS THAT    *
+*        PROCESSES DO NOT SHARE MEMORY. FOR PROMON THIS IS NOT TRUE   *
+*        IN ALL CASES. REENTRANT PROGRAMS THAT MAY BE USED FOR        *
+*        PROCESSES WILL RUN WITH THE COPY OF PROGRAM CODE.            *
+*                                                                     *
+*        THE PROGRAMS TO BE USED FOR THE PROCESSES MUST BE            *
+*        EXECUTABLE AS "STAND-ALONE" MVS-JOB-STEPS (IF ALL REQUESTS   *
+*        TO THE SCHEDULER ARE REMOVED), I.E.  EACH PROCESS MUST       *
+*        INITIALIZE ITS OWN RUN-TIME ENVIRONMENT AND DATA SPACES.     *
+*        SEE ALSO THE DESCRIPTION OF THE PROREQ CREATE REQUEST.       *
+*                                                                     *
+*        THERE IS ONE OTHER PLACE WHERE PROCESSES SHARE DATA AREAS:   *
+*        THE PARAMETER LISTS ON THE CREATION REQUEST.  IT IS          *
+*        STRONGLY RECOMMENDED THAT THESE PARAMETERS SHOULD ONLY BE    *
+*        USED TO INITIALIZE A POSSIBLE RUNTIME SYSTEM OF A CALLED     *
+*        PROGRAM. IN ALL OTHER CASES MESSAGES SHOULD BE USED.         *
+*        FURTHER VERSIONS OF PROMON MAY RESTRICT THE USAGE OF         *
+*        INITIALIZATION PARAMETERS.                                   *
+*                                                                     *
+*        THE CREATION REQUEST SHOULD BE RAGARDED AS AN                *
+*        IMPLEMENTATION OF THE FOLLOWING PROGRAM:                     *
+*                                                                     *
+*                                                                     *
+*        CREATE: SEND THE PROGRAM CODE TO A FREE STORAGE MODULE;      *
+*                SEND THE PARAMETERS AS INITIALIZATION MESSAGES;      *
+*                START THE PROGRAM.                                   *
+*                                                                     *
+*        THE NEW PROCESS STARTS, RECEIVES THE INITIALIZATION          *
+*        MESSAGES, MAKES SOME FURTHER INITIALIZATIONS AND STARTS      *
+*        THE USER PART OF THE PROGRAM.                                *
+*                                                                     *
+*        NOTE: IF THE MAIN TASK TERMINATES BEFORE THE MONITOR IS      *
+*        TERMINATED THE PROGRAM ABENDS WITH ABEND-CODE A03.           *
+*                                                                     *
+*                                                                     *
+* <AUTHOR>: VOLKER SAND, PETER SYLVESTER (GMD-Z1.BN)                  *
+*                                                                     *
+*                                                                     *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+ TITLE 'PROGRAM PARAMETERS'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*   FUNCTION: IN THIS PART OF PROGRAM PARAMETERS ARE SPECIFIED AT     *
+*             COMPILE TIME.                                           *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+&RELEASE SETA  1
+&VERSION SETA  6
+PROMON   CSECT
+ TITLE 'PROGRAM DATA AND STRUCTURE'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*   FUNCTION: THE PROCESS MONITOR IS DIVIDED INTO THREE INDEPENDENT   *
+*             PROCEDURES.  THE FIRST EXECUTES PROMON REQUESTS, THE    *
+*             SECOND EXECUTES PROREQ REQUESTS AND THE THIRD IS AN     *
+*             END-OF-TASK EXIT ROUTINE. EACH ESTABLISH IT'S OWN       *
+*             ADDRESSING AND MANIPULATE CONTROL BLOCKS.               *
+*                                                                     *
+*             THERE ARE:                                              *
+*                                                                     *
+*             -- THE COMMUNICATION AREA (COMAREA),                    *
+*             -- THE PROCESS CONTROL BLOCK (PCB),                     *
+*             -- THE MESSAGE CONTROL BLOCK (MCB).                     *
+*             -- THE COMMUNICATION VARIABLE (COMVAR),                 *
+*                                                                     *
+*             THE COMMUNICATION AREA IS ALLOCATED BY THE CREATE-      *
+*             REQUEST AND CONTAINS INFORMATION THAT PERTAINS TO       *
+*             ALL PROCESSES.                                          *
+*                                                                     *
+*             THE PROCESS CONTROL BLOCK HOLDS INFORMATION FOR A       *
+*             SINGLE PROCESS.  PCBS ARE ALLOCATED FOR THE MAXIMUM     *
+*             NUMBER OF PROCESSS ALLOWED AND ARE APPENDED AFTER THE   *
+*             COMMUNICATION AREA. A POINTER TO THE COMMUNICATION      *
+*             AREA IS PROVIDED IN EACH PROCESS CONTROL BLOCK.         *
+*                                                                     *
+*             THE MAILBOX OF THE TASK IS POINTED TO BY THE PCB AND    *
+*             MAY LAY ABOVE THE 16-MEGABYTE-BOUNDARY. THE MAILBOX     *
+*             IS BUILD BY THE MAXIMUM NUMBER OF ADJACENT MESSAGE      *
+*             CONTROL BLOCKS ALLOWED FOR THIS TASK.                   *
+*                                                                     *
+*             THE COMMUNICATION VARIABLE IS SUPPLIED BY THE USER      *
+*             AND MUST BE INITIALIZED TO ZERO. UPON THE FIRST CALL    *
+*             WITH A ZERO COMMUNICATION VARIABLE, IT IS SET TO THE    *
+*             ADDRESS OF THE PROCESS CONTROL BLOCK OF THE CALLING     *
+*             PROCESS.                                                *
+*                                                                     *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+ TITLE 'COMMUNICATION AREA'
+*=====================================================================*
+*                                                                     *
+*   CCCC  OOOOO   M     M     A      RRRR   EEEE     A                *
+*   C     O   O   MM   MM    A A     R  R   E       A A               *
+*   C     O   O   M M M M   AAAAA    RRRR   EEEE   AAAAA              *
+*   C     O   O   M  M  M  A     A   RRR    E     A     A             *
+*   CCCC  OOOOO   M  M  M  A     A   R  R   EEEE  A     A             *
+*                                                                     *
+*=====================================================================*
+                                                               SPACE 2
+COMAREA@     EQUR  10         POINTER TO COMMUNICATION AREA
+COMAREA      DSECT ,          COMMUNICATION AREA
+CNAME        DS    CL4        TEXT "COMA"  (OFFSET MUST BE +0)
+CPROREQ@     DS    A(PROREQ)  PROREQ PROCEDURE ADDR (OFFSET MUST BE +4)
+CEOPROC@     DS    A(EOPROC)  ADDR OF GLOBAL END-OF-TASK ROUTINE
+CFLAG        DS    F          COMMUNICATION AREA FLAGWORD
+TERMINATE_IN_PROGRESS                  EQUN  128
+CRELEASE     DS    H          RELEASE NUMBER.
+CVERSION     DS    H          VERSION NUMBER.
+CSIZE        DS    F          LENGTH OF COMAREA PCBS IN BYTES
+CMAXP        DS    F          MAXIMUM NUMBER OF CREATED SUBPROCESSES
+CCREATED     DS    F          NUMBER OF CREATED SUBPROCESSES
+CACTIV       DS    F          NUMBER OF NON-TERMINATED SUBPROCESSES
+CWAIT        DS    F          NUMBER OF WAITING PROCESSES
+CMBUFS       DS    H          NUMBER OF MAIN PROC MESSAGE BUFFERS
+CMSGLEN      DS    F          LENGTH OF MAIN PROC MESSAGE BUFFERS
+CMAXCLS      DS    F          MAXIMUM MESSAGE CLASS NUMBER
+CWAITOP      DS    F          ACTION TO BE PERFORMED AT DEADLOCK
+NO_OPERATION                           EQUN  0
+SIGNAL_DEADLOCK                        EQUN  1
+CLASTPCB@    DS    A(PCB)     POINTER TO LAST PCB
+CDEADLOCKS   DS    F          NUMBER OF DEADLOCKS
+             DS    0F         ALIGN FOLLOWING PCB ON FULLWORD
+COMAREA#     EQUN  *-COMAREA  LENGTH OF COMAREA (ROUNDED ON FULLWORD)
+FIRSTPCB     DS    0F         BEGIN OF FIRST PCB AFTER COMAREA
+MAINPCB      EQU   FIRSTPCB   BEGIN OF MAIN PROCESS PCB
+ TITLE 'PROCESS CONTROL BLOCK'
+*=====================================================================*
+*                                                                     *
+*   PPPP   CCCC    BBBB                                               *
+*   P  P   C       B  B                                               *
+*   PPPP   C       BBBB                                               *
+*   P      C       B  B                                               *
+*   P      CCCC    BBBB                                               *
+*                                                                     *
+*=====================================================================*
+                                                               SPACE 2
+HIS_PCB@     EQUR  9          POINTER TO PCB OF ANOTHER PROCESS
+MY_PCB@      EQUR  8          POINTER TO PCB OF OWN PROCESS
+PCB          DSECT ,          PROCESS CONTROL BLOCK
+PNAME        DS    CL4        TEXT "PCB " (OFFSET MUST BE +0)
+PCOMAREA@    DS    A(COMAREA) ADDR OF COMM. AREA (OFFSET MUST BE +4)
+PID          DS    F          PROCESS IDENTIFICATION
+PFLAG        DS    F          FLAG WORD
+PROCESS_READY_TO_RECEIVE                  EQUN  128
+PROCESS_TERMINATED                        EQUN   64
+PROCESS_DELETED                           EQUN   32
+PROCESS_ABENDED                           EQUN   16
+IS_MAIN_PROCESS                           EQUN    8
+CREATED_BY_MAIN_PROCESS                   EQUN    4
+RECEIVE_IN_PROGRESS                       EQUN    2
+TERMINATION_MESSAGE_RECEIVED_BY_CREATOR   EQUN    1
+PFLAG2       EQU   PFLAG+1    FLAG WORD 2
+TIMEOUT_ESTABLISHED                       EQUN  128
+TIMEOUT_OCCURED                           EQUN   64
+PFATHER@     DS    A(PCB)     POINTER TO PCB OF FATHER PROCESS
+PMB@         DS    A(MCB)     POINTER TO START OF MAILBOX
+PMBSIZE      DS    F          LENGTH OF MAILBOX
+PPARM@       DS    A          ADDRESS OF PROCESS PARAMETER LIST
+PPARMSIZE    DS    F          LENGTH OF PROCESS PARAMETER LIST
+PTCB@        DS    A(TCB)     ADDRESS OF THE TASK CONTROL BLOCK (TCB)
+PMSGLEN      DS    F          MAXIMUM MESSAGE LENGTH
+PMBUFS       DS    H          NUMBER OF MESSAGE BUFFERS
+PMCBSIZE     DS    F          LENGTH OF MESSAGE CONTROL BLOCK
+PECB         DS    F          ECB FOR RECEIVING MESSAGES
+PSYSTEMCODE  DS    H          SYSTEM COMPLETION CODE
+PUSERCODE    DS    H          USER COMPLETION CODE
+PREASONCODE  DS    F          ABEND REASON CODE
+PRETURNCODE  DS    F          PROCESS RETURN CODE
+PCLASS       DS    F          PROCESS CLASS
+PHIGHMCB@    DS    A(MCB)     POINTER TO HIGHEST USED MCB IN MAILBOX
+PLASTMCB@    DS    A(MCB)     POINTER TO THE LAST MCB IN MAILBOX
+PLUSEDMCB@   DS    A(MCB)     INTERMEDIATE POINTER TO LAST USED MCB
+PHIGHSAVE@   DS    A(MCB)     INTERMEDIATE COPY OF PHIGHMCB@
+             SPLEVEL SET=1
+PATTACH      ATTACH  SF=L     SPACE FOR ATTACH MACRO ON MVS/370
+             SPLEVEL SET=2
+PATTACHXA    ATTACH  SF=L     SPACE FOR ATTACH MACRO ON MVS/XA
+PETXR        DS    0F,XL(ETXR#)  END OF TASK EXIT ROUTINE
+PTOXR        DS    0F,XL(TOXR#)  TIMEOUT EXIT ROUTINE
+             DS    0F         ALIGN NEXT PCB ON FULLWORD
+PCB#         EQUN  *-PCB      LENGTH OF THE PCB
+ TITLE 'MESSAGE CONTROL BLOCK'
+*=====================================================================*
+*                                                                     *
+*   M     M    CCCC    BBBB                                           *
+*   MM   MM    C       B  B                                           *
+*   M M M M    C       BBBB                                           *
+*   M  M  M    C       B  B                                           *
+*   M  M  M    CCCC    BBBB                                           *
+*                                                                     *
+*=====================================================================*
+                                                               SPACE 2
+MCB@         EQUR  7          POINTER TO MESSAGE CONTROL BLOCK
+MCB          DSECT ,          MESSAGE CONTROL BLOCK
+MFLAG        DS    F          FLAG WORD
+FILLING_IN_PROGRESS                 EQUN  128
+FILLING_COMPLETE                    EQUN   64
+MCLASS       DS    F          MESSAGE CLASS
+MSENDER      DS    F          PID OF SENDER
+MSIZE        DS    F          MESSAGE LENGTH
+MCB#         EQUN  *-MCB      LENGTH OF MCB WITHOUT MESSAGE
+MTEXT        DS    0X         MESSAGE TEXT
+ TITLE 'MISCELLANEOUS DATA STRUCTURES'
+                                       @ * DEFINE COMMUNICATION
+                                       @ * VARIABLE ;
+COMVAR       DSECT ,          COMMUNICATION VARIABLE
+CVPCB@       DS    A(PCB)     POINTER TO PCB OF CALLER OF ZERO
+                                                               SPACE 4
+                                       @ * DEFINE SYSTEM CONTROL BLOCKS
+             CVT    DSECT=YES,LIST=NO
+             IKJTCB DSECT=YES,LIST=NO
+             IHAPSA DSECT=YES,LIST=NO
+             USING PSA,0
+             IHAECB DSECT=YES
+                                                               SPACE 4
+                                       @ * DEFINE PROGRAM CONSTANTS ;
+X80          EQUN  X'80'
+NO           EQUN  0
+YES          EQUN  1
+                                                               SPACE
+OPERATION_INITIATE         EQUN  1
+OPERATION_TERMINATE        EQUN  2
+OPERATION_CREATE           EQUN  1
+OPERATION_SEND             EQUN  2
+OPERATION_RECEIVE          EQUN  3
+OPERATION_STATUS           EQUN  4
+OPERATION_RECEIVE_TIMEOUT  EQUN  5
+                                                               SPACE 4
+                                       @ * DEFINE PARAMETER LIST ;
+PARMLIST@    EQUR  6          POINTER TO PARAMETER LIST
+PARMLIST     DSECT ,          PARAMETER LIST
+PARM1        DS    A
+COMVAR@      EQU   PARM1
+PARM2        DS    A
+OPCODE       EQU   PARM2
+PARM3        DS    A
+PARM4        DS    A
+PARM5        DS    A
+PARM6        DS    A
+PARM7        DS    A
+PARM8        DS    A
+PARM9        DS    A
+PARM10       DS    A
+PARM11       DS    A
+PARM12       DS    A
+PARM13       DS    A
+PARM14       DS    A
+PARM15       DS    A
+                                                               SPACE 4
+                                       @ * DEFINE SAVEAREA ;
+              USING SAVEAREA,13
+SAVEAREA      DSECT ,
+MISCELLANEOUS DS    F
+BACKPTR       DS    F
+FRWDPTR       DS    F
+SAVER14       DS    F
+SAVER15       DS    F
+SAVER0        DS    F
+SAVER1        DS    F
+SAVER2        DS    F
+SAVER3        DS    F
+SAVER4        DS    F
+SAVER5        DS    F
+SAVER6        DS    F
+SAVER7        DS    F
+SAVER8        DS    F
+SAVER9        DS    F
+SAVER10       DS    F
+SAVER11       DS    F
+SAVER12       DS    F
+WORK1         EQU   MISCELLANEOUS
+R13HIGHSAVE   EQU   BACKPTR
+RETURNCODE    EQU   SAVER15
+                                                               SPACE 4
+                                       @ * DEFINE RETURN CODES ;
+NO_ERROR                                      EQUN   0
+INVALID_COMVAR                                EQUN   4
+MONITOR_NOT_ACTIV                             EQUN   8
+MONITOR_ALREADY_ACTIV                         EQUN  12
+INVALID_PROMON_REQUEST                        EQUN  16
+INVALID_PROREQ_REQUEST                        EQUN  20
+INVALID_MESSAGE_LENGTH                        EQUN  24
+INVALID_MESSAGE_CLASS                         EQUN  28
+MAILBOX_FULL                                  EQUN  32
+INVALID_PID                                   EQUN  36
+INVALID_TERMINATE_REQUEST                     EQUN  40
+MAXIMUM_NUMBER_OF_PROCESSES_EXCEEDED          EQUN  44
+RECEIVE_REENTERED                             EQUN  48
+PROCESS_NOT_YET_ACTIV                         EQUN  52
+PROCESS_IS_TERMINATED                         EQUN  56
+INVALID_NUMBER_OF_MESSAGE_BUFFERS             EQUN  60
+INVALID_WAIT_OPTION                           EQUN  64
+INVALID_NUMBER_OF_PARAMETERS                  EQUN  68
+INVALID_NUMBER_OF_CLASSES                     EQUN  72
+INVALID_STATUS_REQUEST_TYPE                   EQUN  76
+NO_MESSAGE_FOUND                              EQUN  80
+ TITLE 'PROCEDURE PROMON -- EXECUTE PROMON REQUESTS'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*   FUNCTION: THIS PART OF PROGRAM EXECUTES PROMON REQUESTS.          *
+*                                                                     *
+*   INPUT:    THE COMMUNICATION VARIBALE FROM THE PARAMETER LIST.     *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+                                                             SPACE
+          #USE  ?
+PROMON    $PROC TYPE=(LOW,CSECT),BASE=(R12,R11),                       -
+               ID='PROMON-V1.6-01APR88-&SYSDATE-&SYSTIME-SAND/SYLV.'
+             COPY  PROLOG              @ * TRY TO ESTABLISH EXECUTION
+                                       @ * ENVIRONMENT
+             $IF
+                                       @ * EXECUCTION ENVIRONMENT COULD
+                                       @ * BE ESTABLISHED
+                $EX$  RETURNCODE,=,NO_ERROR
+             THEN
+                                       @ * DETERMINE THE OPERATION TO
+                                       @ * BE EXECUTED
+                LETP  R1,:=,OPCODE
+                $CASE
+                ON
+                                       @ * MONITOR IS TO BE INITIALIZED
+                   $EX$  R1,=,OPERATION_INITIATE
+                DO
+                   COPY  INITIATE      @ * INITIALIZE THE MONITOR ;
+                ON
+                                       @ * MONITOR IS TO BE TERMINATED
+                   $EX$  R1,=,OPERATION_TERMINATE
+                DO
+                   COPY  TERMINAT      @ * TERMINATE THE MONITOR ;
+                ELSE
+                                       @ * INDICATE "INVALID PROMON
+                                       @ * REQUEST"
+                   SETRC INVALID_PROMON_REQUEST
+                CASE$
+             IF$
+             COPY  EPILOG              @ * PREPARE FOR RETURN ;
+          PROC$ PROMON,RC=(,RETURNCODE)
+ TITLE 'PROCEDURE PROREQ -- EXECUTE PROREQ REQUESTS'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*   FUNCTION: THIS PART OF PROGRAM EXECUTES PROREQ REQUESTS.          *
+*                                                                     *
+*   INPUT:    THE COMMUNICATION VARIBALE FROM THE PARAMETER LIST.     *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+                                                             SPACE
+          #USE  ?
+PROREQ    $PROC TYPE=(LOW,INTERNAL),BASE=R12
+             COPY  PROLOG              @ * TRY TO ESTABLISH EXECUTION
+                                       @ * ENVIRONMENT
+             $IF
+                                       @ * EXECUCTION ENVIRONMENT COULD
+                                       @ * BE ESTABLISHED
+                $EX$  RETURNCODE,=,NO_ERROR
+             THEN
+                                       @ * DETERMINE THE OPERATION TO
+                                       @ * BE EXECUTED
+                LETP  R1,:=,OPCODE
+                $CASE
+                ON
+                                       @ * MONITOR IS TO RECEIVE A
+                                       @ * MESSAGE
+                   $EX$  R1,=,OPERATION_RECEIVE
+                DO
+                   COPY  RECEIVE       @ * RECEIVE A MESSAGE
+                ON
+                                       @ * MONITOR IS TO SEND A MESSAGE
+                   $EX$  R1,=,OPERATION_SEND
+                DO
+                   COPY  SEND          @ * SEND A MESSAGE
+                ON
+                                       @ * MONITOR IS TO RECEIVE A
+                                       @ * MESSAGE WITH TIMEOUT
+                   $EX$  R1,=,OPERATION_RECEIVE_TIMEOUT
+                DO
+                   COPY  RECEIVET      @ * RECEIVE A TIMEOUT MESSAGE
+                ON
+                                       @ * MONITOR IS TO RETURN
+                                       @ * STATUS INFORMATION ;
+                   $EX$  R1,=,OPERATION_STATUS
+                DO
+                   COPY  STATUS        @ * RETURN STATUS INFORMATION ;
+                ON
+                                       @ * MONITOR IS TO CREATE A NEW
+                                       @ * PROCESS
+                   $EX$  R1,=,OPERATION_CREATE
+                DO
+                   COPY  CREATE        @ * CREATE A NEW PROCESS
+                ELSE
+                                       @ * INDICATE "INVALID PROREQ
+                                       @ * REQUEST"
+                   SETRC INVALID_PROREQ_REQUEST
+                CASE$
+             IF$
+             COPY  RECTERM             @ * INSERT RECTERM PROCEDURE
+             COPY  RECNTERM            @ * INSERT RECNTERM PROCEDURE
+             COPY  EPILOG              @ * PREPARE FOR RETURN ;
+          PROC$ PROREQ,RC=(,RETURNCODE)
+ TITLE 'EOPROC -- PROCESS TERMINATION ROUTINE'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+* FUNCTION: THIS PART OF PROGRAM IS CALLED AT TERMINATION OF EVERY    *
+*           SUBPROCESS.  IT INDICATES THE TERMINATION AND SIGNAL      *
+*           THIS CONDITION TO THE PARENT PROCESS IF NECESSARY.        *
+*                                                                     *
+* INPUT:    REGISTER 1 POINTS TO THE PCB AT ENTRY.                    *
+*                                                                     *
+* OUTPUT:   THE TERMINATION IS SIGNALED TO THE PARENT PROCESS.        *
+*                                                                     *
+* CALL:     THIS TERMINATION ROUTINE IS CALLED BY A SMALL BOOTSTRAP   *
+*           TERMINATION ROUTINE LOCAL TO EVERY SUBTASK. THE ONLY      *
+*           FUNCTION OF THE BOOTSTRAP ROUTINE IS TO SET REGISTER 1    *
+*           ACCORDINGLY AND PASS TO THE COMMON TERMINATION ROUTINE.   *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+                                                             SPACE
+          #USE  ?
+EOPROC    $PROC TYPE=(LOW,INTERNAL),BASE=R12
+                                       @ * INDICATE TERMINATION OF
+                                       @ * TERMINATED PROCESS ;
+TCB@      EQUR  R5
+          #USE  MY_PCB@,PCB,R1
+          #USE  COMAREA@,COMAREA,PCOMAREA@
+          #USE  TCB@,TCB,PTCB@
+          LET   PFLAG,OFF,PROCESS_READY_TO_RECEIVE
+          LET   PFLAG,ON,PROCESS_TERMINATED
+                                       @ * DECREASE THE NUMBER OF
+                                       @ * ACTIV SUBPROCESSES ;
+          LET   R0,:=,CACTIV
+          $LOOP
+          UNTIL
+             LET   R1,:=,R0,-,1
+             CS    R0,R1,CACTIV
+             TRUECC EQ
+          LOOP$
+          $IF
+                                       @ * CURRENT PROCESS ENDED
+                                       @ * NORMALLY ;
+             $EX$  TCBFLGS1,OFF,TCBFA
+          THEN
+                                       @ * SAVE COMPLETION CODES ;
+             LET   R0,:=,TCBCMP:F
+             N     R0,=X'00FFFFFF'
+             LET   PRETURNCODE,:=,R0
+          ELSE
+                                       @ * INDICATE PROCESS ABENDED ;
+             LET   PFLAG,ON,PROCESS_ABENDED
+                                       @ * SAVE ABEND COMPLETION CODES
+             LET   R0,:=,TCBCMP:F
+             N     R0,=X'00FFF000'
+             SRL   R0,12
+             LET   PSYSTEMCODE,:=,R0
+             LET   R0,:=,TCBCMP:F
+             N     R0,=X'00000FFF'
+             LET   PUSERCODE,:=,R0
+             LET   PREASONCODE,:=,TCBARC:F
+          IF$
+          $IF
+                                       @ * PARENT PROCESS IS IN THE
+                                       @ * RECEIVE STATE ;
+             LET   HIS_PCB@,:=,PFATHER@
+             $EX$  PFLAG-PCB(HIS_PCB@),ON,RECEIVE_IN_PROGRESS
+          THEN
+                                       @ * SIGNAL TERMINATION TO THE
+                                       @ * PARENT TASK ;
+             POST  PECB-PCB(HIS_PCB@)
+          IF$
+                                       @ * DELETE TERMINATED PROCESS ;
+          DELETEP REASON=END_OF_TASK
+          #DROP MY_PCB@,COMAREA@,TCB@
+          PROC$ EOPROC
+          END
+./ ADD NAME=PROLOG
+  TITLE 'PROLOG -- ESTABLISH EXECUTION ENVIRONMENT'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+* FUNCTION: THIS PART OF PROGRAM ESTABLISHES THE EXECUTION            *
+*           ENVIRONMENT OF THE MONITOR.                               *
+*                                                                     *
+* INPUT:    THE COMMUNICATION VARIABLE FROM THE PARAMETER LIST.       *
+*                                                                     *
+* CALL:     VIA REFINE                                                *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+                                                             SPACE
+          #USE  ?
+          $BLOCK
+                                       @ * SAVE ADDRESSING MODE OF
+                                       @ * CALLER AND SWITCH TO
+                                       @ * 31-ADDRESSING MODE IF ON
+                                       @ * MVS/XA ;
+             CAPON
+                                       @ * INDICATE "NO ERROR" ;
+             SETRC NO_ERROR
+                                       @ * INITIALIZE POINTER TO
+                                       @ * PARAMETER LIST ;
+             #USE  PARMLIST@,PARMLIST,R1
+                                       @ * INITIALIZE POINTER TO PCB ;
+             LET   R1,:=,COMVAR@
+             #USE  MY_PCB@,PCB,0(R1)
+                                       @ * INITIALIZE POINTER TO
+                                       @ * COMAREA ;
+             $IF
+                $EX$  MY_PCB@,=,0
+             THEN
+                LET   COMAREA@,:=,0
+             ELSEIF
+                $EX$  PNAME,=,=CL4'PCB'
+             THEN
+                LET   COMAREA@,:=,PCOMAREA@
+             ELSE
+                SETRC INVALID_COMVAR
+             IF$
+             #USE  COMAREA@,COMAREA
+          BLOCK$
+          ENDCOPY PROLOG
+./ ADD NAME=EPILOG
+  TITLE 'EPILOG -- PREPARE TO RETURN'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*                                                                     *
+* FUNCTION: THIS PART OF PROGRAM PREPARES TO RETURN TO THE CALLER.    *
+*                                                                     *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+                                                             SPACE
+          #USE  ?
+          $BLOCK
+             #DROP PARMLIST@,MY_PCB@,COMAREA@
+                                       @ * RESET TO ADDRESSING MODE OF
+                                       @ * THE CALLER ;
+             CAPOFF
+          BLOCK$
+          ENDCOPY EPILOG
+./ ADD NAME=TERMINAT
+  TITLE 'TERMINAT -- TERMINATE MONITOR (FUNCTION OF PROMON)'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+* FUNCTION: THIS PART OF PROGRAM TERMINATES THE MONITOR. ALL DIRECT   *
+*           SUBPROCESSES OF THE MAIN PROCESS ARE DELETED FROM         *
+*           SYSTEM (AND ALL OTHER BY THAT). THEN ALL MAILBOXES,       *
+*           SUBTASK PARAMETER LISTS, PROCESS CONTROL BLOCKS AND THE   *
+*           COMMUNICATION AREA ARE FREED.                             *
+*                                                                     *
+* INPUT:    NONE.                                                     *
+*                                                                     *
+* OUTPUT:   THE COMMUNCATION VARIABLE IS RESET TO ZERO.               *
+*                                                                     *
+* CALL:     VIA REFINE.                                               *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+                                                             SPACE
+TERMINATE_COMVAR     EQU  PARM1
+TERMINATE_OPCODE     EQU  PARM2
+                                                             SPACE
+          #USE  ?
+TERMINAT  $BLOCK
+             $IF
+                                       @ * MONITOR IS NOT INITIALIZED
+                $EX$  COMAREA@,=,0
+             THEN
+                                       @ * INDICATE "MONITOR NOT ACTIV"
+                SETRC MONITOR_NOT_ACTIV
+             ELSEIF
+                                       @ * TERMINATE REQUESTED IS NOT
+                                       @ * FROM MAIN TASK
+                $EX$  PFLAG,OFF,IS_MAIN_PROCESS
+             THEN
+                                       @ * INDICATE "INVALID TERMINATE
+                                       @ * REQUEST"
+                SETRC INVALID_TERMINATE_REQUEST
+             ELSE
+                                       @ * FOR EVERY PROCESS
+                LET   R1,->,FIRSTPCB
+                LET   R5,:=,CCREATED,*,PCB#,+,R1
+                #USE  HIS_PCB@,PCB
+                $FOR  (HIS_PCB@,->,FIRSTPCB),STEP,PCB#,TO,R5,LOOP
+                   $IF
+                                       @ * PROCESS IS CREATED BY MAIN
+                                       @ * PROCESS
+                      $EX$  PFLAG,ON,CREATED_BY_MAIN_PROCESS
+                   THEN
+                                       @ * DELETE PROCESS IF NOT YET
+                                       @ * DELETED
+                      DELETEP REASON=TERMINATE-REQUEST
+                   IF$
+                FOR$
+                                       @ * FOR EVERY PROCESS
+                $FOR  (HIS_PCB@,->,FIRSTPCB),STEP,PCB#,TO,R5,LOOP
+                                       @ * FREE MAILBOX OF PROCESS ;
+                   $IF   PMBSIZE,¬=,0,THEN
+                      LET   R0,:=,PMBSIZE
+                      FREEMAIN RU,A=PMB@,LV=(0),RELATED=MAILBOX
+                   IF$
+                                       @ * FREE PARAMETER LIST OF
+                                       @ * PROCESS ;
+                $IF   PPARMSIZE,¬=,0,THEN
+                   LET   R0,:=,PPARMSIZE
+                   FREEMAIN RU,A=PPARM@,LV=(0),RELATED=PARMLIST
+                IF$
+                FOR$
+                                       @ * FREE COMAREA AND PCBS ;
+                LET   R0,:=,CSIZE
+                FREEMAIN RU,A=(COMAREA@),LV=(0),                       X
+               RELATED=COMAREA_AND_PCBD
+                                       @ * RESET COMVAR ;
+                LETPP TERMINATE_COMVAR,:=,0
+                #DROP HIS_PCB@
+             IF$
+          BLOCK$ TERMINAT
+          ENDCOPY TERMINAT
+./ ADD NAME=INITIATE
+  TITLE 'INITIATE -- INITIALIZE MONITOR (FUNCTION OF PROMON)'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+* FUNCTION: THIS PART OF PROGRAM INITIALIZES THE MONITOR. THE         *
+*           COMMUNICATION AREA AS WELL AS THE PCB AND THE MAILBOX     *
+*           FOR THE MAIN PROCESS ARE ALLOCATED.                       *
+*                                                                     *
+* INPUT:    THE PARAMETERS FROM THE FUNCTION CALL.                    *
+*                                                                     *
+* OUTPUT:   THE COMMUNCATION VARIABLE IS POINTED TO THE PCB OF THE    *
+*           MAIN TASK.                                                *
+*                                                                     *
+* CALL:     VIA REFINE.                                               *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+                                                             SPACE
+INITIATE_COMVAR    EQU   PARM1
+INITIATE_OPCODE    EQU   PARM2
+INITIATE_MAXP      EQU   PARM3
+INITIATE_MBUFS     EQU   PARM4
+INITIATE_MSGLEN    EQU   PARM5
+INITIATE_MAXCLS    EQU   PARM6
+INITIATE_WAITOP    EQU   PARM7
+                                                             SPACE
+          #USE  ?
+INITIATE  $BLOCK
+             $IF
+                                       @ * MONITOR IS ALREADY
+                                       @ * INITIALIZED
+                $EX$  COMAREA@,¬=,0
+             THEN
+                                       @ * INDICATE "MONITOR ALREADY
+                                       @ * ACTIV"
+                SETRC MONITOR_ALREADY_ACTIV
+             ELSEIF
+                                       @ * NUMBER OF MESSAGE BUFFERS IS
+                                       @ * INVALID
+                LETP  R1,:=,INITIATE_MBUFS
+                $EX   R1,<,0,ORELSE,R1,>,32767,EX$
+             THEN
+                                       @ * INDICATE "INVALID NUMBER OF
+                                       @ * MESSAGE BUFFERS"
+                SETRC INVALID_NUMBER_OF_MESSAGE_BUFFERS
+             ELSEIF
+                                       @ * MAXIMUM MESSAGE LENGTH IS
+                                       @ * INVALID
+                LETP  R1,:=,INITIATE_MSGLEN
+                $EX$  R1,<,0
+             THEN
+                                       @ * INDICATE "INVALID MESSAGE
+                                       @ * LENGTH"
+                SETRC INVALID_MESSAGE_LENGTH
+             ELSEIF
+                                       @ * WAIT OPTION IS INVALID
+                LETP  R1,:=,INITIATE_WAITOP
+                $EX   R1,<,0,ORELSE,R1,>,1,EX$
+             THEN
+                                       @ * INDICATE "INVALID WAIT
+                                       @ * OPTION"
+                SETRC INVALID_WAIT_OPTION
+             ELSE
+                                       @ * ALLOCATE COMAREA AND MAXIMUM
+                                       @ * NUMBER OF PCBS
+                LET   R1,:=,INITIATE_MAXP
+                LET   R5,:=,0(R1),+,1,*,PCB#,+,COMAREA#
+                GETMAIN RU,LV=(R5),LOC=BELOW,RELATED=COMAREA_AND_PCBS
+                LET   COMAREA@,:=,R1
+                                       @ * CLEAR COMAREA AND PCBS ;
+                LET   R0,:=,COMAREA@
+                LET   R1,:=,R5
+                LET   R3,:=,0
+                MVCL  R0,R2
+                                       @ * INITIALIZE COMAREA
+                LET   CSIZE,:=,R5
+                LET   (CNAME,4),:=,=CL4'COMA'
+                LET   CPROREQ@,->,PROREQ
+                LET   CEOPROC@,->,EOPROC
+                LET   CRELEASE,:=,&RELEASE
+                LET   CVERSION,:=,&VERSION
+                LETP  CMAXP,:=,INITIATE_MAXP
+                LETP  CMBUFS,:=,INITIATE_MBUFS
+                LETP  CMSGLEN,:=,INITIATE_MSGLEN
+                LETP  CMAXCLS,:=,INITIATE_MAXCLS
+                LETP  CWAITOP,:=,INITIATE_WAITOP
+                                       @ * INITIALIZE PCB OF MAIN
+                                       @ * PROCESS ;
+                LET   MY_PCB@,->,FIRSTPCB
+                LET   (PNAME,4),:=,=CL4'PCB'
+                LET   PCOMAREA@,->,COMAREA
+                LET   PFLAG,ON,IS_MAIN_PROCESS+PROCESS_READY_TO_RECEIVE
+                LET   PMBUFS,:=,CMBUFS
+                LET   PMSGLEN,:=,CMSGLEN
+                LET   PMCBSIZE,:=,PMSGLEN,+,MCB#,+,3,/,4,*,4
+                LET   PMBSIZE,:=,PMCBSIZE,*,PMBUFS
+                LET   PTCB@,:=,PSATNEW
+                LET   (PTOXR,TOXR#:N),:=,TOXR
+                                       @ * ALLOCATE AND CLEAR MAILBOX
+                                       @ * OF MAIN PROCESS ;
+                LET   R0,:=,PMBSIZE
+                GETMAIN RU,LV=(0),LOC=ANY,RELATED=MAILBOX
+                LET   PMB@,:=,R1
+                LET   PHIGHMCB@,:=,R1
+                LET   PLASTMCB@,:=,PMB@,+,PMBSIZE,-,PMCBSIZE
+                                       @ * CLEAR MAILBOX HEADERS ;
+                $FOR  (MCB@,:=,PMB@),STEP,0,TO,PLASTMCB@,LOOP
+                   #USE  MCB@,MCB
+                   XC    MCB(MCB#),MCB
+                   #DROP MCB@
+                   LET   MCB@,+,PMCBSIZE
+                FOR$
+                                                             SPACE
+                $IF
+                                       @ * COMVAR MEANWHILE INITIALIZED
+                                       @ * BY ANOTHER PROCESS
+                   LET   R0,:=,0
+                   LET   R1,->,PCB
+                   LET   R2,:=,INITIATE_COMVAR
+                   CS    R0,R1,0(R2)
+                   TRUECC NE
+                THEN
+                                       @ * INDICATE "MONITOR ALREADY
+                                       @ * ACTIV" ;
+                   SETRC MONITOR_ALREADY_ACTIV
+                                       @ * FREE MAILBOX OF MAIN TASK ;
+                   LET   R0,:=,PMBSIZE
+                   FREEMAIN RU,A=PMB@,LV=(0),RELATED=MAILBOX
+                                       @ * FREE COMAREA AND PCBS ;
+                   LET   R0,:=,CSIZE
+                   FREEMAIN RU,A=(COMAREA@),LV=(0),                    X
+               RELATED=COMAREA_AND_PCBS
+                IF$
+             IF$
+          BLOCK$ INITIATE
+          ENDCOPY INITIATE
+./ ADD NAME=SEND
+  TITLE 'SEND -- SEND A MESSAGE (FUNCTION OF PROREQ)'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+* FUNCTION: THIS PART OF PROGRAM SENDS A MESSAGE TO A PROCESS.  IF    *
+*           THE MESSAGE IS A TERMINATION MESSAGE (CLASS ZERO WITH     *
+*           LENGTH ZERO) THE RECEIVING PROCESS IS TERMINATED. IF      *
+*           NOT, THE MESSAGE IS COPIED TO THE MAILBOX OF THE          *
+*           RECEIVING PROCESS.                                        *
+*                                                                     *
+* INPUT:    THE PARAMETERS FROM THE FUNCTION CALL.                    *
+*                                                                     *
+* OUTPUT:   THE MAILBOX OF THE RECEIVING PROCESS IS MODIFIED.         *
+*                                                                     *
+* CALL:     VIA REFINE.                                               *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+                                                             SPACE
+SEND_COMVAR      EQU   PARM1
+SEND_OPCODE      EQU   PARM2
+SEND_PID         EQU   PARM3
+SEND_MSGLEN      EQU   PARM4
+SEND_MSG         EQU   PARM5
+SEND_MCLASS      EQU   PARM6
+                                                             SPACE
+          #USE  ?
+SEND      $BLOCK
+             $IF
+                                       @ * THE RECEIVING PROCESS ID IS
+                                       @ * INVALID
+                LETP  R1,:=,SEND_PID
+                $EX   R1,<,0,ORELSE,R1,>,CCREATED,EX$
+             THEN
+                                       @ * INDICATE "INVALID PID"
+                SETRC INVALID_PID
+             ELSEIF
+                LET   HIS_PCB@,:=,R1,*,PCB#,+,:FIRSTPCB
+                #USE  HIS_PCB@,PCB
+                                       @ * RECEIVING PROCESS HAS
+                                       @ * TERMINATED
+                $EX$  PFLAG,ON,PROCESS_TERMINATED
+             THEN
+                                       @ * INDICATE "PROCESS
+                                       @ * TERMINATED"
+                SETRC PROCESS_IS_TERMINATED
+             ELSEIF
+                                       @ * RECEIVING PROCESS NOT YET
+                                       @ * ACTIVATED
+                $EX$  PFLAG,OFF,PROCESS_READY_TO_RECEIVE
+             THEN
+                                       @ * INDICATE "PROCESS NOT YET
+                                       @ * ACTIV"
+                SETRC PROCESS_NOT_YET_ACTIV
+             ELSEIF
+                                       @ * MESSAGE LENGTH INVALID
+                LETP  R1,:=,SEND_MSGLEN
+                $EX   R1,<,0,ORELSE,R1,>,PMSGLEN,EX$
+             THEN
+                                       @ * INDICATE "INVALID MESSAGE
+                                       @ * LENGTH"
+                SETRC INVALID_MESSAGE_LENGTH
+             ELSEIF
+                                       @ * MESSAGE CLASS INVALID
+                LETP  R1,:=,SEND_MCLASS
+                LPR   R1,R1
+                $EX$  R1,>,CMAXCLS
+             THEN
+                                       @ * INDICATE "INVALID MESSAGE
+                                       @ * CLASS"
+                SETRC INVALID_MESSAGE_CLASS
+             ELSEIF
+                                       @ * MESSAGE IS A TERMINATE
+                                       @ * MESSAGE
+                LETP  R1,:=,SEND_MCLASS
+                $EX$  R1,=,0
+             ANDTHEN
+                LETP  R1,:=,SEND_MSGLEN
+                $EX$  R1,=,0
+             THEN
+                COPY CANCEL            @ * TERMINATE THE RECEIVING
+                                       @ * PROCESS
+             ELSE
+                                       @ * INDICATE "NO MESSAGE SENT"
+SENT            EQUR  R5
+                #USE  SENT
+                LET   SENT,:=,NO
+                                       @ * FOR EVERY MAILBOX BUFFER ;
+                $FOR  (MCB@,:=,PMB@),STEP,0,TO,PLASTMCB@,LOOP
+                   #USE  MCB@,MCB
+                   $IF
+                                       @ * CURRENT BUFFER WAS FREE AND
+                                       @ * COULD BE RESERVED
+                      LET   R0,:=,0
+                      LET   R1,:=,=AL1(FILLING_IN_PROGRESS,0,0,0)
+                      CS    R0,R1,MFLAG
+                      TRUECC EQ
+                   THEN
+                                       @ * COPY MESSAGE ;
+                      LET   R0,->,MTEXT
+                      LETP  R1,:=,SEND_MSGLEN
+                      LET   R2,:=,SEND_MSG
+                      LET   R3,:=,R1
+                      MVCL  R0,R2
+                                       @ * COPY MESSAGE LENGTH ;
+                      LETP  MSIZE,:=,SEND_MSGLEN
+                                       @ * COPY MESSAGE CLASS ;
+                      LETP  MCLASS,:=,SEND_MCLASS
+                                       @ * COPY PROCESS ID OF SENDER ;
+                      LET   MSENDER,:=,PID-PCB(MY_PCB@)
+                                       @ * INDICATE "MESSAGE SENT" ;
+                      LET   SENT,:=,YES
+                      LET   MFLAG,ON,FILLING_COMPLETE
+                                       @ * INCREASE HIGH WATER MARK ;
+                      $LOOP
+                         LET   R0,:=,PHIGHMCB@
+                         LET   R1,:=,MCB@
+                         IF    R1,<=,R0,LEAVE
+                         CS    R0,R1,PHIGHMCB@
+                      UNTIL
+                         TRUECC EQ
+                      LOOP$
+                   IF$
+                                       @ * IF MESSAGE COULD BE SENT
+                                       @ * THEN LEAVE
+                   IF    SENT,=,YES,LEAVE
+                   #DROP MCB@
+                   LET   MCB@,+,PMCBSIZE
+                FOR$
+                $IF
+                                       @ * MESSAGE COULD NOT BE SEND
+                   $EX$  SENT,=,NO
+                THEN
+                                       @ * INDICATE "MAILBOX FULL"
+                   SETRC MAILBOX_FULL
+                ELSEIF
+                                       @ * RECEIVING PROCESS IS JUST
+                                       @ * RECEIVING
+                   $EX$  PFLAG,ON,RECEIVE_IN_PROGRESS
+                THEN
+                   LET   R0,:=,PECB
+                   $IF
+                                       @ * RECEIVING PROCESS IS
+                                       @ * WAITING
+                      $EX$  R0,<,0
+                   ORELSE
+                                       @ * BYPASS POST FAILED
+                      LET   R1,:=,R0
+                      N     R1,=X'EFFFFFFF'
+                      O     R1,=X'40000000'
+                      CS    R0,R1,PECB
+                      TRUECC NE
+                   THEN
+                                       @ * SIGNAL "MESSAGE SENT" TO THE
+                                       @ * RECEIVING PROCESS
+                      POST  PECB
+                   IF$
+                IF$
+                #DROP HIS_PCB@,SENT
+             IF$
+                                                               SPACE
+          BLOCK$ SEND
+                                                               SPACE
+          ENDCOPY SEND
+                                                               SPACE
+./ ADD NAME=CREATE
+  TITLE 'CREATE -- CREATE A SUBPROCESS (FUNCTION OF PROREQ)'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+* FUNCTION: THIS PART OF PROGRAM CREATES A NEW SUBPROCESS.            *
+*                                                                     *
+* INPUT:    THE PARAMETERS FROM THE FUNCTION CALL.                    *
+*                                                                     *
+* OUTPUT:   THE PROCESS IDENTIFICATION OF THE NEW TASK IS RETURNED    *
+*           TO THE CALLER.                                            *
+*                                                                     *
+* CALL:     VIA REFINE.                                               *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+                                                             SPACE
+CREATE_COMVAR     EQU   PARM1
+CREATE_OPCODE     EQU   PARM2
+CREATE_NEWPID     EQU   PARM3
+CREATE_MODULE     EQU   PARM4
+CREATE_PCLASS     EQU   PARM5
+CREATE_MBUFS      EQU   PARM6
+CREATE_MSGLEN     EQU   PARM7
+CREATE_NPARM      EQU   PARM8
+CREATE_PARMS      EQU   PARM9
+                                                             SPACE
+          #USE  ?
+CREATE    $BLOCK
+             $IF
+                                       @ * NUMBER OF MESSAGE BUFFERS IS
+                                       @ * INVALID
+                LETP  R1,:=,CREATE_MBUFS
+                $EX   R1,<,0,ORELSE,R1,>,32767,EX$
+             THEN
+                                       @ * INDICATE "INVALID NUMBER OF
+                                       @ * MESSAGE BUFFERS"
+                SETRC INVALID_NUMBER_OF_MESSAGE_BUFFERS
+             ELSEIF
+                                       @ * MESSAGE LENGTH IS INVALID
+                LETP  R1,:=,CREATE_MSGLEN
+                $EX$  R1,<,0
+             THEN
+                                       @ * INDICATE "INVALID MESSAGE
+                                       @ * LENGTH"
+                SETRC INVALID_MESSAGE_LENGTH
+             ELSEIF
+                                       @ * NUMBER OF PARAMETERS IS
+                                       @ * INVALID
+                LETP  R1,:=,CREATE_NPARM
+                $EX$  R1,<,0
+             THEN
+                                       @ * INDICATE "INVALID NUMBER OF
+                                       @ * PARAMETERS"
+                SETRC INVALID_NUMBER_OF_PARAMETERS
+             ELSEIF
+                                       @ * TRY TO GET A UNIQUE PROCESS
+                                       @ * IDENTIFICATION FOR THE NEW
+                                       @ * PROCESS ;
+                LET   R0,:=,CCREATED
+                $LOOP
+                UNTIL
+                   $EX$  R0,=,CMAXP
+                ORELSE
+                   LET   R1,:=,R0,+,1
+                   CS    R0,R1,CCREATED
+                   TRUECC EQ
+                LOOP$
+                LET   R2,:=,R1
+                                       @ * MAXIMUM NUMBER OF PROCESSES
+                                       @ * EXCEEDED
+                $EX$  R0,=,CMAXP
+             THEN
+                                       @ * INDICATE "MAXIMUM NUMBER OF
+                                       @ * PROCESSES EXCEEDED"
+                SETRC MAXIMUM_NUMBER_OF_PROCESSES_EXCEEDED
+             ELSE
+                                       @ * INCREASE THE NUMBER OF
+                                       @ * ACTIV SUBPROCESSES ;
+                LET   R0,:=,CACTIV
+                $LOOP
+                UNTIL
+                   LET   R1,:=,R0,+,1
+                   CS    R0,R1,CACTIV
+                   TRUECC EQ
+                LOOP$
+                                       @ * RETURN THE PID OF THE NEW
+                                       @ * PROCESS TO THE CALLER ;
+                LETPP CREATE_NEWPID,:=,R2
+                                       @ * INITIALIZE PCB OF THE NEW
+                                       @ * PROCESS ;
+                LET   R1,->,FIRSTPCB
+                LET   HIS_PCB@,:=,R2,*,PCB#,+,R1
+                #USE  HIS_PCB@,PCB
+                LET   (PNAME,4),:=,=CL4'PCB'
+                LET   PID,:=,R2
+                LET   PCOMAREA@,->,COMAREA
+                LET   PFATHER@,:=,MY_PCB@
+                LETP  PCLASS,:=,CREATE_PCLASS
+                $IF
+                   LETP  R1,:=,CREATE_MBUFS
+                   $EX$  R1,>,0
+                THEN
+                   LET   PMBUFS,:=,R1
+                ELSE
+                   LET   PMBUFS,:=,CMBUFS
+                IF$
+                $IF
+                   LETP  R1,:=,CREATE_MSGLEN
+                   $EX$  R1,>,0
+                THEN
+                   LET   PMSGLEN,:=,R1
+                ELSE
+                   LET   PMSGLEN,:=,CMSGLEN
+                IF$
+                LET   PMCBSIZE,:=,PMSGLEN,+,MCB#,+,3,/,4,*,4
+                LET   PMBSIZE,:=,PMCBSIZE,*,PMBUFS
+                $IF
+                   $EX$  PFLAG-PCB(MY_PCB@),ON,IS_MAIN_PROCESS
+                THEN
+                   LET   PFLAG,ON,CREATED_BY_MAIN_PROCESS
+                IF$
+                                       @ * ALLOCATE AND CLEAR MAILBOX
+                                       @ * FOR NEW PROCESS ;
+                LET   R0,:=,PMBSIZE
+                GETMAIN RU,LV=(0),LOC=ANY,RELATED=MAILBOX
+                LET   PMB@,:=,R1
+                LET   PHIGHMCB@,:=,R1
+                LET   PLASTMCB@,:=,PMB@,+,PMBSIZE,-,PMCBSIZE
+                                       @ * CLEAR MAILBOX HEADERS ;
+                $FOR  (MCB@,:=,PMB@),STEP,0,TO,PLASTMCB@,LOOP
+                   #USE  MCB@,MCB
+                   XC    MCB(MCB#),MCB
+                   #DROP MCB@
+                   LET   MCB@,+,PMCBSIZE
+                FOR$
+                LET   PFLAG,ON,PROCESS_READY_TO_RECEIVE
+                                       @ * DEFINE END-OF-PROCESS
+                                       @ * ROUTINE OWNED BY NEW PROCESS
+       CONST
+ETXR   LA    0,PETXR-PCB             LOAD OFFSET FROM START OF PCB
+       SLR   15,0                    POINT TO PCB OF TERMINATED TASK
+       LR    1,15
+       L     15,PCOMAREA@-PCB(15)    POINT TO COMAREA
+       L     15,CEOPROC@-COMAREA(15) POINT TO GLOBAL END-OF-TASK RTN
+       BR    15                      BRANCH TO IT
+ETXR#  EQUN  *-ETXR
+       CODE
+                LET   (PETXR,ETXR#),:=,ETXR
+                                       @ * DEFINE TIMEOUT-EXIT-ROUTINE
+       CONST
+TOXR   LA    0,PTOXR-PCB             LOAD OFFSET FROM START OF PCB
+       SLR   15,0                    POINT TO PCB OF TIMEOUTED TASK
+       OI    PFLAG2-PCB(15),TIMEOUT_OCCURED    SET TIMEOUT INDICATOR
+       POST  PECB-PCB(15)            ACTIVATE SUSPENDED TASK
+       BR    14                      BRANCH TO IT
+TOXR#  EQUN  *-TOXR
+       CODE
+                LET   (PTOXR,TOXR#),:=,TOXR
+                                       @ * BUILD PARAMETER LIST FOR NEW
+                                       @ * PROCESS ;
+                $IF
+                   LET   R5,:=,CREATE_NPARM
+                   $EX$  0(R5),=,0
+                THEN
+                   LET   PPARM@,:=,0
+                   LET   PPARMSIZE,:=,0
+                ELSE
+                   LET   PPARMSIZE,:=,0(R5),*,4
+                   LET   R0,:=,PPARMSIZE
+                   GETMAIN RU,LV=(0),LOC=BELOW,RELATED=PARMLIST
+                   LET   PPARM@,:=,R1
+                   LET   R0,:=,PPARM@
+                   LET   R1,:=,PPARMSIZE
+                   LET   R2,->,CREATE_PARMS
+                   LET   R3,:=,R1
+                   MVCL  R0,R2
+                   LET   R1,:=,PPARM@,+,PPARMSIZE,-,4
+                   LET   0(R1),ON,X80
+                IF$
+                                       @ * START SUBPROCESS
+                LET   R1,:=,PPARM@
+                LET   R2,->,PCB
+                LET   R3,:=,CREATE_MODULE
+                LET   R4,->,PETXR
+                $IF
+                  MVSXA
+                THEN
+                  SPLEVEL SET=2
+                  ATTACH EPLOC=(R3),ETXR=(R4),SF=(E,PATTACHXA),SZERO=NO
+                ELSE
+                  SPLEVEL SET=1
+                  ATTACH EPLOC=(R3),ETXR=(R4),SF=(E,PATTACH),SZERO=NO
+                IF$
+                LET   PTCB@,:=,R1
+                #DROP HIS_PCB@
+             IF$
+          BLOCK$ CREATE
+          ENDCOPY CREATE
+./ ADD NAME=RECEIVE
+  TITLE 'RECEIVE -- RECEIVE A MESSAGE (FUNCTION OF PROREQ)'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+* FUNCTION: THIS PART OF PROGRAM SEARCHES THE CALLER'S MAILBOX FOR    *
+*           A MESSAGE TO RECEIVE. IF NO MESSAGE OF THE REQUESTED      *
+*           CLASS COULD BE FOUND, THE CALLER'S PROCESS ENTERS A       *
+*           WAIT STATE.  THE ORDER OF THE RECEIVING MESSAGES SHOULD   *
+*           BE UNDEFINED AS STATED.  THIS TO ENSURE THE START OF      *
+*           SEARCH IS DEFINED BY A WRAP-AROUND COUNTER WHICH IS       *
+*           INCREASED ON EVERY RECEIVE.                               *
+*                                                                     *
+* INPUT:    THE PARAMETERS FROM THE FUNCTION CALL.                    *
+*                                                                     *
+* OUTPUT:   THE RECEIVED MESSAGE IS MOVED TO THE CALLER'S AREA.       *
+*                                                                     *
+* CALL:     VIA REFINE.                                               *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+                                                             SPACE
+RECEIVE_COMVAR      EQU   PARM1
+RECEIVE_OPCODE      EQU   PARM2
+RECEIVE_PID         EQU   PARM3
+RECEIVE_MSGLEN      EQU   PARM4
+RECEIVE_MSG         EQU   PARM5
+RECEIVE_MCLASS      EQU   PARM6
+RECEIVE_NCLASS      EQU   PARM7
+RECEIVE_CLASSES     EQU   PARM8
+                                                             SPACE
+          #USE  ?
+RECEIVE   $BLOCK
+                                       @ * INDICATE "RECEIVE IN
+                                       @ * PROGRESS"
+             LET   R0,:=,PFLAG
+             LET   R1,:=,R0
+             O     R1,=AL1(RECEIVE_IN_PROGRESS,0,0,0)
+             CS    R0,R1,PFLAG
+             $IF
+                                       @ * RECEIVE WAS ALREADY IN
+                                       @ * PROGRESS
+                N     R0,=AL1(RECEIVE_IN_PROGRESS,0,0,0)
+                TRUECC NZ
+             THEN
+                                       @ * INDICATE "RECEIVE REENTERED"
+                SETRC RECEIVE_REENTERED
+             ELSEIF
+                                       @ * NUMBER OF MESSAGE CLASSES IS
+                                       @ * INVALID
+                LETP  R1,:=,RECEIVE_NCLASS
+                $EX$  R1,<,0
+             THEN
+                                       @ * INDICATE "INVALID NUMBER OF
+                                       @ * CLASSES"
+                SETRC INVALID_NUMBER_OF_CLASSES
+             ELSE
+                                       @ * INDICATE "NO MESSAGE
+                                       @ * RECEIVED" ;
+RECEIVED        EQUR  R5
+                #USE  RECEIVED
+                LET   RECEIVED,:=,NO
+RECEIVE_LOOP    $LOOP
+                                       @ * TRY TO RECEIVE A TERMINATION
+                                       @ * MESSAGE ;
+                   ICALL RECTERMP
+                                       @ * IF A MESSAGE COULD BE
+                                       @ * RECEIVED THEN LEAVE ;
+                   IF    RECEIVED,=,YES,LEAVE
+                                       @ * TRY TO RECEIVE A
+                                       @ * NON-TERMINATION MSG ;
+                   ICALL RECNTERP
+                                       @ * IF A MESSAGE COULD BE
+                                       @ * RECEIVED THEN LEAVE ;
+                   IF    RECEIVED,=,YES,LEAVE
+                                       @ * INCREASE THE NUMBER OF
+                                       @ * WAITING PROCESSES
+                   $LOOP
+                      LET   R0,:=,CWAIT
+                      LET   R1,:=,R0,+,1
+                      CS    R0,R1,CWAIT
+                   UNTIL
+                      TRUECC EQ
+                   LOOP$
+                   $IF
+                                       @ * DEADLOCK WILL HAPPEN AND
+                                       @ * DEADLOCK IS TO BE SIGNALED
+                                       @ * TO THE MAIN PROCESS ;
+                      $EX   R1,>,CACTIV,ANDTHEN,CWAITOP,=,             X
+               SIGNAL_DEADLOCK,EX$
+********************************************** 1.5 (ADDED) ************
+                   ANDTHEN
+                      SASLIST ASIS
+                      LET   R1,->,FIRSTPCB
+                      LET   CLASTPCB@,:=,CCREATED,*,PCB#,+,R1
+                      #USE  HIS_PCB@,PCB
+LOOP2                 $FOR  (HIS_PCB@,->,FIRSTPCB),STEP,PCB#,          X
+               TO,CLASTPCB@,LOOP
+                         IF    PECB,ON,ECBPOST,LEAVE
+                      FOR$
+                      $EX$  HIS_PCB@,>,CLASTPCB@
+                      #DROP HIS_PCB@
+                      SASLIST LOC
+                   THEN
+***********************************************************************
+                                       @ * SIGNAL DEADLOCK ;
+                      LET   CDEADLOCKS,+,1
+                      $IF
+                         $EX$  CDEADLOCKS,<,10
+                      THEN
+                         WTO   'PROMON  ALL PROCESSES IN WAIT STATE.', X
+               ROUTCDE=11,DESC=7
+                      ELSEIF
+                         $EX$  CDEADLOCKS,=,10
+                      THEN
+                         WTO   'PROMON  MAXIMIUM NUMBER OF ERROR MESSAGX
+               ES REACHED. ALL FURTHER MESSAGES SUPPRESSED.',          X
+               ROUTCDE=11,DESC=7
+                      IF$
+                      LET  MAINPCB+(PFLAG-PCB),ON,PROCESS_TERMINATED
+                      POST MAINPCB+(PECB-PCB)
+                   IF$
+                                       @ * WAIT FOR MESSAGE ;
+                   WAIT  ECB=PECB
+                   LET   PECB,:=,0
+                                       @ * DECREASE THE NUMBER OF
+                                       @ * WAITING PROCESSES
+                   $LOOP
+                      LET   R0,:=,CWAIT
+                      LET   R1,:=,R0,-,1
+                      CS    R0,R1,CWAIT
+                   UNTIL
+                      TRUECC EQ
+                   LOOP$
+                LOOP$
+                #DROP RECEIVED
+             IF$
+                                       @ * INDICATE "RECEIVE NOT IN
+                                       @ * PROCESS"
+             LET   PFLAG,OFF,RECEIVE_IN_PROGRESS
+          BLOCK$ RECEIVE
+          ENDCOPY RECEIVE
+./ ADD NAME=CANCEL
+  TITLE 'CANCEL -- DELETE A SUBTASK (SUBFUNCTION OF SEND)'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+* FUNCTION: THIS PART OF PROGRAM DELETES THE RECEIVING PROCESS IF     *
+*           IT IS A DESCENDANT OF THE ACTIV PROCESS.                  *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+                                                               SPACE
+          #USE  ?
+CANCEL    $BLOCK
+                                       @ * LET THE RECEIVING PROCESS BE
+                                       @ * THE CURRENT PROCESS ;
+             LET   R1,:=,HIS_PCB@
+             $LOOP
+                                       @ * POINT TO FATHER PROCESS OF
+                                       @ * CURRENT PROCESS ;
+                LET   R1,:=,PFATHER@-PCB(R1)
+             UNTIL
+                                       @ * ACTIV PROCESS IS FATHER OF
+                                       @ * CURRENT PROCESS OR CURRENT
+                                       @ * PROCESS HAS NO FATHER
+                                       @ * PROCESS ;
+                $EX$  R1,=,MY_PCB@
+             ORELSE
+                $EX$  R1,=,0
+             LOOP$
+             $IF
+                                       @ * ACTIV PROCESS IS FATHER OF
+                                       @ * CURRENT PROCESS
+                $EX$  R1,=,MY_PCB@
+             THEN
+                                       @ * DELETE RECEIVING PROCESS
+                DELETEP REASON=SEND-REQUEST
+             ELSE
+                                       @ * INDICATE "INVALID TERMINATE
+                                       @ * REQUEST"
+                SETRC INVALID_TERMINATE_REQUEST
+             IF$
+          BLOCK$ CANCEL
+          ENDCOPY CANCEL
+./ ADD NAME=RECTERM
+  TITLE 'RECTERM -- RECEIVE A TERMINATION MESSAGE (SUBFUNC OF RECEIVE)'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+* FUNCTION: THIS PART OF PROGRAM LOOKS IF ANY PROCESS CREATED BY      *
+*           ACTIV PROCESS HAS TERMINATED. IF FOUND, A TERMINATION     *
+*           MESSAGE IS MOVED TO THE CALLER'S AREA.                    *
+*                                                                     *
+* CALL:     VIA REFINE.                                               *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+                                                              SPACE
+          #USE  ?
+RECTERM   $BLOCK
+RECTERMP  $PROC TYPE=(BASIC,INTERNAL)
+             $IF
+                                       @ * TERMINATION MESSAGES MAY BE
+                                       @ * RECEIVED
+                LETP  R1,:=,RECEIVE_NCLASS
+                $EX$  R1,=,0
+             ORELSE
+                LET   R1,:=,R1,-,1,*,4
+                LET   R4,:=,RECEIVE_CLASSES
+                LA    R4,0(R1,R4)
+                $FOR  (R1,:=,RECEIVE_CLASSES),STEP,4,TO,R4,LOOP
+                   IF    0(R1),=,0,LEAVE
+                FOR$
+                $EX$  R1,<=,R4
+             THEN
+                                       @ * FOR EVERY PROCESS ;
+                LET   R1,->,FIRSTPCB
+                LET   CLASTPCB@,:=,CCREATED,*,PCB#,+,R1
+                #USE  HIS_PCB@,PCB
+                $FOR  (HIS_PCB@,:=,MY_PCB@),STEP,PCB#,TO,CLASTPCB@,LOOP
+                   $IF
+                                       @ * THIS PROCESS HAS TERMINATED
+                                       @ * AND ACTIV PROCESS IS FATHER
+                                       @ * OF TERMINATED PROCESS AND
+                                       @ * TERMINATION MESSAGE HAS NOT
+                                       @ * YET BEEN RECEIVED
+                      $EX$  PFLAG,ON,PROCESS_TERMINATED
+                   ANDTHEN
+                      $EX$  PFLAG,OFF,                                 X
+               TERMINATION_MESSAGE_RECEIVED_BY_CREATOR
+                   ANDTHEN
+                      $EX$  PFATHER@,=,MY_PCB@
+                   ORELSE
+                      $EX$   PFLAG,ON,IS_MAIN_PROCESS
+                   THEN
+                                       @ * COPY TERMINATION MESSAGE
+                                       @ * LENGTH ;
+                      LETPP RECEIVE_MSGLEN,:=,0
+                                       @ * COPY TERMINATION MESSAGE
+                                       @ * CLASS ;
+                      LETPP RECEIVE_MCLASS,:=,0
+                                       @ * COPY PROCESS ID OF SENDER ;
+                      LETPP RECEIVE_PID,:=,PID
+                                       @ * INDICATE "MESSAGE RECEIVED";
+                      LET   PFLAG,ON,                                  X
+               TERMINATION_MESSAGE_RECEIVED_BY_CREATOR
+                      LET   RECEIVED,:=,YES
+                      $IF
+                         $EX$  PFLAG,ON,IS_MAIN_PROCESS
+                      THEN
+                         LET   PFLAG,OFF,PROCESS_TERMINATED+TERMINATION*
+               _MESSAGE_RECEIVED_BY_CREATOR
+                      IF$
+                   IF$
+                                       @ * IF MESSAGE COULD BE
+                                       @ * RECEIVED THEN LEAVE ;
+                   IF    RECEIVED,=,YES,LEAVE
+                FOR$
+                #DROP HIS_PCB@
+             IF$
+                                                             SPACE
+          PROC$ RECTERMP
+                                                             SPACE
+          BLOCK$ RECTERM
+                                                             SPACE
+          ENDCOPY RECTERM
+                                                             SPACE
+./ ADD NAME=RECEIVET
+  TITLE 'RECEIVET -- RECEIVE A TIMEOUT MESSAGE (FUNCTION OF PROREQ)'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+* FUNCTION: THIS PART OF PROGRAM SEARCHES THE CALLER'S MAILBOX FOR    *
+*           A MESSAGE TO RECEIVE. IF NO MESSAGE OF THE REQUESTED      *
+*           CLASS COULD BE FOUND, THE CALLER'S PROCESS ENTERS A       *
+*           WAIT STATE. THE WAIT TIME CAN BE LIMITED BY THE USER.     *
+*                                                                     *
+* INPUT:    THE PARAMETERS FROM THE FUNCTION CALL.                    *
+*                                                                     *
+* OUTPUT:   THE RECEIVED MESSAGE IS MOVED TO THE CALLER'S AREA.       *
+*                                                                     *
+* CALL:     VIA REFINE.                                               *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+                                                             SPACE
+RECEIVET_COMVAR     EQU   PARM1
+RECEIVET_OPCODE     EQU   PARM2
+RECEIVET_PID        EQU   PARM3
+RECEIVET_MSGLEN     EQU   PARM4
+RECEIVET_MSG        EQU   PARM5
+RECEIVET_MCLASS     EQU   PARM6
+RECEIVET_NCLASS     EQU   PARM7
+RECEIVET_CLASSES    EQU   PARM8
+RECEIVET_HSECS      EQU   PARM9
+                                                             SPACE
+          #USE  ?
+RECEIVET  $BLOCK
+                                       @ * INDICATE "RECEIVE IN
+                                       @ * PROGRESS"
+             LET   R0,:=,PFLAG
+             LET   R1,:=,R0
+             O     R1,=AL1(RECEIVE_IN_PROGRESS,0,0,0)
+             CS    R0,R1,PFLAG
+             $IF
+                                       @ * RECEIVE WAS ALREADY IN
+                                       @ * PROGRESS
+                N     R0,=AL1(RECEIVE_IN_PROGRESS,0,0,0)
+                TRUECC NZ
+             THEN
+                                       @ * INDICATE "RECEIVE REENTERED"
+                SETRC RECEIVE_REENTERED
+             ELSEIF
+                                       @ * NUMBER OF MESSAGE CLASSES IS
+                                       @ * INVALID
+                LETP  R1,:=,RECEIVET_NCLASS
+                $EX$  R1,<,0
+             THEN
+                                       @ * INDICATE "INVALID NUMBER OF
+                                       @ * CLASSES"
+                SETRC INVALID_NUMBER_OF_CLASSES
+             ELSE
+                                       @ * INDICATE "NO MESSAGE
+                                       @ * RECEIVED" ;
+                #USE  RECEIVED
+                LET   RECEIVED,:=,NO
+                                       @ * INDICATE "NO TIMEOUT
+                                       @ * ESTABLISHED" ;
+                LET   PFLAG2,OFF,TIMEOUT_ESTABLISHED
+                $LOOP
+                                       @ * TRY TO RECEIVE A TERMINATION
+                                       @ * MESSAGE ;
+                   ICALL RECTERMP
+                                       @ * IF A MESSAGE COULD BE
+                                       @ * RECEIVED THEN LEAVE ;
+                   IF    RECEIVED,=,YES,LEAVE
+                                       @ * TRY TO RECEIVE A
+                                       @ * NON-TERMINATION MSG ;
+                   ICALL RECNTERP
+                                       @ * IF A MESSAGE COULD BE
+                                       @ * RECEIVED THEN LEAVE ;
+                   IF    RECEIVED,=,YES,LEAVE
+                                       @ * IF TIMEOUT IS NOT POSITIV
+                                       @ * THEN LEAVE ;
+                   LET   R1,:=,RECEIVET_HSECS                       1.3
+                   IF    0(R1):F,<=,0,LEAVE                         1.3
+                   $IF
+                                       @ * A TIMEOUT WAS NOT YET
+                                       @ * ESTABLISHED ;
+                      $EX$  PFLAG2,OFF,TIMEOUT_ESTABLISHED
+                   THEN
+                                       @ * ESTABLISH TIMEOUT ;
+                      LET   PFLAG2,OFF,TIMEOUT_OCCURED
+                      LET   PFLAG2,ON,TIMEOUT_ESTABLISHED
+                      STIMER REAL,PTOXR,BINTVL=(1)                  1.3
+                   IF$
+                                       @ * WAIT FOR MESSAGE ;
+                   WAIT ECB=PECB
+                   LET  PECB,:=,0
+                                       @ * IF TIMEOUT REACHED THEN
+                                       @ * LEAVE ;
+                   IF    PFLAG2,ON,TIMEOUT_OCCURED,LEAVE
+                LOOP$
+                $IF
+                                       @ * TIMEOUT WAS ESTABLISHED AND
+                                       @ * NOT REACHED ;
+                   $EX   PFLAG2,ON,TIMEOUT_ESTABLISHED,ANDTHEN,        X
+               PFLAG2,OFF,TIMEOUT_OCCURED,EX$
+                THEN
+                                       @ * DELETE TIMEOUT LIMIT ;
+                   TTIMER CANCEL
+                IF$
+                $IF
+                                       @ * NO MESSAGE FOUND
+                   $EX$  RECEIVED,=,NO
+                THEN
+                                       @ * INDICATE NO MESSAGE FOUND ;
+                   SETRC NO_MESSAGE_FOUND
+                IF$
+                #DROP RECEIVED
+             IF$
+                                       @ * INDICATE "RECEIVE NOT IN
+                                       @ * PROCESS"
+             LET   PFLAG,OFF,RECEIVE_IN_PROGRESS
+                                                              SPACE
+          BLOCK$ RECEIVET
+                                                              SPACE
+          ENDCOPY RECEIVET
+                                                              SPACE
+./ ADD NAME=RECNTERM
+  TITLE 'RECNTERM -- RECEIVE A NONTERMINATION MSG (SUBFUNC OF RECEIVE)'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+* FUNCTION: THIS PART OF PROGRAM SEARCHES THE MAILBOX FOR ANY         *
+*           MESSAGE OF THE REQUESTED CLASS(ES). IF FOUND, THE         *
+*           MESSAGE IS MOVED TO THE CALLER'S AREA.                    *
+*                                                                     *
+* CALL:     VIA REFINE.                                               *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+                                                              SPACE
+          #USE  ?
+RECNTERM  $BLOCK
+RECNTERP  $PROC TYPE=(BASIC,INTERNAL)
+                                       @ * POINT TO FIRST MESSAGE
+                                       @ * BUFFER IN SEARCH SEQUENCE ;
+             LET   MCB@,:=,PMB@
+             #USE  MCB@,MCB
+             LET   PLUSEDMCB@,:=,MCB@
+             LET   PHIGHSAVE@,:=,PHIGHMCB@
+             $LOOP
+                $IF
+                                       @ * BUFFER CONTAINS A MESSAGE OF
+                                       @ * WANTED CLASS
+                   $EX$  MFLAG,ON,FILLING_COMPLETE
+                ANDTHEN
+                   LET   PLUSEDMCB@,:=,MCB@
+                   LETP  R1,:=,RECEIVE_NCLASS
+                   $EX$  R1,=,0
+                ORELSE
+                   LET   R1,:=,R1,-,1,*,4
+                   LET   R4,:=,RECEIVE_CLASSES
+                   LA    R4,0(R1,R4)
+                   $FOR  (R1,:=,RECEIVE_CLASSES),STEP,4,TO,R4,LOOP
+                      IF    0(R1),=,MCLASS,LEAVE
+                   FOR$
+                   $EX$  R1,<=,R4
+                THEN
+                                       @ * COPY MESSAGE LENGTH ;
+                   LET   R1,:=,RECEIVE_MSGLEN
+                   LET   R3,:=,0(R1)
+                   LET   0(R1),:=,MSIZE
+                   $IF
+                      $EX$  MSIZE,<,R3
+                   THEN
+                      LET   R3,:=,MSIZE
+                   IF$
+                                       @ * COPY MESSAGE ;
+                   LET   R0,:=,RECEIVE_MSG
+                   LET   R1,:=,R3
+                   LET   R2,->,MTEXT
+                   MVCL  R0,R2
+                                       @ * COPY MESSAGE CLASS ;
+                   LETPP RECEIVE_MCLASS,:=,MCLASS
+                                       @ * COPY PROCESS ID OF SENDER ;
+                   LETPP RECEIVE_PID,:=,MSENDER
+                                       @ * FREE BUFFER FOR REUSE ;
+                   LET   MFLAG,:=,0
+                                       @ * INDICATE "MESSAGE RECEIVED";
+                   LET   RECEIVED,:=,YES
+                IF$
+                                       @ * IF MESSAGE COULD BE
+                                       @ * RECEIVED THEN LEAVE ;
+                IF    RECEIVED,=,YES,LEAVE,RECNTERP
+                                       @ * LEAVE IF AT LAST USED MCB
+                LET   MCB@,+,PMCBSIZE
+                IF    MCB@,>,PHIGHMCB@,LEAVE
+             LOOP$
+                                       @ * DECREASE HIGH WATER MARK ;
+             LET   R0,:=,PHIGHSAVE@
+             LET   R1,:=,PLUSEDMCB@
+             CS    R0,R1,PHIGHMCB@
+             #DROP MCB@
+                                                             SPACE
+          PROC$ RECNTERP
+                                                             SPACE
+          BLOCK$ RECNTERM
+                                                             SPACE
+          ENDCOPY RECNTERM
+                                                             SPACE
+./ ADD NAME=RTCOMMON
+  TITLE 'RTCOMMON -- RETURN COMMON INFORMATION (SUBFUNC. OF STATUS)'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+* FUNCTION: THIS PART OF PROGRAM RETURNS PROCESS INDEPENDENT          *
+*           INFORMATION.                                              *
+*                                                                     *
+* INPUT:    THE PARAMETERS FROM THE STATUS-REQUEST.                   *
+*                                                                     *
+* OUTPUT:   SEE FUNCTION.                                             *
+*                                                                     *
+* CALL:     VIA REFINE.                                               *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+                                                             SPACE
+          #USE  ?
+RTCOMMON  $BLOCK
+                                       @ * RETURN PID OF CALLER ;
+             LETPP STATUS_PID,:=,PID
+                                       @ * RETURN PARAMETERS ;
+             COPYPARM 1,CRELEASE
+             COPYPARM 2,CVERSION
+             COPYPARM 3,CMAXP
+             COPYPARM 4,CCREATED
+             COPYPARM 5,CACTIV
+             COPYPARM 6,CWAIT
+             COPYPARM 7,CMAXCLS
+             COPYPARM 8,CWAITOP
+             COPYPARM 9,CMSGLEN
+          BLOCK$ RTCOMMON
+          ENDCOPY RTCOMMON
+./ ADD NAME=STATUS
+  TITLE 'STATUS -- RETURN STATUS INFORMATION (FUNCTION OF PROREQ)'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+* FUNCTION: THIS PART OF PROGRAM RETURNS STATUS INFORMATION ABOUT     *
+*           ALL PROCESSES AND MAILBOXES.                              *
+*                                                                     *
+* INPUT:    THE PARAMETERS FROM THE STATUS-REQUEST.                   *
+*                                                                     *
+* OUTPUT:   SEE FUNCTION.                                             *
+*                                                                     *
+* CALL:     VIA REFINE.                                               *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+                                                             SPACE
+STATUS_COMVAR      EQU   PARM1
+STATUS_OPCODE      EQU   PARM2
+STATUS_TYPE        EQU   PARM3
+STATUS_PID         EQU   PARM4
+STATUS_TOKEN       EQU   PARM5
+STATUS_NPARM       EQU   PARM6
+STATUS_PARM1       EQU   PARM7
+STATUS_PARM2       EQU   PARM8
+STATUS_PARM3       EQU   PARM9
+STATUS_PARM4       EQU   PARM10
+STATUS_PARM5       EQU   PARM11
+STATUS_PARM6       EQU   PARM12
+STATUS_PARM7       EQU   PARM13
+STATUS_PARM8       EQU   PARM14
+STATUS_PARM9       EQU   PARM15
+                                                             SPACE
+          #USE  ?
+STATUS    $BLOCK
+NPARM        EQUR  R5
+             LETP  NPARM,:=,STATUS_NPARM
+             #USE  NPARM
+             LETP  R1,:=,STATUS_TYPE
+             $CASE
+             ON
+                                       @ * COMMON INFORMATION IS TO BE
+                                       @ * RETURNED ;
+                $EX$  R1,=,0
+             DO
+                COPY RTCOMMON          @ * RETURN COMMON INFORMATION ;
+             ON
+                                       @ * PROCESS INFORMATION IS TO BE
+                                       @ * RETURNED ;
+                $EX$  R1,=,1
+             DO
+                COPY RTPROC            @ * RETURN PROCESS INFORMATION ;
+             ON
+                                       @ * A MESSAGE IS TO BE RETURNED
+                $EX$  R1,=,2
+             DO
+                COPY RTMSG             @ * RETURN A MESSAGE ;
+             ELSE
+                                       @ * INDICATE "INVALID STATUS
+                                       @ * REQUEST TYPE" ;
+                SETRC INVALID_STATUS_REQUEST_TYPE
+             CASE$
+             #DROP NPARM
+          BLOCK$ STATUS
+          ENDCOPY STATUS
+./ ADD NAME=RTMSG
+  TITLE 'RTMSG -- RETURN COMMON INFORMATION (SUBFUNC. OF STATUS)'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+* FUNCTION: THIS PART OF PROGRAM RETURNS A MESSAGE FROM A MAILBOX ;   *
+*                                                                     *
+* INPUT:    THE PARAMETERS FROM THE STATUS-REQUEST.                   *
+*                                                                     *
+* OUTPUT:   SEE FUNCTION.                                             *
+*                                                                     *
+* CALL:     VIA REFINE.                                               *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+                                                             SPACE
+          #USE  ?
+RTMSG     $BLOCK
+             $IF
+                                       @ * PROCESS ID IS INVALID ;
+                LETP  R1,:=,STATUS_PID
+                $EX   R1,<,0,ORELSE,R1,>,CCREATED,EX$
+             THEN
+                                       @ * INDICATE "INVALID PROCESS
+                                       @ * ID" ;
+                SETRC INVALID_PID
+                                       @ * LEAVE RTMSG ;
+                LEAVE RTMSG
+             IF$
+TOKEN        EQUR  R4
+FOUND        EQU   WORK1
+             #USE  TOKEN
+             $IF
+                                       @ * TOKEN IS ZERO ;
+                LETP  TOKEN,:=,STATUS_TOKEN
+                $EX$  TOKEN,=,0
+             THEN
+                                       @ * POINT TO FIRST PCB ;
+                LET   TOKEN,->,FIRSTPCB
+             IF$
+                                       @ * INDICATE "NO MESSAGE FOUND"
+             LET   FOUND,:=,NO
+             $IF
+                                       @ * TOKEN POINTS TO A PCB
+                $EX$  TOKEN,>,0
+             THEN
+                LET   R1,->,FIRSTPCB
+                LET   CLASTPCB@,:=,CCREATED,*,PCB#,+,R1
+                $WHILE
+                                       @ * NO MESSAGE FOUND AND THERE
+                                       @ * ARE MORE PCBS ;
+                   $EX   FOUND,=,NO,ANDTHEN,TOKEN,<=,CLASTPCB@,EX$
+                LOOP
+                   #USE  HIS_PCB@,PCB,TOKEN
+                   $IF
+                                       @ * THIS PROCESS HAS TERMINATED
+                                       @ * AND ACTIV PROCESS IS FATHER
+                                       @ * OF TERMINATED PROCESS AND
+                                       @ * TERMINATION MESSAGE HAS NOT
+                                       @ * YET BEEN RECEIVED OR ACTIV
+                                       @ * PROCESS IS MAIN PROCESS
+                      $EX$  PFLAG,ON,PROCESS_TERMINATED
+                   ANDTHEN
+                      $EX$  PFLAG,OFF,                                 X
+               TERMINATION_MESSAGE_RECEIVED_BY_CREATOR
+                   ANDTHEN
+                      LETP  R2,:=,STATUS_PID
+                      LET   R1,:=,PFATHER@
+                      $EX$  R2,=,PID-PCB(R1)
+                   ORELSE
+                      $EX$  PFLAG,ON,IS_MAIN_PROCESS
+                   THEN
+                                       @ * INDICATE "MESSAGE FOUND" ;
+                      LET   FOUND,:=,YES
+                                       @ * COPY TERMINATION MESSAGE
+                                       @ * PARAMETERS ;
+                      LETP  R3,:=,STATUS_PARM1
+                      COPYPARM 1,0
+                      COPYPARM 3,0
+                      COPYPARM 4,PID
+                   IF$
+                                       @ * POINT NO NEXT PCB ;
+                   LET   TOKEN,+,PCB#
+                   #DROP HIS_PCB@
+                WHILE$
+             IF$
+             $IF
+                                       @ * MESSAGE FOUND ;
+                $EX$  FOUND,=,YES
+             THEN
+                                       @ * RESTORE TOKEN TO PARAMETER
+                                       @ * LIST ;
+                LETPP STATUS_TOKEN,:=,TOKEN
+                                       @ * LEAVE RTMSG ;
+                LEAVE RTMSG
+             ELSEIF
+                LETP  R1,:=,STATUS_PID
+                LET   HIS_PCB@,:=,R1,*,PCB#,+,:FIRSTPCB
+                #USE  HIS_PCB@,PCB
+                                       @ * TOKEN POINTS AFTER LAST PCB
+                $EX$  TOKEN,>,0
+             THEN
+                                       @ * LET TOKEN POINT TO START OF
+                                       @ * MAILBOX ;
+                LET   TOKEN,:=,PMB@
+             ELSE
+                                       @ * TOKEN ALREADY POINTS TO A
+                                       @ * MESSAGE BUFFER. CLEAR HIGH
+                                       @ * ORDER BIT ;
+                LA    TOKEN,0(TOKEN)
+             IF$
+             $WHILE
+                                       @ * NO MESSAGE FOUND AND THERE
+                                       @ * ARE MORE MESSAGE BUFFERS ;
+                $EX   FOUND,=,NO,ANDTHEN,TOKEN,<=,PHIGHMCB@,EX$
+             LOOP
+                #USE  MCB@,MCB,TOKEN
+                $IF
+                                       @ * MESSAGE IS IN MESSAGE
+                                       @ * BUFFER ;
+                   $EX$  MFLAG,ON,FILLING_COMPLETE
+                THEN
+                                       @ * COPY MESSAGE PARAMETERS ;
+                   LET   FOUND,:=,YES
+                   LETP  R3,:=,STATUS_PARM1
+                   COPYPARM 1,MSIZE
+                   IF    NPARM,<,2,LEAVE
+                   $IF
+                      $EX$  MSIZE,<,R3
+                   THEN
+                      LET   R3,:=,MSIZE
+                   IF$
+                   LET   R0,:=,STATUS_PARM2
+                   LET   R1,:=,R3
+                   LET   R2,->,MTEXT
+                   MVCL  R0,R2
+                   COPYPARM 3,MCLASS
+                   COPYPARM 4,MSENDER
+                IF$
+                LET   TOKEN,+,PMCBSIZE
+                #DROP MCB@
+             WHILE$
+             $IF
+                                       @ * MESSAGE FOUND ;
+                $EX$  FOUND,=,YES
+             THEN
+                                       @ * INDICATE THAT TOKEN POINTS
+                                       @ * TO A MESSAGE BUFFER" ;
+                O     TOKEN,=X'80000000'
+             ELSE
+                                       @ * INDICATE NO MESSAGE COULD
+                                       @ * BE RETRIEVED ;
+                LET   TOKEN,:=,0
+             IF$
+                                       @ * RESTORE TOKEN TO USER
+                                       @ * AREA ;
+             LETPP STATUS_TOKEN,:=,TOKEN
+             #DROP TOKEN,HIS_PCB@
+          BLOCK$ RTMSG
+          ENDCOPY RTMSG
+./ ADD NAME=RTPROC
+  TITLE 'RTPROC   -- RETURN PROCESS INFORMATION (SUBFUNC. OF STATUS)'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+* FUNCTION: THIS PART OF PROGRAM RETURNS PROCESS DEPENDENT            *
+*           INFORMATION.                                              *
+*                                                                     *
+* INPUT:    THE PARAMETERS FROM THE STATUS-REQUEST.                   *
+*                                                                     *
+* OUTPUT:   SEE FUNCTION.                                             *
+*                                                                     *
+* CALL:     VIA REFINE.                                               *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+                                                             SPACE
+          #USE  ?
+RTPROC    $BLOCK
+             $IF
+                                       @ * PROCESS ID IS INVALID ;
+                LETP  R1,:=,STATUS_PID
+                $EX   R1,<,0,ORELSE,R1,>,CCREATED,EX$
+             THEN
+                                       @ * INDICATE "INVALID PID" ;
+                SETRC INVALID_PID
+             ELSE
+                LET   HIS_PCB@,:=,R1,*,PCB#,+,:FIRSTPCB
+                #USE  HIS_PCB@,PCB
+                                       @ * RETURN FIRST PARAMETER ;
+                IF    NPARM,<=,0,LEAVE
+                $IF
+                   $EX$  PFLAG,ON,PROCESS_ABENDED
+                THEN
+                   LET   R0,:=,4
+                ELSEIF
+                   $EX$  PFLAG,ON,PROCESS_TERMINATED
+                THEN
+                   LET   R0,:=,3
+                ELSEIF
+                   $EX$  PECB,ON,ECBWAIT
+                THEN
+                   LET   R0,:=,2
+                ELSEIF
+                   $EX$  PFLAG,ON,PROCESS_READY_TO_RECEIVE
+                THEN
+                   LET   R0,:=,1
+                ELSE
+                   LET   R0,:=,0
+                IF$
+                LETPP STATUS_PARM1,:=,R0
+                                       @ * RETURN NEXT PARAMETERS ;
+                COPYPARM 2,PRETURNCODE
+                COPYPARM 3,PSYSTEMCODE
+                COPYPARM 4,PUSERCODE
+                COPYPARM 5,PREASONCODE
+                LET   R2,:=,PFATHER@
+                COPYPARM 6,PID-PCB(R2)
+                COPYPARM 7,PMSGLEN
+                COPYPARM 8,PMBUFS
+                COPYPARM 9,PCLASS
+                #DROP HIS_PCB@
+             IF$
+          BLOCK$ RTPROC
+          ENDCOPY RTPROC
+./ ADD NAME=SETRC
+         MACRO
+         SETRC &RETCODE
+.*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- -*
+.*                                                                    *
+.*   THIS MACRO SETS THE RETURN CODE TO &RETCODE.                     *
+.*                                                                    *
+.*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- -*
+         LET   RETURNCODE,:=,&RETCODE
+         MEND
+./ ADD NAME=CAPOFF
+      MACRO
+      CAPOFF
+.*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- -*
+.*                                                                    *
+.*   IF 31-BIT-ADDRESSING IS AVAILABLE, THIS MACRO SETS TO THE        *
+.*   ADDRESSING MODE SAVED BY THE LAST CAPON-MACRO.                   *
+.*                                                                    *
+.*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- -*
+      $IF
+         MVSXA
+      THEN
+         LR    15,12                                                1.2
+         N     15,=X'80000000'
+         O     15,=A(*+6)
+         BSM   0,15
+         ICM   13,B'1000',R13HIGHSAVE                               1.2
+      IF$
+      MEND
+./ ADD NAME=CAPON
+      MACRO
+      CAPON
+.*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- -*
+.*                                                                    *
+.*   IF 31-BIT-ADDRESSING IS AVAILABLE, THIS MACRO SAVES THE CURRENT  *
+.*   ADDRESSING MODE IN THE HIGH ORDER BYTE OF REGISTER 12 AND        *
+.*   SWITCHES TO 31-BIT-ADDRESSING MODE.                              *
+.*                                                                    *
+.*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- -*
+      $IF
+         MVSXA
+      THEN
+         STCM  13,B'1000',R13HIGHSAVE                               1.2
+         LA    13,0(13)                                             1.2
+         L     15,=A(*+6+X'80000000')
+         BSM   12,15                                                1.2
+      IF$
+      MEND
+./ ADD NAME=MVSXA
+      MACRO
+      MVSXA
+.*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- -*
+.*                                                                    *
+.*   THIS MACRO TESTS IF 31-BIT-ADDRESSING IS AVAILABLE.              *
+.*                                                                    *
+.*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- -*
+      LET   R15,:=,CVTPTR
+      $EX$  CVTDCB-CVT(R15),ON,CVTMVSE
+      MEND
+./ ADD NAME=LETP
+      MACRO
+      LETP  &TO,&ASSIGN,&FROM
+.*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- -*
+.*                                                                    *
+.*    THIS MACRO IS TO COPY A PARAMETER OF THE CALLING PROGRAM TO     *
+.*    LOCAL STORAGE. '&FROM' IS INTERPRETED AS A POINTER TO A         *
+.*    FULLWORD. THIS FULLWORD IS COPIED TO LOCATION '&TO'.            *
+.*                                                                    *
+.*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- -*
+      LET   R1,:=,&FROM
+      LET   &TO,:=,0(R1)
+      MEND
+./ ADD NAME=DELETEP
+      MACRO
+      DELETEP &REASON=
+.*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- -*
+.*                                                                    *
+.*   THIS MACRO DELETES THE PROCESS WHOSE PCB IS CURRENTLY ADDRESSED, *
+.*   IF THIS PROCESS IS NOT YET DELETED.                              *
+.*                                                                    *
+.*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- -*
+      $IF
+         LET   R0,:=,PFLAG
+         $LOOP
+         UNTIL
+            LET   R1,:=,R0
+            O     R1,=AL1(PROCESS_DELETED,0,0,0)
+            CS    R0,R1,PFLAG
+            TRUECC EQ
+         LOOP$
+         N     R0,=AL1(PROCESS_DELETED,0,0,0)
+         TRUECC Z
+      THEN
+         DETACH PTCB@
+         $IF
+            $EX$  R15,¬=,0
+         THEN
+            WTO   'PROMON INTERNAL ERROR 1',ROUTCDE=11,DESC=7
+            ABEND 1
+         IF$
+      IF$
+      MEND
+./ ADD NAME=LETPP
+      MACRO
+      LETPP &TO,&ASSIGN,&FROM
+.*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- -*
+.*                                                                    *
+.*   THIS MACRO IS TO COPY A FULLWORD OF LOCAL STORAGE TO AN OUTPUT   *
+.*   PARAMETER OF THE CALLING PROGRAM. '&TO' IS INTERPRETED AS A      *
+.*   POINTER TO A FULLWORD. THIS FULLWORD IS OVERWRITTEN BY '&FROM'.  *
+.*                                                                    *
+.*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- -*
+      LET   R1,:=,&TO
+      LET   0(R1),:=,&FROM
+      MEND
+./ ADD NAME=COPYPARM
+      MACRO
+      COPYPARM &PARM,&VALUE
+.*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- -*
+.*                                                                    *
+.*   THIS MACRO IS TO RETURN STATUS INFORMATION TO THE CALLER.        *
+.*   &VALUE IS STORED IN THE PARAMETER &PARM OF THE STATUS REQUEST    *
+.*   CALL IF THIS PARAMETER IS REQUESTED BY THE CALLER. OTHERWISE     *
+.*   THE CURRENT BLOCK IS LEFT.                                       *
+.*                                                                    *
+.*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- -*
+      IF    &PARM,>,NPARM,LEAVE
+      LETPP STATUS_PARM&PARM,:=,&VALUE
+      MEND
+./ ENDUP

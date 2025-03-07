@@ -1,0 +1,69 @@
+         MACRO
+&L       LET0M1 &TO,&LENGTH,&FROM
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*
+.*
+.*  GENERATE MVC OR XC OPERAND-LIST
+.*       SUB-MACRO FOR 'LET' AND 'LET0M',MAY NOT BE USED AS OUTER MACRO
+.* &TO     DENOTES THE ADDRESS OF A STORAGE FULLWORD,HALFWORD OR BYTE.
+.* &LENGTH DENOTES A SELF.DEFINING TERM
+.* &FROM   DENOTES THE ADDRESS OF A STORAGE FULLWORD,HALFWORD OR BYTE.
+.*
+.* EXAMPLES:
+.*         '&TO = WORD'      (WORD IS DECLARED AS A STORAGE FULLWORD)
+.*         '&LENGTH = 4'
+.*         '&FROM = WORD'
+.* RESULT: 'WORD(4),WORD'
+.*
+.*         '&TO = 3(,@7)'
+.*         '&LENGTH = 2'
+.*         '&FROM = 3(,@7)'
+.* RESULT: '3(2,@7),3(@7)'
+.*
+         GBLA  &LETL(3)
+         GBLB  &LETLA
+         GBLC  &LETA(3),&LETM(3),&LET0M1
+         LCLC  &TOHEAD,&TOFROM,&C
+         LCLA  &POSLPAR,&POSCOMM,&BRNUM
+         LCLB  &QUOTE
+         AIF   ('&TO'(K'&TO,1)         EQ ')').TO2
+&LET0M1  SETC  '&TO.(&LENGTH),&FROM'
+         AGO  .MEND
+.TO2     ANOP
+&POSLPAR SETA  K'&TO
+.PLOOP   ANOP
+&POSLPAR SETA  &POSLPAR-1
+         AIF   (&POSLPAR LT 1).ERROR
+&C       SETC  '&TO'(&POSLPAR,1)
+         AIF   ('&C' NE '''').NOQUOTE
+&QUOTE   SETB  (NOT &QUOTE)
+         AGO   .PLOOP
+.NOQUOTE AIF   (&QUOTE).PLOOP
+         AIF   ('&C' NE ')').NOCLOSE
+&BRNUM   SETA  &BRNUM+1
+         AGO   .PLOOP
+.NOCLOSE AIF   ('&C' NE '(').NOOPEN
+         AIF   (&BRNUM EQ 0).FOUND
+&BRNUM   SETA  &BRNUM-1
+         AGO   .PLOOP
+.NOOPEN  AIF   (&BRNUM GT 0).PLOOP
+         AIF   ('&C' NE ',').PLOOP
+         AIF   (&POSLPAR EQ 1).ERROR
+         AIF   ('&TO'(&POSLPAR-1,1) NE '(').ERROR
+&POSCOMM SETA  &POSLPAR
+&POSLPAR SETA  &POSLPAR-1
+         AGO   .CFOUND
+.FOUND   ANOP
+&POSCOMM SETA  &POSLPAR
+.CFOUND  ANOP
+&TOHEAD  SETC  '&TO'(1,&POSLPAR)
+&TOTAIL  SETC  '&TO'(&POSCOMM+1,K'&TO-&POSCOMM)
+&LET0M1  SETC  '&TOHEAD&LENGTH,&TOTAIL,&FROM'
+         AGO  .MEND
+.*
+.ERROR   MNOTE 12,'*** LET0M1: ILLEGAL SYNTAX IN &&TO = &TO'
+.MEND    ANOP
+         MEND

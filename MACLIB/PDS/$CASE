@@ -1,0 +1,42 @@
+         MACRO ,                                       STRUCT MACRO SET
+&LABEL   $CASE &INDEX,&TABLE
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                      ADAPTED FROM $IF      PAHL (GMD-IST/RZ) 00MAR73
+.*  "(CASE" <"ON" COND "DO" BLOCK>* <"ELSE" BLOCK> "CASE)"      27MAR75
+.*       BEGIN "CASE" CLAUSE
+.*
+         GBLA  &BLK,&BLKDCNT(30),&EQUR
+         GBLC  &BLKTYPE(30),&BLKNAME(30),&BLKID(30)
+         LCLA  &I
+&LABEL   SASLIST MACRO,'(CASE'
+&BLK     SETA  &BLK+1
+&BLKDCNT(&BLK) SETA 0 &BLKDCNT(&BLK)+1
+&BLKTYPE(&BLK) SETC 'C '               BEING IN INIT PART OF "CASE"
+&BLKNAME(&BLK) SETC '&LABEL'
+         SPTSNDX C
+         AIF   ('&LABEL' EQ '').GO
+&LABEL   DS    0H
+.GO      ANOP
+@@A&BLKID(&BLK) DS 0H
+         AIF   ('&INDEX' EQ '').MEND
+         AIF   ('&TABLE' EQ '').MEND
+         AIF   (T'&INDEX NE 'N').EQUR
+         AIF   (&INDEX GT 1 OR &INDEX LE 15).OK
+.YINDEX  MNOTE 08,'****** $CASE : INVALID OPERAND &&INDEX = &INDEX '
+         AGO  .MEND
+.EQUR    EQUR  &INDEX
+         AIF   (&EQUR LT 2).YINDEX
+&BLKTYPE(&BLK) SETC 'CB'               BEING IN INIT PART OF "CASE"
+         B     *+4(&INDEX)
+.LOOP    AIF   (&I GE N'&TABLE).MEND
+&I       SETA  &I+1
+         AIF   ('&TABLE(&I)' EQ '').FALSE
+         GOTO  &TABLE(&I),NOOP=YES
+         AGO   .LOOP
+.FALSE   GOTO  F&BLKID(&BLK)
+         AGO   .LOOP
+.MEND    SASLIST MACEND
+         MEND

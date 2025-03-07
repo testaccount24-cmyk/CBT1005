@@ -1,0 +1,259 @@
+         #TEST PROC$
+         AIF   (&NOTFND).PROC$
+         PRINT ON
+         TITLE 'EXAMPLES FOR MACRO    PROC$'
+PGM      LOCTR ,
+         GBLC  &PRCCODE(4)
+         PROC$
+         SPACE 3
+&PRCCODE(1) SETC ''
+***********************************************************************
+*    PROC1$   $PROC TYPE=(BASIC,EXTERNAL),BASE=(R10,R15)              *
+*    *           SEQUENCE OF STATEMENTS                               *
+*    PROC2$      $PROC TYPE=(LOW,INTERNAL)                            *
+*    *           SEQUENCE OF STATEMENTS                               *
+*                PROC$                                                *
+*             PROC$ RC=(5,7,2),LTORG=YES                              *
+***********************************************************************
+         SPACE 3
+PROC1$   $PROC TYPE=(BASIC,EXTERNAL),BASE=(R10,R15)
+*           SEQUENCE OF STATEMENTS
+PROC2$      $PROC TYPE=(LOW,INTERNAL)
+*              SEQUENCE OF STATEMENTS
+            PROC$
+         PROC$ RC=(5,7,2),LTORG=YES
+         EJECT
+***********************************************************************
+*    &PRCCODE(1) SETC ''                                              *
+*    PROC3$   $PROC TYPE=(STD,EXTERNAL),BASE=R10                      *
+*    *           SEQUENCE OF STATEMENTS                               *
+*             PROC$ RC=(1,2)                                          *
+***********************************************************************
+         SPACE 3
+&PRCCODE(1) SETC ''
+PROC3$   $PROC TYPE=(STD,EXTERNAL),BASE=R10
+*           SEQUENCE OF STATEMENTS
+         PROC$ RC=(1,2)
+         EJECT
+***********************************************************************
+*    &PRCCODE(1) SETC ''                                              *
+*    PROC5$   $PROC TYPE=(STD,EXTERNAL),LOCAL=DATA,BASE=R11           *
+*    *           SEQUENCE OF STATEMENTS                               *
+*    PROC6$      $PROC TYPE=(LOW,EXTERNAL)                            *
+*    *              SEQUENCE OF STATEMENTS                            *
+*                PROC$ RC=24,LTORG=NO                                 *
+*    PGM      CSECT ,                                                 *
+*             PROC$ RC=(4,,8)                                         *
+***********************************************************************
+         EJECT
+&PRCCODE(1) SETC ''
+PROC5$   $PROC TYPE=(STD,EXTERNAL),LOCAL=DATA,BASE=R11
+*           SEQUENCE OF STATEMENTS
+PROC6$      $PROC TYPE=(LOW,EXTERNAL)
+*              SEQUENCE OF STATEMENTS
+            PROC$ RC=24,LTORG=NO
+PGM      LOCTR ,
+         PROC$ RC=(4,,8)
+         EJECT
+***********************************************************************
+*    PROC7$   $PROC TYPE=(STD,EXTERNAL),BASE=R10                      *
+*    *           SEQUENCE OF STATEMENTS                               *
+*             PROC$ RC=(,16,4)                                        *
+***********************************************************************
+         SPACE 3
+PROC7$   $PROC TYPE=(STD,EXTERNAL),BASE=R10
+*           SEQUENCE OF STATEMENTS
+         PROC$ RC=(,16,4)
+         EJECT
+***********************************************************************
+*    PROC8$   $PROC TYPE=(STD,EXTERNAL),BASE=R10                      *
+*    *           SEQUENCE OF STATEMENTS                               *
+*             PROC$ RC=(,,6)                                          *
+***********************************************************************
+         SPACE 3
+PROC8$   $PROC TYPE=(STD,EXTERNAL),BASE=R10
+*           SEQUENCE OF STATEMENTS
+         PROC$ RC=(,,6)
+         EJECT
+***********************************************************************
+*             #USE  R6,DATA                                           *
+*    PROC9$   $PROC TYPE=(STD,EXTERNAL),BASE=R10,LOCAL=(DATA,STATIC)  *
+*    *           SEQUENCE OF STATEMENTS                               *
+*    PROC10$     $PROC TYPE=(LOW,EXTERNAL)                            *
+*    *              SEQUENCE OF STATEMENTS                            *
+*    PROC11$        $PROC TYPE=(LOW,EXTERNAL)                         *
+*    *                 SEQUENCE OF STATEMENTS                         *
+*                   PROC$                                             *
+*                PROC$ RC=(,,8)                                       *
+*             PROC$ RC=(4,0,2)                                        *
+***********************************************************************
+         SPACE 3
+         #USE  R6,DATA
+PROC9$   $PROC TYPE=(STD,EXTERNAL),BASE=R10,LOCAL=(DATA,STATIC)
+*           SEQUENCE OF STATEMENTS
+PROC10$     $PROC TYPE=(LOW,EXTERNAL)
+*              SEQUENCE OF STATEMENTS
+PROC11$        $PROC TYPE=(LOW,EXTERNAL)
+*                 SEQUENCE OF STATEMENTS
+               PROC$
+            PROC$ RC=(,,8)
+         PROC$ RC=(4,0,2)
+         EJECT
+***********************************************************************
+*    &PRCCODE(1) SETC ''                                              *
+*    PROC12$  $PROC TYPE=(LOW,EXTERNAL),BASE=R9                       *
+*                $IF R3,LT,R5,THEN                                    *
+*             PROC$ RC=(1,2,3,4)                                      *
+***********************************************************************
+         SPACE 3
+&PRCCODE(1) SETC ''
+PROC12$  $PROC TYPE=(LOW,EXTERNAL),BASE=R9
+            $IF R3,LT,R5,THEN
+         PROC$ RC=(1,2,3,4)
+         SPACE 6
+*    AUFSETZEN FUER DIE NAECHSTEN BEISPIELE
+         SPACE 2
+&PRCCODE(1) SETC ''
+PROC4$   $PROC TYPE=(STD,EXTERNAL),LOCAL=DATA,BASE=R10
+         CONST
+         LTORG ,
+         CODE
+         SPACE 8
+         PRINT OFF                                                      #20  007
+.PROC$   ANOP                                                           #20  008
+         #TEST   XCALL                                                  #20  001
+         AIF   (&NOTFND).XCALL                                          #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   XCALL'                             #20  004
+PGM      LOCTR                                                          #20  006
+         #USE  R9,PGM
+         XCALL  EPOINT
+***********************************************************************
+*             XCALL  EPOI+4,4,5,6                                     *
+***********************************************************************
+         SPACE 3
+         XCALL  EPOI+4,4,5,6
+         SPACE 6
+***********************************************************************
+*             XCALL  EPOIN(R7),2,3,4                                  *
+***********************************************************************
+         SPACE 3
+         XCALL  EPOIN(R7),2,3,4
+         SPACE 6
+***********************************************************************
+*             XCALL  EPIN+4(R5),1,2,3                                 *
+***********************************************************************
+         SPACE 3
+         XCALL  EPIN+4(R5),1,2,3
+         SPACE 6
+***********************************************************************
+*             XCALL  (R5)                                             *
+***********************************************************************
+         SPACE 3
+         XCALL  (R5)
+         SPACE 6
+***********************************************************************
+*    XCALL1   XCALL                                                   *
+***********************************************************************
+         SPACE 3
+XCALL1   XCALL
+         SPACE 6
+***********************************************************************
+*    XCALL3   XCALL  12-R7),F2,F2,FULLWORD                            *
+***********************************************************************
+         SPACE 3
+XCALL3   XCALL  12-R7),F2,F2,FULLWORD
+         SPACE 6
+         CONST
+         LTORG
+         CODE
+         SPACE 8
+         PRINT OFF                                                      #20  007
+.XCALL   ANOP                                                           #20  008
+         #TEST   ICALL                                                  #20  001
+         AIF   (&NOTFND).ICALL                                          #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   ICALL'                             #20  004
+PGM      LOCTR                                                          #20  006
+***********************************************************************
+*    ICALL1   ICALL ICALLP1                                           *
+***********************************************************************
+         SPACE 3
+ICALL1   ICALL ICALLP1
+         SPACE 6
+***********************************************************************
+*    ICALL2   ICALL ICALLP2,1,2,3                                     *
+***********************************************************************
+         SPACE 3
+ICALL2   ICALL ICALLP2,1,2,3
+ICALLP1  $PROC TYPE=(B,I),RETURN=R4
+         PROC$
+ICALLP2  $PROC TYPE=(B,I)
+         PROC$
+         SPACE 8
+         PRINT OFF                                                      #20  007
+.ICALL   ANOP                                                           #20  008
+         #TEST   DATA                                                   #20  001
+         AIF   (&NOTFND).DATA                                           #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   DATA'                              #20  004
+PGM      LOCTR                                                          #20  006
+         GBLC  &PRCCODE(4)               MAY BE DUPLICATE
+***********************************************************************
+*             DATA                                                    *
+*             CODE                                                    *
+***********************************************************************
+         SPACE 3
+         DATA
+         CODE
+         SPACE 6
+***********************************************************************
+*    DATA6    $PROC TYPE=(LOW,INTERNAL)                               *
+*             DATA                                                    *
+*             CODE                                                    *
+*             PROC$ LTORG=YES                                         *
+***********************************************************************
+         SPACE 3
+DATA6    $PROC TYPE=(LOW,INTERNAL)
+         DATA
+         CODE
+         PROC$ LTORG=YES
+         SPACE 6
+***********************************************************************
+*             PROC$ LTORG=YES                                         *
+*    DATA7    $PROC TYPE=(BASIC,INTERNAL)                             *
+*             DATA                                                    *
+*             CODE                                                    *
+*             PROC$                                                   *
+***********************************************************************
+         SPACE 3
+         PROC$ LTORG=YES
+DATA7    $PROC TYPE=(BASIC,INTERNAL)
+         DATA
+         CODE
+         PROC$
+         SPACE 6
+*         AUFSETZEN FUER DIE NAECHSTEN BEISPIELE                      *
+         SPACE 2
+&PRCCODE(1) SETC ''
+PROC4$   $PROC TYPE=(STD,EXTERNAL),LOCAL=DATA,BASE=R10
+         CONST
+         LTORG ,
+         CODE
+         SPACE 8
+         PRINT OFF                                                      #20  007
+.DATA    ANOP                                                           #20  008
+         #TEST   CODE                                                   #20  001
+         AIF   (&NOTFND).CODE                                           #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   CODE'                              #20  004
+PGM      LOCTR                                                          #20  006
+***********************************************************************
+*             CODE                                                    *
+***********************************************************************
+         SPACE 3
+         CODE
+         SPACE 8
+         PRINT OFF                                                      #20  007
+         #USE  DATA,R13
+.CODE    ANOP                                                           #20  008

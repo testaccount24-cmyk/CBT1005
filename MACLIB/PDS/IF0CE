@@ -1,0 +1,266 @@
+         MACRO                        INTERFACE STRUCT/COMPUT MACRO SET
+&NAME    IF0CE &A,&REL,&B,&R=@0,&CALLER=$EX$
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                            PAHL (GMD-IST/RZ) 00JUL73
+.*  EVALUATE AND GENERATE CONDITIONAL EXPR FOR IF/WHILE/UNTIL   03OCT75
+.*                                               LAST MOD ECKARDT IST
+.*
+.*
+         GBLA  &LETL(3)                                          COMPUT
+         GBLC  &LETA(3),&LETM(3),&LET0M1                         COMPUT
+         GBLA  &BLK,&BLKCC(10)                                   STRUCT
+         GBLA  &IFCC
+         LCLC  &C,&ROP,&A2
+.*
+.*  EVALUATE RELATIONAL OPERATOR
+.*
+         AIF   ('&NAME' EQ '').NONAME
+&NAME    DS    0H
+.NONAME  ANOP
+&ROP     SETC  '&REL'
+&C       SETC  'C'                     ARITHMETIC COMPARE
+         AIF   (K'&REL NE 3 OR '&REL'(1,1) NE 'L').QREL
+         AIF   ('&REL'(2,1) NE 'E' AND '&REL'(2,1) NE 'N' AND          -
+               '&REL'(2,1) NE 'L' AND '&REL'(2,1) NE 'G').YLOG
+&ROP     SETC  '&REL'(2,2)
+&C       SETC  'CL'                    LOGICAL COMPARE
+.QREL    ANOP
+&IFCC    SETA  8
+         AIF   ('&ROP' EQ 'EQ' OR '&ROP' EQ '=').QAZ
+&IFCC    SETA  7
+         AIF   ('&ROP' EQ 'NE' OR '&ROP' EQ '¬=').QAZ
+&IFCC    SETA  4
+         AIF   ('&ROP' EQ 'LT' OR '&ROP' EQ '<').QAZ
+&IFCC    SETA  2
+         AIF   ('&ROP' EQ 'GT' OR '&ROP' EQ '>').QAZ
+&IFCC    SETA  12
+         AIF   ('&ROP' EQ 'LE' OR '&ROP' EQ '<=').QAZ
+&IFCC    SETA  10
+         AIF   ('&ROP' EQ 'GE' OR '&ROP' EQ '>=').QAZ
+&IFCC    SETA  1
+         AIF   ('&ROP' EQ 'O'  OR '&ROP' EQ ':' OR '&ROP' EQ 'ON').TM
+&IFCC    SETA  14
+         AIF   ('&ROP' EQ 'NO' OR '&ROP' EQ '¬:' OR '&ROP' EQ 'OFF').TM
+&IFCC    SETA  4
+         AIF ('&ROP' EQ 'M'  OR '&ROP' EQ ':%' OR '&ROP' EQ 'MIXED').TM
+&IFCC    SETA  11
+         AIF   ('&ROP' EQ 'NM' OR '&ROP' EQ '¬:%').TM
+&IFCC    SETA  8
+         AIF   ('&ROP' EQ 'Z'  OR '&ROP' EQ '%').TM
+&IFCC    SETA  7
+         AIF   ('&ROP' EQ 'NZ' OR '&ROP' EQ '¬%').TM
+&IFCC    SETA  8
+         AIF   ('&ROP' EQ '->' OR '&ROP' EQ 'AT').POINT
+&IFCC    SETA  7
+         AIF   ('&ROP' EQ '¬->' OR '&ROP' EQ '+>').POINT
+         MNOTE 08,'****** &CALLER: INVALID RELATIONAL OPERATOR'
+&IFCC    SETA  0
+         AGO   .MEND
+.NOCODE  ANOP
+.**********************************************************************
+.*
+.*  ANALYSE OPERANDS AND GENERATE COMPARE
+.*
+.QAZ     AIF   ('&A&B' EQ '').MEND     USER GOING TO WRITE COND.EXPR
+         AIF   ('&A' EQ '' OR '&B' EQ '').YAB
+         AIF   (N'&A EQ 2).STRING      STRING MODE COMPARE
+.QAZ1    LET0Q &A,2                    ANALYSE OPERAND
+         AIF   ('&B' EQ '0').ZERO      SPECIAL CODE FOR ZERO TEST
+         LET0Q &B,3                    ANALYSE OPERAND
+         AIF   ('&A'(1,1) EQ ':').ADDRA
+         AIF   ('&B'(1,1) EQ ':').ADDRB
+         AIF   ('&LETM(2)' EQ 'R').AREG
+         AIF   ('&LETM(3)' EQ 'R').BREG
+         AIF   (&LETL(2) EQ 1).QCLI    B.IF L'&A=1
+.LET0F   LET0F &R,&A,2
+         LET0X &R,&C,&B,3,R=&R
+         AGO   .MEND
+.ADDRA   ANOP
+         LA    &R,&LETA(2)
+         AIF   ('&B'(1,1) EQ ':').ADDRAB
+         AIF   (&IFCC EQ 7 OR &IFCC EQ 8).POINTI1
+         AIF   ('&LETM(3)' EQ 'R').ADDRBR
+         AIF   ('&LETA(3)'(1,1) EQ '=').ICM1
+         AIF   ('&LETA(3)'(K'&LETA(3),1) NE ')').ICM1
+         MNOTE 0,'****** WARNING REGISTER @1 USED'
+         LET0F @1,&B,3
+         LA    @1,0(,@1)
+         CR    &R,@1
+         AGO   .MEND
+.ADDRBR  ANOP
+         MNOTE 0,'****** WARNING REGISTER @1 USED'
+         LA    @1,0(,&B)
+         CR    &R,@1
+         AGO   .MEND
+.ICM1    LET0X &R,CA,&B,3,R=&R
+         AGO   .MEND
+.ADDRB   LA    &R,&LETA(3)
+         AIF   (&IFCC EQ 7 OR &IFCC EQ 8).POINT1
+         AIF   ('&LETM(2)' EQ 'R').ADDRAR
+         AIF   ('&LETA(2)'(1,1) EQ '=').ICM2
+         AIF   ('&LETA(2)'(K'&LETA(2),1) NE ')').ICM2
+         MNOTE 0,'****** WARNING REGISTER @1 USED'
+         LET0F @1,&A,2
+         LA    @1,0(,@1)
+         CR    @1,&R
+         AGO   .MEND
+.ADDRAR  ANOP
+         MNOTE 0,'****** WARNING REGISTER @1 USED'
+         LA    @1,0(,&A)
+         CR    @1,&R
+         AGO   .MEND
+.ICM2    LET0X &R,CA,&A,2,R=&R
+         AGO   .REFLCT
+.ADDRAB  MNOTE 0,'****** WARNING REGISTER @1 USED'
+         LA    @1,&LETA(3)
+         CR    &R,@1
+         AGO   .MEND
+.*
+.*  L'&A=1.
+.*  SEE WHETHER 'CLI' IS POSSIBLE
+.*
+.QCLI    AIF   (T'&B EQ '#').CLIEQUN
+         AIF   (K'&B LE 2).QCLINO#
+         AIF   ('&B'(K'&B-1,2) EQ ':N').CLI#
+         AIF   ('&B'(K'&B-1,2) EQ ':#').CLI#
+.QCLINO# AIF   (&LETL(3) EQ 1).CLC1
+         AIF   (&LETL(3) NE 0).LET0F   B.IF NO SELF.DEF
+         CLI   &LETA(2),&LETA(3)
+         AGO   .MEND
+.CLC1    AIF   ('&LETA(2)'(K'&LETA(2),1) EQ ')').LET0F
+         CLC   &LETA(2)(1),&LETA(3)
+         AGO   .MEND
+.CLIEQUN ANOP
+         CLI   &LETA(2),&B
+         AGO  .MEND
+.CLI#    ANOP
+&LETA(3) SETC  '&B'(1,K'&B-2)
+         CLI   &LETA(2),&LETA(3)
+         AGO  .MEND
+.*
+.*  A OPERAND IS REGISTER
+.*
+.AREG    LET0X &A(1),&C,&B,3,R=&R
+         AGO   .MEND
+.*
+.*  B OPERAND IS REGISTER: EXCHANGE OPERANDS
+.*
+.BREG    LET0X &B(1),&C,&A,2,R=&R
+.*
+.*  REFLECT OPERANDS EXCHANGE IN BRANCH CONDITION
+.*
+.REFLCT  AIF   (&IFCC EQ 8 OR &IFCC EQ 7).MEND EQ,NE ARE SYMMETRIC
+         AIF   (&IFCC EQ 4 OR &IFCC EQ 12).SYMLT
+&IFCC    SETA  &IFCC+2                 GT,GE => LT,LE
+         AGO   .MEND
+.SYMLT   ANOP
+&IFCC    SETA  &IFCC-2                 LT,LE => GT,GE
+         AGO   .MEND
+.**********************************************************************
+.*
+.*   ZERO TEST.  EXTRA CODE PROVIDED IN ORDER TO:
+.*        INCREASE EFFICIENCY
+.*        ENHANCE FACILITIES FOR THIS FREQUENT CASE
+.*
+.ZERO    AIF   ('&LETM(2)' EQ 'R').ZLTR A IS REG
+         AIF   (&LETL(2) EQ 1).ZCLI
+.*       AIF   ('&LETM(2)' EQ 'H' OR '&LETM(2)' EQ ' ').ZNORM
+.*       AIF   ('&A' NE '&LETA(2)'  OR '&A'(K'&A,1) EQ ')' OR
+.*             (&IFCC NE 8 AND &IFCC NE 7)).ZNORM
+.*       NC    &A,&A                   COMPARE TO ZERO.
+.*       AGO   .MEND
+.ZNORM   LET0F &R,&A,2                 FETCH OPERAND
+         LTR   &R,&R                   COMPARE TO ZERO.
+         AGO   .MEND
+.ZCLI    CLI   &LETA(2),0              COMPARE TO ZERO.
+         AGO   .MEND
+.ZLTR    LTR   &A(1),&A(1)             COMPARE TO ZERO.
+         AGO   .MEND
+.**********************************************************************
+.*
+.*  BOOLEAN TEST: ASK BIT IN BYTE
+.*
+.TM      AIF   ('&A&B' EQ '').MEND
+         AIF   ('&A' EQ '' OR '&B' EQ '').YAB
+&LETA(1) SETC  '&A'
+&LETA(2) SETC  '&B'
+         AIF   (K'&A LT 2).TM2
+         AIF   ('&A'(K'&A-1,1) NE ':' OR '&A'(K'&A,1) EQ '''').TM2
+&LETA(1) SETC  '&A'(1,K'&A-2)
+         AGO   .TM1
+.TM2     AIF   (T'&A NE '@').TM1
+&LETA(1) SETC  '0(&A)'
+.TM1     AIF   (K'&B LT 2).TM3
+         AIF   ('&B'(K'&B-1,1) NE ':' OR '&B'(K'&B,1) EQ '''').TM3
+&LETA(2) SETC  '&B'(1,K'&B-2)
+.TM3     TM    &LETA(1),&LETA(2)
+         AGO   .MEND
+.**********************************************************************
+.*
+.*  ADDRESS COMPARE:  "IF A,->,B,...."
+.*
+.POINT   AIF   ('&A' EQ '' OR '&B' EQ '').YAB
+         LA    &R,&B                   GET ADDRESS
+         LET0X &R,X,&A                 X-OR
+         N     &R,=XL4'00FFFFFF'       IF EQ, REG NOW 0.
+         AGO   .MEND
+.POINT1  ANOP
+         LET0X &R,X,&A,1               X-OR
+         N     &R,=XL4'00FFFFFF'       IF EQ, REG NOW 0.
+         AGO   .MEND
+.POINTI1 ANOP
+         LET0X &R,X,&B,2               X-OR
+         N     &R,=XL4'00FFFFFF'       IF EQ, REG NOW 0.
+         AGO   .MEND
+.**********************************************************************
+.*
+.*  STRING MODE COMPARISON
+.*
+.STRING  ANOP
+&C       SETC  ''
+         AIF   ('&B'(1,1) NE '''').STRING2
+&C       SETC  '=C'
+.STRING2 AIF   (T'&A(2) EQ '@' OR '&A(2)'(1,1) EQ '(').CLCEX
+         AIF   (K'&A(2) LT 2).STRING3
+         AIF   ('&A(2)'(K'&A(2)-1,2) EQ ':N').CLCCN2
+         AIF   ('&A(2)'(K'&A(2)-1,2) EQ ':#').CLCCN2
+.STRING3 AIF   (T'&A(2) NE 'N' AND T'&A(2) NE '#'                      -
+               AND '&A(2)'(1,2) NE 'L''').QAZ1
+.*  STRING WITH CONSTANT LENGTH
+.CLCCNST LET0M1 &A(1),&A(2),&C&B
+         CLC   &LET0M1
+.*       CLC   0(&A(2),0),&C&B
+.*       ORG   *-4
+.*       DC    S(&A(1))
+.*       ORG   *+2
+         AGO   .MEND
+.CLCCN2  ANOP
+&A2      SETC  '&A(2)'(1,K'&A(2)-2)
+         LET0M1 &A(1),&A2,&C&B
+         CLC   &LET0M1
+         AGO   .MEND
+.*  STRING COMPARE WITH LENGTH IN (REG)
+.*LCEX   B     *+10                    JUMP AROUND EX'ED CLC
+.CLCEX   LET0M1 &A(1),*-*,&C&B
+         CLC   &LET0M1
+.*       CLC   0(*-*,0),&C&B
+.*       ORG   *-4
+.*       DC    S(&A(1))
+.*       ORG   *+2
+         BCTR  &A(2),0                 -1 FOR 'EX'
+         EX    &A(2),*-2-6             COMPARE
+         LA    &A(2),1(,&A(2))         RESTORE LENGTH
+         AGO   .MEND
+.*
+.YOP     MNOTE 12,'****** &CALLER: INVALID RELATION OPERANDS'
+         AGO   .MEND
+.YAB     MNOTE 12,'****** &CALLER: MISSING RELATION OPERANDS'
+         AGO   .MEND
+.YLOG    MNOTE 12,'****** &CALLER: INVALID RELATIONAL OPERATOR'
+&IFCC    SETA  0
+.MEND    ANOP
+&BLKCC(&BLK) SETA &IFCC                NOTE CONDITION CODE
+         MEND

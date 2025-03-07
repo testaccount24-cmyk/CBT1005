@@ -1,0 +1,793 @@
+         #TEST   $CASE                                                  #20  001
+         AIF   (&NOTFND).$CASE                                          #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   $CASE'                             #20  004
+PGM      LOCTR                                                          #20  006
+         SPACE 2
+***********************************************************************
+*    CASE1    $CASE                                                   *
+*             ON    RC,LT,0,DO                                        *
+*                ICALL SUBR1                                          *
+*             ON    RC,GT,0,DO                                        *
+*                ICALL SUBR3                                          *
+*             CASE$                                                   *
+***********************************************************************
+         SPACE 3
+CASE1    $CASE
+         ON    RC,LT,0,DO
+            ICALL SUBR1
+         ON    RC,GT,0,DO
+            ICALL SUBR3
+         CASE$
+         SPACE 6
+***********************************************************************
+*             $CASE                                                   *
+*             ON    0(R3),¬:,#BIT2,DO                                 *
+*                LET 3(R5),:,#BIT2                                    *
+*             CASE$                                                   *
+***********************************************************************
+         SPACE 3
+         $CASE
+         ON    0(R3),¬:,#BIT2,DO
+            LET 3(R5),:,#BIT2
+         CASE$
+         SPACE 2
+RC       DS    H
+SUBR1    $PROC TYPE=(L,I)
+         PROC$
+SUBR3    $PROC TYPE=(B,I),RETURN=R10
+         PROC$
+         SPACE 8
+         PRINT OFF                                                      #20  007
+.$CASE   ANOP                                                           #20  008
+         #TEST   ON                                                     #20  001
+         AIF   (&NOTFND).ON                                             #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   ON'                                #20  004
+PGM      LOCTR                                                          #20  006
+         SPACE 2
+***********************************************************************
+*             $CASE                                                   *
+*    ON1      ON    R5,EQ,R6                                          *
+*             DO                                                      *
+*                LET R6,->,FULLWORD                                   *
+***********************************************************************
+         SPACE 3
+         $CASE
+ON1      ON    R5,EQ,R6
+         DO
+            LET R6,->,FULLWORD
+         SPACE 6
+***********************************************************************
+*             ON    R2,EQ,12,DO                                       *
+*                LET F2,->,H2                                         *
+***********************************************************************
+         SPACE 3
+         ON    R2,EQ,12,DO
+            LET F2,->,H2
+         SPACE 6
+***********************************************************************
+*             ON    R5,EQ,R6,ORELSE,F2,GT,0,DO                        *
+*                LET R6,=,R5,*,4                                      *
+***********************************************************************
+         SPACE 3
+         ON    R5,EQ,R6,ORELSE,F2,GT,0,DO
+            LET R6,=,R5,*,4
+         SPACE 6
+***********************************************************************
+*    ON2      ON    R5,EQ,R6,ANDTHEN,H2,LT,0,DO                       *
+*                LET H2,=,R5,/,8                                      *
+***********************************************************************
+         SPACE 3
+ON2      ON    R5,EQ,R6,ANDTHEN,H2,LT,0,DO
+            LET H2,=,R5,/,8
+         SPACE 6
+***********************************************************************
+*             ON    R5,EQ,R6,END                                      *
+*             DO                          CLOSING STRUCTURE           *
+*                LET CHAR,¬:,#BIT2                                    *
+*             CASE$                                                   *
+***********************************************************************
+         SPACE 3
+         ON    R5,EQ,R6,END
+         DO                          CLOSING STRUCTURE
+            LET CHAR,¬:,#BIT2
+         CASE$
+         SPACE 6
+***********************************************************************
+*             $IF   R3,EQ,5,THEN                                      *
+*                LET H2,=,FULLWORD                                    *
+*             ON    R4,->,0(R5):F,DO                                  *
+*             IF$                                                     *
+***********************************************************************
+         SPACE 3
+         $IF   R3,EQ,5,THEN
+            LET H2,=,FULLWORD
+         ON    R4,->,0(R5):F,DO
+         IF$
+         SPACE 8
+         PRINT OFF                                                      #20  007
+.ON      ANOP                                                           #20  008
+         #TEST   DO                                                     #20  001
+         AIF   (&NOTFND).DO                                             #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   DO'                                #20  004
+PGM      LOCTR                                                          #20  006
+         SPACE 2
+***********************************************************************
+*             $CASE                                                   *
+*             ON    R2,EQ,5                                           *
+*             DO                                                      *
+*                LET FULLWORD,=,-,C2                                  *
+***********************************************************************
+         SPACE 3
+         $CASE
+         ON    R2,EQ,5
+         DO
+            LET FULLWORD,=,-,C2
+         SPACE 6
+***********************************************************************
+*             ON  0(R4),:,#BIT2,ORELSE,R3,EQ,234                      *
+*             DO                                                      *
+*                LET F2,=,H2,WORK=                                    *
+*             CASE$                                                   *
+***********************************************************************
+         SPACE 3
+         ON  0(R4),:,#BIT2,ORELSE,R3,EQ,234
+         DO
+            LET F2,=,H2,WORK=
+         CASE$
+         SPACE 6
+***********************************************************************
+*             $IF R6,->,FULLWORD,THEN                                 *
+*                LET 5(R3):C,=,3(R6):C                                *
+*             DO                                                      *
+*             IF$                                                     *
+***********************************************************************
+         SPACE 3
+         $IF R6,->,FULLWORD,THEN
+            LET 5(R3):C,=,3(R6):C
+         DO
+         IF$
+         SPACE 8
+         PRINT OFF                                                      #20  007
+.DO      ANOP                                                           #20  008
+         #TEST   CASE$                                                  #20  001
+         AIF   (&NOTFND).CASE$                                          #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   CASE$'                             #20  004
+PGM      LOCTR                                                          #20  006
+         SPACE 2
+***********************************************************************
+*             $CASE                                                   *
+*             ON    R3,EQ,0,DO                                        *
+*                LET F2,¬:,B'01010111'                                *
+*             CASE$                                                   *
+***********************************************************************
+         SPACE 3
+         $CASE
+         ON    R3,EQ,0,DO
+            LET F2,¬:,B'01010111'
+         CASE$
+         SPACE 6
+***********************************************************************
+*    CASE1$   $CASE                                                   *
+*             ON    R5,>,9,DO                                         *
+*                LET R5,=,1                                           *
+*             CASE$ CASE1$                                            *
+***********************************************************************
+         SPACE 3
+CASE1$   $CASE
+         ON    R5,>,9,DO
+            LET R5,=,1
+         CASE$ CASE1$
+         SPACE 6
+***********************************************************************
+*    CASE2$   $CASE                                                   *
+*             ON    R3,EQ,0(R5):F,DO                                  *
+*                LET R3,=,R5                                          *
+*             ELSE                                                    *
+*                LET FULLWORD,->,H2                                   *
+*             CASE$                                                   *
+***********************************************************************
+         SPACE 3
+CASE2$   $CASE
+         ON    R3,EQ,0(R5):F,DO
+            LET R3,=,R5
+         ELSE
+            LET FULLWORD,->,H2
+         CASE$
+         SPACE 6
+***********************************************************************
+*    CASE3$   $CASE                                                   *
+*             ON    R6,=,6,DO                                         *
+*                LET R7,=,F2,+,2                                      *
+*             CASE$ CASE2                                             *
+*             CASE$                                                   *
+***********************************************************************
+         SPACE 3
+CASE3$   $CASE
+         ON    R6,=,6,DO
+            LET R7,=,F2,+,2
+         CASE$ CASE2
+         CASE$
+         SPACE 6
+***********************************************************************
+*             $IF   R3,=,FULLWORD+2:H,THEN                            *
+*                LET 3(R5),:,#BIT2                                    *
+*             CASE$                                                   *
+*             IF$                                                     *
+***********************************************************************
+         SPACE 3
+         $IF   R3,=,FULLWORD+2:H,THEN
+            LET 3(R5),:,#BIT2
+         CASE$
+         IF$
+         SPACE 6
+***********************************************************************
+*             $CASE                                                   *
+*             CASE$                                                   *
+*             ON    R3,GT,55,DO                                       *
+*                LET R3,-,8                                           *
+*             CASE$                                                   *
+***********************************************************************
+         SPACE 3
+         $CASE
+         CASE$
+         ON    R3,GT,55,DO
+            LET R3,-,8
+         CASE$
+         SPACE 8
+         PRINT OFF                                                      #20  007
+.CASE$   ANOP                                                           #20  008
+         #TEST   $LOOP                                                  #20  001
+         AIF   (&NOTFND).$LOOP                                          #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   $LOOP'                             #20  004
+PGM      LOCTR                                                          #20  006
+         SPACE 2
+***********************************************************************
+*    LOOP1    $LOOP                                                   *
+*                LET R3,=,0(R3):F                                     *
+*                IF  0(R3):F,<,1,LEAVE,LOOP1                          *
+*             LOOP$                                                   *
+***********************************************************************
+         SPACE 3
+LOOP1    $LOOP
+            LET R3,=,0(R3):F
+            IF  0(R3):F,<,1,LEAVE,LOOP1
+         LOOP$
+         SPACE 6
+***********************************************************************
+*             $LOOP                                                   *
+*                LET R4,-,1                                           *
+*                LET R8,+,4                                           *
+*                IF  R4,<,1,LEAVE                                     *
+*             LOOP$                                                   *
+***********************************************************************
+         SPACE 3
+         $LOOP
+            LET R4,-,1
+            LET R8,+,4
+            IF  R4,<,1,LEAVE
+         LOOP$
+         SPACE 8
+         PRINT OFF                                                      #20  007
+.$LOOP   ANOP                                                           #20  008
+         #TEST   UNTIL
+         AIF   (&NOTFND).UNTIL
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   UNTIL'
+PGM      LOCTR                                                          #20  006
+         SPACE 2
+***********************************************************************
+*             $LOOP                                                   *
+*                LET R3,=,0(R3):F                                     *
+*    UNTIL1      UNTIL 0(R3):F,<,1                                    *
+*             LOOP$                                                   *
+***********************************************************************
+         SPACE 3
+         $LOOP
+            LET R3,=,0(R3):F
+UNTIL1      UNTIL 0(R3):F,<,1
+         LOOP$
+         SPACE 6
+***********************************************************************
+*             $LOOP                                                   *
+*                LET R4,-,1                                           *
+*                LET R8,+,4                                           *
+*                UNTIL R4,<,1,OR,R8,>,:FULLWORD                       *
+*             LOOP$                                                   *
+***********************************************************************
+         SPACE 3
+         $LOOP
+            LET R4,-,1
+            LET R8,+,4
+            UNTIL R4,<,1,OR,R8,>,:FULLWORD
+         LOOP$
+         SPACE 6
+**********************************************************************
+*        $LOOP ,
+*           LET  @1,=,0
+*        UNTIL @15,=,0,OR,@14,=,0
+*        LOOP$ ,
+**********************************************************************
+         SPACE 3
+         $LOOP ,
+            LET  @1,=,0
+         UNTIL @15,=,0,OR,@14,=,0
+         LOOP$ ,
+         SPACE 6
+***********************************************************************
+*             $IF  R3,=,77,THEN                                       *
+*                LET H2,=,R5,/,8                                      *
+*                UNTIL 0(R4),=,:FULLWORD+20                           *
+*             IF$                                                     *
+***********************************************************************
+         SPACE 3
+         $IF  R3,=,77,THEN
+            LET H2,=,R5,/,8
+            UNTIL 0(R4),=,:FULLWORD+20
+         IF$
+         SPACE 8
+         PRINT OFF                                                      #20  007
+.UNTIL   ANOP                                                           #20  008
+         #TEST   LOOP$                                                  #20  001
+         AIF   (&NOTFND).LOOP$                                          #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   LOOP$'                             #20  004
+PGM      LOCTR                                                          #20  006
+         SPACE 2
+***********************************************************************
+*    LOOP1$   $LOOP                                                   *
+*                LET R3,+,2                                           *
+*                ICALL SUBR1                                          *
+*                IF  C2,:,X'FF',LEAVE                                 *
+*             LOOP$ LOOP1$                                            *
+***********************************************************************
+         SPACE 3
+LOOP1$   $LOOP
+            LET R3,+,2
+            ICALL SUBR1
+            IF  C2,:,X'FF',LEAVE
+         LOOP$ LOOP1$
+         SPACE 6
+***********************************************************************
+*             LET   R6,=,R5                                           *
+*    LOOP2    $LOOP                                                   *
+*                IF  0(R6):F,=,0,LEAVE                                *
+*                LET R6,=,4(R6):F                                     *
+*                UNTIL R5,=,R6                                        *
+*             LOOP$ LOOP1                                             *
+*             LOOP$                                                   *
+***********************************************************************
+         SPACE 3
+         LET   R6,=,R5
+LOOP2    $LOOP
+            IF  0(R6):F,=,0,LEAVE
+            LET R6,=,4(R6):F
+            UNTIL R5,=,R6
+         LOOP$ LOOP1
+         LOOP$
+         SPACE 6
+***********************************************************************
+*             $IF   F2,EQ,0,THEN                                      *
+*                LET FULLWORD,=,-,C2                                  *
+*             LOOP$                                                   *
+*             IF$                                                     *
+***********************************************************************
+         SPACE 3
+         $IF   F2,EQ,0,THEN
+            LET FULLWORD,=,-,C2
+         LOOP$
+         IF$
+         SPACE 8
+         PRINT OFF                                                      #20  007
+.LOOP$   ANOP                                                           #20  008
+         #TEST   $FOR                                                   #20  001
+         AIF   (&NOTFND).$FOR                                           #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   $FOR'                              #20  004
+PGM      LOCTR                                                          #20  006
+         SPACE 2
+***********************************************************************
+*    FOR1     $FOR  R5,TIMES,LOOP                                     *
+*                LET R3,=,0(R3):F                                     *
+*             FOR$                                                    *
+***********************************************************************
+         SPACE 3
+FOR1     $FOR  R5,TIMES,LOOP
+            LET R3,=,0(R3):F
+         FOR$
+         SPACE 6
+***********************************************************************
+*    FOR2     $FOR  R5,STEP,2,TO,20,LOOP                              *
+*                LET 0(R5):C,=,X'80'                                  *
+*                ICALL SUBR1,0(R5)                                    *
+*             FOR$                                                    *
+***********************************************************************
+         SPACE 3
+FOR2     $FOR  R5,STEP,2,TO,20,LOOP
+            LET 0(R5):C,=,X'80'
+            ICALL SUBR1,0(R5)
+         FOR$
+         SPACE 6
+***********************************************************************
+*             $FOR  (F2,=,4),STEP,2,TO,R8                             *
+*                LET R3,+,F2                                          *
+*             FOR$                                                    *
+***********************************************************************
+         SPACE 3
+         $FOR  (F2,=,4),STEP,2,TO,R8
+            LET R3,+,F2
+         FOR$
+         SPACE 6
+***********************************************************************
+*             $FOR  (R4,=,3),STEH,2,TU                                *
+*    *           SEQUENCE OF STATEMENTS                               *
+*             FOR$                                                    *
+***********************************************************************
+         SPACE 3
+         $FOR  (R4,=,3),STEH,2,TU
+*           SEQUENCE OF STATEMENTS
+         FOR$
+         SPACE 8
+         PRINT OFF                                                      #20  007
+.$FOR    ANOP                                                           #20  008
+         #TEST   FOR$                                                   #20  001
+         AIF   (&NOTFND).FOR$                                           #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   FOR$'                              #20  004
+PGM      LOCTR                                                          #20  006
+         SPACE 2
+***********************************************************************
+*             LET   R6,->,FULLWORD                                    *
+*             LET   R7,=,0(R8):F                                      *
+*             LET   R3,=,20                                           *
+*    FOR1$    $FOR  R3,TIMES,LOOP                                     *
+*                LET R10,+,0(R6):H                                    *
+*                LET R6,+,2                                           *
+*                IF  R6,GE,R7,LEAVE                                   *
+*             FOR$  FOR1$                                             *
+***********************************************************************
+         SPACE 3
+         LET   R6,->,FULLWORD
+         LET   R7,=,0(R8):F
+         LET   R3,=,20
+FOR1$    $FOR  R3,TIMES,LOOP
+            LET R10,+,0(R6):H
+            LET R6,+,2
+            IF  R6,GE,R7,LEAVE
+         FOR$  FOR1$
+         SPACE 6
+***********************************************************************
+*    FOR3$    $FOR  R3,STEP,4,TO,30,LOOP                              *
+*                ICALL SUBR,0(R3):F                                   *
+*             FOR$  FOR3$                                             *
+***********************************************************************
+         SPACE 3
+FOR3$    $FOR  R3,STEP,4,TO,30,LOOP
+            ICALL SUBR,0(R3):F
+         FOR$  FOR3$
+         SPACE 6
+***********************************************************************
+*             $FOR  R3,STEP,2,LOOP                                    *
+*                $IF 0(R3):H,NE,0,THEN                                *
+*                   ICALL SUBR,0(R3):H                                *
+*                IF$                                                  *
+*             FOR$                                                    *
+***********************************************************************
+         SPACE 3
+         $FOR  R3,STEP,2,LOOP
+            $IF 0(R3):H,NE,0,THEN
+               ICALL SUBR,0(R3):H
+            IF$
+         FOR$
+         SPACE 6
+***********************************************************************
+*             $LOOP                                                   *
+*                IF  0(R3):C,EQ,'.',LEAVE                             *
+*                LET R3,+,1                                           *
+*                FOR$                                                 *
+*                UNTIL R3,GE,R5                                       *
+*             LOOP$                                                   *
+***********************************************************************
+         SPACE 3
+         $LOOP
+            IF  0(R3):C,EQ,'.',LEAVE
+            LET R3,+,1
+            FOR$
+            UNTIL R3,GE,R5
+         LOOP$
+         SPACE 6
+***********************************************************************
+*    FOR2$    $FOR  R3,TIMES,LOOP                                     *
+*                LET R4,=,0(R4):F                                     *
+*             FOR$  FOR1$                                             *
+*             FOR$                     CLOSING STRUCTURE              *
+*             FOR$  FOR2$                                             *
+***********************************************************************
+         SPACE 3
+FOR2$    $FOR  R3,TIMES,LOOP
+            LET R4,=,0(R4):F
+         FOR$  FOR1$
+         FOR$                     CLOSING STRUCTURE
+         FOR$  FOR2$
+         SPACE 8
+         PRINT OFF                                                      #20  007
+.FOR$    ANOP                                                           #20  008
+         #TEST   $WHILE                                                 #20  001
+         AIF   (&NOTFND).$WHILE                                         #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   $WHILE'                            #20  004
+PGM      LOCTR                                                          #20  006
+         SPACE 2
+***********************************************************************
+*    WHILE1   $WHILE 0(R5),¬:,X'80'                                   *
+*                LOOP                                                 *
+*                LET R5,=,0(R5):F                                     *
+*             WHILE$                                                  *
+***********************************************************************
+         SPACE 3
+WHILE1   $WHILE 0(R5),¬:,X'80'
+            LOOP
+            LET R5,=,0(R5):F
+         WHILE$
+         SPACE 6
+***********************************************************************
+*             $WHILE R6,>,0,LOOP                                      *
+*                LET R6,-,1                                           *
+*                LET R8,+,256                                         *
+*                ICALL SUBR,R8                                        *
+*             WHILE$                                                  *
+***********************************************************************
+         SPACE 3
+         $WHILE R6,>,0,LOOP
+            LET R6,-,1
+            LET R8,+,256
+            ICALL SUBR,R8
+         WHILE$
+         SPACE 6
+***********************************************************************
+*             $WHILE R5,LT,R6,OR,H2,¬:,#BIT2                          *
+*             LOOP                                                    *
+*                LET R5,*,2                                           *
+*             WHILE$                                                  *
+***********************************************************************
+         SPACE 3
+         $WHILE R5,LT,R6,OR,H2,¬:,#BIT2
+         LOOP
+            LET R5,*,2
+         WHILE$
+         SPACE 6
+***********************************************************************
+*             $WHILE R5,LT,R3,AND,0(R5),¬:,X'80'                      *
+*                LOOP                                                 *
+*                LET R5,=,0(R5):F                                     *
+*             WHILE$                                                  *
+***********************************************************************
+         SPACE 3
+         $WHILE R5,LT,R3,AND,0(R5),¬:,X'80'
+            LOOP
+            LET R5,=,0(R5):F
+         WHILE$
+         SPACE 6
+***********************************************************************
+*             LET   R4,=,:FULLWORD                                    *
+*             $WHILE 0(R6):F,NE,R4,LUP                                *
+*                LET R1,=,4(R6):F                                     *
+*                ICALL SUBR,R1                                        *
+*                LET R6,+,8                                           *
+*             WHILE$                                                  *
+***********************************************************************
+         SPACE 3
+         LET   R4,=,:FULLWORD
+         $WHILE 0(R6):F,NE,R4,LUP
+            LET R1,=,4(R6):F
+            ICALL SUBR,R1
+            LET R6,+,8
+         WHILE$
+         SPACE 8
+         PRINT OFF                                                      #20  007
+.$WHILE  ANOP                                                           #20  008
+         #TEST   LOOP                                                   #20  001
+         AIF   (&NOTFND).LOOP                                           #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   LOOP'                              #20  004
+PGM      LOCTR                                                          #20  006
+         SPACE 2
+***********************************************************************
+*             $WHILE 0(R3):C,NE,X'80'                                 *
+*                LOOP                                                 *
+*                LET R3,=,0(R3):F                                     *
+*             WHILE$                                                  *
+***********************************************************************
+         SPACE 3
+         $WHILE 0(R3):C,NE,X'80'
+            LOOP
+            LET R3,=,0(R3):F
+         WHILE$
+         SPACE 6
+***********************************************************************
+*             $IF  3(R5),¬:,#BIT2,THEN                                *
+*                LET 3(R5),:,#BIT2                                    *
+*                LOOP                                                 *
+*             IF$                                                     *
+***********************************************************************
+         SPACE 3
+         $IF  3(R5),¬:,#BIT2,THEN
+            LET 3(R5),:,#BIT2
+            LOOP
+         IF$
+         SPACE 8
+         PRINT OFF                                                      #20  007
+.LOOP    ANOP                                                           #20  008
+         #TEST   WHILE$                                                 #20  001
+         AIF   (&NOTFND).WHILE$                                         #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   WHILE$'                            #20  004
+PGM      LOCTR                                                          #20  006
+         SPACE 2
+***********************************************************************
+*    WHILE1$  $WHILE R3,GT,0,LOOP                                     *
+*                ICALL SUBR,0(R3):H                                   *
+*                LET R3,-,2                                           *
+*             WHILE$                                                  *
+***********************************************************************
+         SPACE 3
+WHILE1$  $WHILE R3,GT,0,LOOP
+            ICALL SUBR,0(R3):H
+            LET R3,-,2
+         WHILE$
+         SPACE 6
+***********************************************************************
+*             $IF   R3,->,FULLWORD,THEN                               *
+*                LET R3,-,4                                           *
+*             WHILE$                                                  *
+*             IF$                                                     *
+***********************************************************************
+         SPACE 3
+         $IF   R3,->,FULLWORD,THEN
+            LET R3,-,4
+         WHILE$
+         IF$
+         SPACE 6
+***********************************************************************
+*    WHILE2$  $WHILE R3,GT,0                                          *
+*                LET R6,=,0(R6):F                                     *
+*                LET 0(R6):C,=,X'80'                                  *
+*             WHILE$ WHILE1$                                          *
+*             WHILE$
+***********************************************************************
+         SPACE 3
+WHILE2$  $WHILE R3,GT,0
+            LET R6,=,0(R6):F
+            LET 0(R6):C,=,X'80'
+         WHILE$ WHILE1$
+         WHILE$
+         SPACE 8
+         PRINT OFF                                                      #20  007
+.WHILE$  ANOP                                                           #20  008
+         #TEST   $BLOCK                                                 #20  001
+         AIF   (&NOTFND).$BLOCK                                         #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   $BLOCK'                            #20  004
+PGM      LOCTR                                                          #20  006
+         SPACE 2
+***********************************************************************
+*             LET   R4,->,FULLWORD                                    *
+*             $BLOCK                                                  *
+*                LET R3,=,0                                           *
+*                ICALL SUBR,R4                                        *
+*                IF  C2,:,X'FF',LEAVE                                 *
+*                REPEAT                                               *
+*             BLOCK$                                                  *
+***********************************************************************
+         SPACE 3
+         LET   R4,->,FULLWORD
+         $BLOCK
+            LET R3,=,0
+            ICALL SUBR,R4
+            IF  C2,:,X'FF',LEAVE
+            REPEAT
+         BLOCK$
+         SPACE 6
+***********************************************************************
+*    BLOCK1   $BLOCK                                                  *
+*                $IF CHAR,¬:,#BIT2,THEN                               *
+*                   ICALL SUBR                                        *
+*                   $CASE                                             *
+*                   ON   R15,=,0,DO                                   *
+*                      LET R3,+,R1                                    *
+*                   ON   R15,GT,0,DO                                  *
+*                      LET R3,+,R2                                    *
+*                   ELSE                                              *
+*                      LEAVE BLOCK1                                   *
+*                   CASE$                                             *
+*                IF$                                                  *
+*             BLOCK$ BLOCK1                                           *
+***********************************************************************
+         SPACE 3
+BLOCK1   $BLOCK
+            $IF CHAR,¬:,#BIT2,THEN
+               ICALL SUBR
+               $CASE
+               ON   R15,=,0,DO
+                  LET R3,+,R1
+               ON   R15,GT,0,DO
+                  LET R3,+,R2
+               ELSE
+                  LEAVE BLOCK1
+               CASE$
+            IF$
+         BLOCK$ BLOCK1
+         SPACE 8
+         PRINT OFF                                                      #20  007
+.$BLOCK  ANOP                                                           #20  008
+         #TEST   BLOCK$                                                 #20  001
+         AIF   (&NOTFND).BLOCK$                                         #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   BLOCK$'                            #20  004
+PGM      LOCTR                                                          #20  006
+         SPACE 2
+***********************************************************************
+*    BLOCK1$  $BLOCK                                                  *
+*                LET R6,=,4(R12)                                      *
+*                $WHILE R6,NE,0,LOOP                                  *
+*                   $IF (8(R6),8),=,=CL'OTTO',THEN                    *
+*    *                 ACTION IF OTTO IS FOUND                        *
+*                      LEAVE BLOCK1$                                  *
+*                   IF$                                               *
+*                    LET R6,=,4(R6)                                   *
+*                WHILE$                                               *
+*    *           ACTION IF OTTO WAS NOT FOUND                         *
+*             BLOCK$ BLOCK1$                                          *
+***********************************************************************
+         SPACE 3
+BLOCK1$  $BLOCK
+            LET R6,=,4(R12)
+            $WHILE R6,NE,0,LOOP
+               $IF (8(R6),8),=,=CL'OTTO',THEN
+*                 ACTION IF OTTO IS FOUND
+                  LEAVE BLOCK1$
+               IF$
+                LET R6,=,4(R6)
+            WHILE$
+*           ACTION IF OTTO WAS NOT FOUND
+         BLOCK$ BLOCK1$
+         SPACE 6
+***********************************************************************
+*    BLOCK2$  $BLOCK                                                  *
+*                LET R1,=,0(R1)                                       *
+*                IF  R1,NE,R2,REPEAT                                  *
+*                ICALL SUBR,R1                                        *
+*             BLOCK$ BLOCK1$                                          *
+*             BLOCK$                  CLOSING STRUCTURE               *
+*             BLOCK$ BLOCK2$                                          *
+***********************************************************************
+         SPACE 3
+BLOCK2$  $BLOCK
+            LET R1,=,0(R1)
+            IF  R1,NE,R2,REPEAT
+            ICALL SUBR,R1
+         BLOCK$ BLOCK1$
+         BLOCK$                  CLOSING STRUCTURE
+         BLOCK$ BLOCK2$
+         SPACE 6
+***********************************************************************
+*             $IF  R3,->,H2,THEN                                      *
+*                LET H2,=,0,WORK=                                     *
+*             BLOCK$                                                  *
+*             IF$                                                     *
+***********************************************************************
+         SPACE 3
+         $IF  R3,->,H2,THEN
+            LET H2,=,0,WORK=
+         BLOCK$
+         IF$
+         SPACE 8
+         CONST
+         LTORG ,
+         CODE
+         PRINT OFF                                                      #20  007
+.BLOCK$  ANOP                                                           #20  008

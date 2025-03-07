@@ -1,0 +1,43 @@
+         MACRO                                         STRUCT MACRO SET
+         EX$   &LABEL
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                            SYLVESTER GMD-RZ) 00JAN79
+.*  "(EX" CONDITION <"AND/OR"  CONDITION>... "EX)"
+.*       END "EX" CLAUSE.
+.*
+         GBLA  &BLK,&BLKCC(30)
+         GBLC  &BLKTYPE(30),&BLKNAME(30),&BLKID(30)
+         LCLC  &T,&C
+         GBLB  &DEFER
+&LABEL   SASLIST MACRO,'EX)'
+.*
+         AIF   ('&LABEL' NE '' AND '&LABEL' NE '&BLKNAME(&BLK)').Y0
+.*
+         AIF   ('&BLKTYPE(&BLK)' NE  'EX').YPART    NOT IN THEN PART
+         AIF   (NOT &DEFER).NODEFER
+@@W&BLKID(&BLK+1) EQU @@Y&BLKID(&BLK)
+@@Y&BLKID(&BLK+1) EQU @@Y&BLKID(&BLK)
+@@V&BLKID(&BLK+1) EQU @@X&BLKID(&BLK)
+@@X&BLKID(&BLK+1) EQU @@X&BLKID(&BLK)
+@@T&BLKID(&BLK+1) EQU @@T&BLKID(&BLK)
+@@F&BLKID(&BLK+1) EQU @@F&BLKID(&BLK)
+.NODEFER ANOP
+&DEFER    SETB 1
+         AIF   ('&BLKNAME(&BLK)' EQ '').NOXREF
+         DS    0S(&BLKNAME(&BLK))
+.NOXREF  ANOP
+@@Z&BLKID(&BLK) DS   0H
+&BLK     SETA  &BLK-1                  POP
+&BLKTYPE(&BLK) SETC '&BLKTYPE(&BLK)'(1,1)'X'
+&BLKCC(&BLK) SETA &BLKCC(&BLK+1)
+         AGO  .MEND
+.**********************************************************************
+.YPART   AIF   ('&BLKTYPE(&BLK)'(1,1) NE 'E').Y0
+         MNOTE 08,'****** EX): (EX PART MISSING'
+.*-      AGO   .TEST
+.Y0      BLK0TEST EX,(,E),&LABEL
+.MEND    SASLIST MACEND
+         MEND

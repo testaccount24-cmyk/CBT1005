@@ -1,0 +1,349 @@
+./ ADD NAME=PGMBEGIN
+PGMBEGIN  TITLE 'PGMBEGIN  --  PROGRAM DESCRIPTION'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*                                                                     *
+* COPYRIGHT: COPYRIGHT BY GESELLSCHAFT FUER MATHEMATIK UND            *
+*                                      DATENVERARBEITUNG MBH BONN,    *
+*                         - RECHENZENTREN -                           *
+*                         SCHLOSS BIRLINGHOVEN                        *
+*                         5205 ST. AUGUSTIN 1                         *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+*        PGMBEGIN                                                     *
+*                                                                     *
+*                                                                     *
+* <CLASS>:                                                            *
+*        T S O   C O M M A N D S                                      *
+*                                                                     *
+*                                                                     *
+* <FUNCTION/OPERATION>:                                               *
+*                                                                     *
+*   'PGMBEGIN' (1) ENABLES EACH PROGRAM WHICH USES THE OS STANDARD    *
+*   PARAMETER TO BE INVOKED AS A TSO COMMAND WITH THE TEXT            *
+*   FOLLOWING THE COMMAND NAME INTERPRETED AS THE OS PARAMETER AND    *
+*   (2) TO SIMPLIFY THE INVOKATION OF PLI LANGUAGE PROGRAMS (NO       *
+*   SLASH MUST BE HEADING THE OS PARAMETER TO AVOID THE ERROR         *
+*   MESSAGE 'ERRORNESS PARM OPTION IGNORED').                         *
+*                                                                     *
+*   'PGMBEGIN' DOES THE FOLLOWING:                                    *
+*                                                                     *
+*   'PGMBEGIN' DETERMINES THE CALLING ENVIRONMENT BY INSPECTING THE   *
+*   BIT 0 OF THE ADDRESSES POINTED TO BY R1. IF ONE OF THE FIRST      *
+*   FOUR ADDRESSES IS MARKED WITH X'80', 'PGMBEGIN' WAS CALLED        *
+*   USING NORMAL LINKAGE CONVENTIONS (EXEC-STATEMENT). IF NOT, R1     *
+*   POINTS TO A FOUR WORD COMMAND PROCESSOR PARAMETER LIST (CPPL)     *
+*   WHICH HAS ZEROES IN EACH FIRST BYTE OF EACH ADDRESS.              *
+*                                                                     *
+*   (1) IF 'PGMBEGIN' IS CALLED USING STANDARD OS LINKAGE             *
+*       CONVENTIONS AND THE PROGRAM TO BE CALLED IS A PLI PROGRAM     *
+*       AN EVENTUALLY PRECCEDING SLASH IS STRIPPED OFF (SO EARLEYER   *
+*       CALLING SEQUENCES DON'T HAVE TO BE REWRITTEN).                *
+*                                                                     *
+*   (2) IF CALLED AS A TSO COMMAND THE TEXT OF THE COMMAND BUFFER     *
+*       FROM THE FIRST NON-BLANK CHARACTER WHICH FOLLOWS THE COMMAND  *
+*       NAME UP TO THE END OF THE COMMAND BUFFER IS EXTRACTED.        *
+*       THIS TEXT IS PASSED TO THE PROGRAM IN THE SAME WAY. (E.G.     *
+*       IF THE COMMAND BUFFER CONTAINS '  ACCINFO  RZ  ', THE TEXT    *
+*       'RZ  ' IS EXTRACTED)                                          *
+*                                                                     *
+*   THE PASSED PARAMETER IS TRANSLATED TO UPPERCASE CHARACTERS BY     *
+*   DEFAULT IN A CONTROL SECTION NAMED 'PGMCAPS'. IN THIS CASE THE    *
+*   LENGTH OF THE PARAMETER IS RESTRICTED TO 255 CHARACTERS. IF       *
+*   LENGTH IS >255 'PGMBEGIN' ENDS WITH RETURN CODE 4.                *
+*                                                                     *
+*   IF THE PARAMETER IS NOT TO BE TRANSLATED TO UPPERCASE, DELETE     *
+*   CONTROL SECTION 'PGMCAPS' FROM MODULE 'PGMBEGIN' USING LINKAGE    *
+*   EDITOR CONTROL STATEMENTS (SEE LATER). REMEMBER THAT PARAMETERS   *
+*   PASSED VIA THE TSO CALL COMMAND ARE ALLWAYS TRANSLATED TO         *
+*   UPPERCASE.                                                        *
+*                                                                     *
+*   'PGMBEGIN' FIRST TRIES TO PASS THE PARAMETER TO AN ENTRY POINT    *
+*   CALLED 'ASMSTART'. IF THERE IS NO ENTRY POINT WITH THIS NAME,     *
+*   'PGMBEGIN' PLACES A SLASH IN FRONT OF THE PARAMETER AND TRIES     *
+*   TO PASS THIS ENLARGED PARAMETER TO ENTRY POINT 'PLISTART'. IF     *
+*   ALSO 'PLISTART' CANNOT BE FOUND AN ERROR MESSAGE IS GIVEN AND     *
+*   'PGMBEGIN' ENDS WITH RETURN CODE 8.                               *
+*                                                                     *
+*   IF 'PGMBEGIN' IS LINK EDITED TOGETHER WITH A PLI PROGRAM IT       *
+*   MUST BE THE MAIN ENTRY POINT OF THE LOAD MODULE. THIS CAN BE      *
+*   ACCOMPLISHED BY SPECIFYING FOLLOWING LINKAGE EDITOR CONTROL       *
+*   CARDS:                                                            *
+*                                                                     *
+*   ENTRY   PGMBEGIN                                                  *
+*   INCLUDE SYSLIB(PGMBEGIN)                                          *
+*                                                                     *
+*   AN ASSEMBLER LANGUAGE PROGRAM DON'T HAVE AN ENTRY POINT           *
+*   'ASMSTART' BY DEFAULT. THE ENTRY POINT NAME 'ASMSTART'            *
+*   THEREFORE HAS TO BE CHANGED TO THE ENTRY POINT NAME OF THE        *
+*   ASSEMBLER LANGUAGE PROGRAM:                                       *
+*                                                                     *
+*   ENTRY   PGMBEGIN                                                  *
+*   CHANGE  ASMSTART(...ASSEMBLER ENTRY POINT NAME...)                *
+*   INCLUDE SYSLIB(PGMBEGIN)                                          *
+*                                                                     *
+*   IF CONTROL SECTION 'PGMCAPS' IS TO BE DELETED, PLACE FOLLOWING    *
+*   REPLACE- AND LIBRARY- CONTROL STATEMENTS BEFORE THE INCLUDE       *
+*   STATEMENT:                                                        *
+*                                                                     *
+*   ENTRY   PGMBEGIN                                                  *
+*   CHANGE  ASMSTART(...ASSEMBLER ENTRY POINT NAME...)                *
+*   LIBRARY (PGMCAPS)                                                 *
+*   REPLACE PGMCAPS                                                   *
+*   INCLUDE SYSLIB(PGMBEGIN)                                          *
+*                                                                     *
+*   AN EXISTING PROGRAM CAN BE CHANGED WITHOUT RECOMPILATION IN THE   *
+*   FOLLOWING MANNER:                                                 *
+*                                                                     *
+*   //ADDBEGIN EXEC PGM=IEWL,PARM='MAP,TEST,LIST'                     *
+*   //SYSLIN   DD   *                                                 *
+*    ENTRY   PGMBEGIN                                                 *
+*    INCLUDE SYSLIB(PGMBEGIN)                                         *
+*    INCLUDE SYSLIB(...PLI PROGRAM NAME...)                           *
+*   //SYSLIB   DD  DSN=GMD.SOURCE.LINKLIB,DISP=SHR CONTAINS PGMBEGIN  *
+*   //         DD  DSN=GRZ014.X.LOAD,DISP=SHR   CONTAINS PLI PROGRAM  *
+*   //SYSUT1   DD  UNIT=VIODA,SPACE=(1024,(100,100))                  *
+*   //SYSLMOD  DD  DSN=GRZ014.X.LOAD(...PLI PROGRAM NAME...),DISP=SHR *
+*   //SYSPRINT DD  SYSOUT=A                                           *
+*                                                                     *
+*                                                                     *
+* <ENTRY POINTS>:                                                     *
+*        PGMBEGIN                                                     *
+*                                                                     *
+*                                                                     *
+* <INPUT>:                                                            *
+*        GENERAL REGISTER 1  ( WHEN CALLED VIA EXEC )                 *
+*        |                                                            *
+*        V                                                            *
+*        ------------------------                                     *
+*        |  80  |      |        |                                     *
+*        --------------|---------                                     *
+*                      |                                              *
+*                      |       ---------------------------------      *
+*                      +-----> | PARM LENGTH | PARM TEXT              *
+*                              ---------------------------------      *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+*        GENERAL REGISTER 1  ( WHEN CALLED AS A CP )                  *
+*        |                                                            *
+*        V                                                            *
+*        ------------------------                                     *
+*        |  00  |          -----|---->  COMMAND BUFFER (CBUF)         *
+*        ------------------------                                     *
+*        |  00  |          -----|---->  USER PROFILE TABLE (UPT)      *
+*        ------------------------                                     *
+*        |  00  |          -----|---->  PROTECTED STEP CB (PSCB)      *
+*        ------------------------                                     *
+*        |  00  |          -----|---->  ENV. CONTROL TABLE (ECT)      *
+*        ------------------------                                     *
+*                                                                     *
+* <OUTPUT>:                                                           *
+*        GENERAL REGISTER 1  ( PASSED TO THE MAIN PROGRAM )           *
+*        |                                                            *
+*        V                                                            *
+*        ------------------------                                     *
+*        |  80  |      |        |                                     *
+*        --------------|---------                                     *
+*                      |                                              *
+*                      |       ----------------------------- - -      *
+*                      +-----> | MOD. PARM LEN | MOD. PARM TEXT       *
+*                              ----------------------------- - -      *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+* <DD-STATEMENTS/DATA SETS>:                                          *
+*        NONE                                                         *
+*                                                                     *
+*                                                                     *
+* <NORMAL EXIT>:                                                      *
+*        VIA BR14                                                     *
+*                                                                     *
+*                                                                     *
+* <ERROR EXIT>:                                                       *
+*        NONE                                                         *
+*                                                                     *
+*                                                                     *
+* <RETURN CODES>:                                                     *
+*        THE RETURN CODE OF THE PLI-PROGRAM IS RETURNED               *
+*                                                                     *
+*                                                                     *
+* <EXTERNAL ROUTINES>:                                                *
+*        PLISTART OR. ASMSTART                                        *
+*                                                                     *
+*                                                                     *
+* <TABLES/WORK AREAS>:                                                *
+*        --                                                           *
+*                                                                     *
+*                                                                     *
+* <ATTRIBUTES>:                                                       *
+*        RENT,REFR,REUS                                               *
+*                                                                     *
+*                                                                     *
+* <RESTRICTIONS>:                                                     *
+*        --                                                           *
+*                                                                     *
+*                                                                     *
+* <AUTHORIZATION REQUIRED>:                                           *
+*        --                                                           *
+*                                                                     *
+*                                                                     *
+* <RELATED PROGRAMS>:                                                 *
+*        --                                                           *
+*                                                                     *
+*                                                                     *
+* <STORAGE>:                                                          *
+*        PROGRAM:  ?                                                  *
+*        DYNAMIC:  ?                                                  *
+*        BUFFER :  ?                                                  *
+*                                                                     *
+*                                                                     *
+* <LOAD MODULE CREATION>:                                             *
+*      SOURCE LANGUAGE      :    ASSEMBLER H (SLAC VERSION)           *
+*      COMPILE LIBRARIES    :    SYS2.SPTS.MACLIB                     *
+*                                SYS1.MACLIB                          *
+*      COMPILE PARAMETERS   :    RENT                                 *
+*      LINK-EDIT LIBRARIES  :    --                                   *
+*      LINK-EDIT PARAMETERS :    REFR,RENT,REUS,MAP,LET,NCAL          *
+*      LINK-EDIT INPUT      :                                         *
+*      DESTINATION LIBRARIES:    GMD.LINKLIB(PGMBEGIN)                *
+*                                                                     *
+*      GENERATING DECK      :    GMD.JCL(PGMBEGIN)                    *
+*                                                                     *
+*                                                                     *
+* <STATUS>:                                                           *
+*        CHANGE LEVEL - 1.0    02 JUN 83    VOLKER SAND               *
+*                       1.1    12 OKT 84    VOLKER SAND               *
+*                                                                     *
+* <NOTES>:                                                            *
+*        --                                                           *
+*                                                                     *
+*                                                                     *
+* <AUTHOR>:                                                           *
+*        VOLKER SAND                                                  *
+*                                                                     *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+ TITLE 'PGMBEGIN  --  PROGRAM LOGIC'
+                                                      SASLIST ASIS
+PGMBEGIN  $PROC TYPE=(STANDARD,CSECT),BASE=R12
+                                       @ * DEFINE LOCAL DATA
+             WXTRN ASMSTART,PLISTART
+OLD_PARM_PTR  EQUR  R3
+OLD_PARM_LEN  EQUR  R4
+COPY_PARM_PTR EQUR  R8
+COPY_PARM_LEN EQUR  R9
+             CONST
+ASM_PROGRAM  DC    V(ASMSTART)
+PLI_PROGRAM  DC    V(PLISTART)
+PGM_CAPS     DC    V(PGMCAPS)
+             DATA
+RETURN_CODE  DS    F
+PARMLIST     DS    A
+             CODE
+             $IF
+                                       @ * PROGRAM IS INVOKED BY TSO
+                                       @ * CALL COMMAND OR AS A JOB
+                                       @ * STEP
+                $EX$    0(R1),:,X'80'
+                ORELSE  4(R1),:,X'80'
+                ORELSE  8(R1),:,X'80'
+                ORELSE 12(R1),:,X'80'
+             THEN
+                                       @ * POINT TO PARAMETER STRING
+                                       @ * AND SET UP LENGTH
+                LET   R1,:=,0(R1)
+                LET   OLD_PARM_PTR,->,2(R1)
+                LET   OLD_PARM_LEN,:=,0(R1):H
+                $IF
+                                       @ * PARAMETER IS NOT A NULL
+                                       @ * STRING
+                   $EX$  OLD_PARM_LEN,>,0
+                ANDTHEN
+                                       @ * FIRST CHARACTER OF PARAMETER
+                                       @ * IS SLASH
+                   $EX$  0(OLD_PARM_PTR):C,=,C'/'
+                ANDTHEN
+                   $EX$  PLI_PROGRAM,¬=,0
+                THEN
+                                       @ * POINT BEHIND THE SLASH AND
+                                       @ * REDUCE LENGTH BY ONE
+                   LET   OLD_PARM_PTR,+,1
+                   LET   OLD_PARM_LEN,-,1
+                IF$
+             ELSE
+                                       @ * POINT TO FIRST NON BLANK
+                                       @ * CHARACTER AFTER COMMAND NAME
+                                       @ * OR TO THE END OF COMMAND
+                                       @ * BUFFER IF NO OPERANDS ;
+CBUF_PTR        EQUR  R5
+CBUF_LEN        EQUR  R6
+CBUF_OFFSET     EQUR  R7
+                LET   CBUF_PTR,:=,0(R1)
+                LET   CBUF_LEN,:=,0(CBUF_PTR):H
+                LET   CBUF_OFFSET,:=,2(CBUF_PTR):H
+                LET   OLD_PARM_PTR,->,4(CBUF_PTR,CBUF_OFFSET)
+                                       @ * DETERMINE NUMBER OF
+                                       @ * CHARACTERS UP TO THE END OF
+                                       @ * THE COMMAND BUFFER
+               LET   OLD_PARM_LEN,:=,CBUF_PTR,+,CBUF_LEN,-,OLD_PARM_PTR
+             IF$
+                                       @ * MAKE A COPY OF THE PARAMETER
+             LET   COPY_PARM_LEN,:=,OLD_PARM_LEN,+,3
+             GETMAIN RU,LV=(COPY_PARM_LEN)
+             LET   COPY_PARM_PTR,:=,R1
+             LET   0(COPY_PARM_PTR):H,:=,OLD_PARM_LEN,+,1
+             LET   2(COPY_PARM_PTR):C,:=,C'/'
+             LET   R0,->,3(COPY_PARM_PTR)
+             LET   R1,:=,OLD_PARM_LEN
+             LET   R14,:=,OLD_PARM_PTR
+             LET   R15,:=,OLD_PARM_LEN
+             MVCL  R0,R14
+                                       @ * CONVERT TO UPPERCASE
+             $IF   PGM_CAPS,¬=,0,THEN
+                XCALL PGMCAPS
+             IF$
+                                       @ * BUILT PARAMETER LIST FOR
+                                       @ * PROGRAM INVOKATION
+             $IF
+                $EX$  ASM_PROGRAM,¬=,0
+             THEN
+                LET   1(COPY_PARM_PTR):H,:=,0(COPY_PARM_PTR):H,-,1
+                LET   PARMLIST,->,1(COPY_PARM_PTR)
+                LET   PARMLIST,:,X'80'
+                XCALL ASMSTART,:PARMLIST
+                LET   RETURN_CODE,:=,R15
+             ELSEIF
+                $EX$  PLI_PROGRAM,¬=,0
+             THEN
+                LET   PARMLIST,:=,COPY_PARM_PTR
+                LET   PARMLIST,:,X'80'
+                XCALL PLISTART,:PARMLIST
+                LET   RETURN_CODE,:=,R15
+             ELSE
+                WTO   'PGMBEGIN: NO MAIN PROGRAM',ROUTCDE=11,DESC=7
+                LET   RETURN_CODE,:=,8
+             IF$
+PGMCAPS   $PROC TYPE=(BASIC,CSECT),BASE=R15
+                                       @ * TRANSLATE PARM TO UPPERCASE
+             CONST
+TRANSL_CAPS  TRTAB 256AL1(*-TRANSL_CAPS),    UPPERCASE TRANSL TABLE    X
+               (C'A'-C' ',9AL1(*-TRANSL_CAPS+C' ')),                   X
+               (C'J'-C' ',9AL1(*-TRANSL_CAPS+C' ')),                   X
+               (C'S'-C' ',8AL1(*-TRANSL_CAPS+C' '))
+TRANSL_INSTR TR    0(*-*,R1),TRANSL_CAPS
+             CODE
+             LET   R1,->,3(COPY_PARM_PTR)
+             LET   R2,:=,COPY_PARM_LEN,-,3
+             $WHILE R2,>,256,LOOP
+                TR    0(255,R1),TRANSL_CAPS
+                LET   R1,+,256
+                LET   R2,-,256
+             WHILE$
+             $IF   R2,>,0,THEN
+                LET   R2,-,1
+                EX    R2,TRANSL_INSTR
+             IF$
+          PROC$ PGMCAPS
+          PROC$ PGMBEGIN,RC=(RETURN_CODE)
+          END PGMBEGIN

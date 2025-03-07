@@ -1,0 +1,2193 @@
+1
+-
+-
+-
+-
+-
+0                                                          P C P
+0                                                  PSEUDOCODE-PROZESSOR
+0                                                    Benutzerhandbuch
+0
+0                                                      (Version 2.3)
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-                                                Brigitte Stumm
+0                                                GMD-Z1.BN
+0                                                April 1985
+1
+            Inhalt                                      Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+-
+0           Inhalt:
++           ______
+-
+-            1. Einleitung
+0            2. Pseudocode fÇr sequentielle Algorithmen
+0            3. Bestandteile des Pseudocode
+0               3.1 Klausel
+0               3.2 Verfeinerung (Refinement)
+0               3.3 Labels und Label-Referenzen
+0            4. Leistungen des Pseudocode-Prozessors (PCP)
+0               4.1 Formale PrÇfung, Formatierung, Crossreference
+0               4.2 CodegerÇst
+0            5. Benutzung des Pseudocode-Prozessors (PCP)
+0               5.1 Die Eingabe
+0                   5.1.1 Keywords
+0                   5.1.2 Labels
+0                   5.1.3 Label-Referenzen
+0                   5.1.4 Kommentare
+0                   5.1.5 Kontrollanweisungen (Pragmas)
+0                   5.1.6 Freier Text
+0                   5.1.7 Besonderheiten bei der Eingabe
+0               5.2 Ausgabedateien
+0               5.3 Aufruf des PCP
+0            6. Fehlermeldungen, Return-Codes
+0            7. Die Crossreference-Liste
+0            8. Beispiel
+0               8.1 Pseudocode
+0               8.2 Formatierter Pseudocode
+0               8.3 Pretty-Print-Datei
+0               8.4 CodegerÇst
+0            9. Anhang
+0               9.1 Syntaxbeschreibung
+0               9.2 Code-Tabelle
+0           10. Literatur
+-
+-
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                     3
+1
+            1. Einleitung                               Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+-
+0           1. Einleitung
++           _____________
+-
+-              Nachdem der Einsatz von Pseudocode sich fÇr  die  Praxis  der
+0           Softwareentwicklung  im  Rechenzentrum als nÇtzlich erwiesen hat
+0           (vergl.  ÝBIR80¨),  hat sich das Rechenzentrum Bonn der GMD ent-
+0           schlossen,  die  vorliegenden  Erfahrungen  auszuwerten  und ein
+0           Werkzeug fÇr die allgemeine Benutzung  von  Pseudocode  zu  ent-
+0           wickeln.   Ziel   dieses  Werkzeugs,   nÜmlich  des  Pseudocode-
++                                                                Pseudocode-
++                                                                Pseudocode-
+0           Prozessors (PCP),  ist es,  dem Software-Entwickler ein Werkzeug
++           Prozessors (PCP)
++           Prozessors (PCP)
+0           in die Hand zu geben, das zwischen freiem Text und formaler Pro-
+0           grammiersprache angesiedelt ist. Es soll einerseits durch forma-
+0           le  Bestandteile  die  M°glichkeit  zur  Strukturierung  bieten,
+0           andererseits durch Zulassung informeller Teile die M°glichkeiten
+0           freier Formulierung offen halten.
+-
+-              In  der  hier  vorliegenden  Beschreibung wird eine spezielle
+0           AusprÜgung des PCP vorgestellt,  die der Strukturierung  sequen-
++                                                                    sequen-
++                                                                    sequen-
+0           tieller Algorithmen dient.  Der Aufbau des Prozessors ist so ge-
++           tieller Algorithmen
++           tieller Algorithmen
+0           halten,  da[ die zugrundeliegenden allgemeinen  Funktionen  Çber
+0           Tabellensteuerung  auch  an  andere  Strukturierungsaufgaben  im
+0           Softwareentwicklungsproze[ angepa[t  werden  k°nnen  (z. B.  Be-
+0           schreibung von Datenstrukturen).
+-
+-              Die  im  PCP verwendeten Konstrukte k°nnen leicht an die Kon-
+0           strukte verschiedener  Programmiersprachen  oder  "Prozedurspra-
+0           chen" angelehnt werden. Auch eine ûbertragung auf Konstrukte fÇr
+0           nicht sequentielle Algorithmen ist auf einfache Weise m°glich.
+-
+-
+-
+-
+0
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                     4
+1
+            2. Pseudocode                               Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+-
+0           2. Pseudocode fÇr sequentielle Algorithmen
++           __________________________________________
+-
+-              Die Pseudocode-Technik erlaubt es, unabhÜngig von irgendeiner
+0           Programmiersprache  ein bestimmtes Problem zu formulieren,  nÜm-
+0           lich im Pseudocode,  und danach dann  Schritt  fÇr  Schritt  das
+0           eigentliche Programm zu entwickeln.
+-
+-              Unter  dem  Begriff  Pseudocode  soll im folgenden verstanden
++                                   Pseudocode
++                                   Pseudocode
+0           werden, was der PCP als richtig verarbeitet.
+-
+-              Pseudocode setzt sich zusammen einerseits aus  formalen  Mit-
+0           teln  zur Beschreibung der Gliederung und der Kontrollflu[struk-
+0           tur eines Programmes und andererseits  aus  informellen  Teilen,
+0           die sequentielle VorgÜnge bzw.  Aktionen verbal beschreiben. Der
+0           Programmablauf wird durch die im Pseudocode gegebenen Konstrukte
+0           (Klauseln) formalisiert, und die darin enthaltenen einzelnen Ak-
+0           tionen werden frei mit umgangssprachlichem Text beschrieben. Die
+0           Kontrollstruktur eines Programmes wird dabei also schon  eindeu-
+0           tig festgelegt, wogegen die Aktionen zunÜchst nur verbal bleiben
+0           und erst zu einem spÜteren Zeitpunkt formalisiert werden.
+-
+-              Das  Programmieren mit Pseudocode bietet viele Vorteile.  Man
+0           mu[ sich nicht um Compiler-spezifische Regeln  kÇmmern,  da  die
+0           Entscheidung,  in welcher Sprache implementiert werden soll,  im
+0           allgemeinen erst nach der Fertigstellung des Pseudocode  gefÜllt
+0           wird.  Man wird dazu gezwungen, klar zu trennen zwischen Design-
+0           Phase und Codierungs-Phase und die beiden nicht  miteinander  zu
+0           vermischen. Das "strukturierte Programmieren" wird durch Pseudo-
+0           code  wesentlich  unterstÇtzt.  Die einzelnen Aktionen innerhalb
+0           des Programmes k°nnen mit frei gewÜhlten Worten beschrieben wer-
+0           den,  so da[ der Pseudocode z. B.  auch  fÇr  nicht-DV-Fachleute
+-
+
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                     5
+1
+            2. Pseudocode                               Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+            oder  nicht-Programmierer  lesbar  und  verstÜndlich  wird.  Die
+0           Codierungs-Phase tritt erst  zu  dem  Zeitpunkt  ein,  wenn  der
+0           eigentliche  "Denkproze[" abgeschlossen ist,  was natÇrlich dann
+0           das Codieren sehr vereinfacht bzw.  auch eine mechanische Umset-
+0           zung in eine bestimmte Programmiersprache erm°glicht.
+-
+-              Insgesamt  lÜ[t  sich  sagen,  da[  Pseudocode  ein wichtiges
+0           Hilfsmittel fÇr Design und Dokumentation ist. Programme, die mit
++                           Design     Dokumentation
++                           Design     Dokumentation
+0           Pseudocode geschrieben sind, k°nnen leicht gewartet bzw.  erwei-
+0           tert oder verÜndert werden.
+-
+-              Zur  Verdeutlichung m°chte ich ein kleines Beispiel anfÇhren,
+0           das zeigen soll, wie auch Probleme aus der "nicht-DV-Welt" durch
+0           Pseudocode beschrieben und damit fÇr jedermann verstÜndlich dar-
+0           gestellt werden k°nnen.
+-
+-              Das Beispiel soll zeigen,  welcher Ablauf bzw.  welche  Folge
++                  Beispiel
++                  Beispiel
+0           von Aktionen sich ergibt, wenn man an einem Automaten eine Fahr-
+0           karte ziehen m°chte:
+-
+-           Karte_ziehen:
+0               (PROGRAM
+0
+0                     Taste fuer gewuenschte Fahrkarte druecken
+0
+0           Bezahlen: (IF
+0                     Geldanzeige leuchtet nicht auf
+0                     THEN
+0                       an anderen Automaten gehen
+0                     ELSE
+0                       Geld einwerfen
+0
+0                       (IF
+-
+
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                     6
+1
+            2. Pseudocode                               Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+                        Karte wird nicht ausgegeben
+0                       THEN
+0                         Geld zurueckfordern ;
+0                         an anderen Automaten gehen
+0                       ELSE
+0                         Karte entnehmen
+0                       IF)
+0
+0                     IF)  :Bezahlen
+0
+0
+0               PROGRAM)
+-
+-              Als nÜchstes m°chte ich nun genauer darauf eingehen, aus wel-
+0           chen Bestandteilen sich der Pseudocode zusammensetzt.
+-
+-
+-
+            3. Bestandteile des Pseudocode
++           ______________________________
+-
+-           Die wesentlichen Bestandteile des Pseudocode sind:
+-
+            -   die Klausel
++           -   die Klausel
++           -   die Klausel
+-
+            -   die Verfeinerung (Refinement)
++           -   die Verfeinerung (Refinement)
++           -   die Verfeinerung (Refinement)
+-
+            -   Labels und Label-Referenzen
++           -   Labels und Label-Referenzen
++           -   Labels und Label-Referenzen
+-
+-
+-
+-
+-
+-
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                     7
+1
+            3. Bestandteile des Pseudocode              Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+-
+0           3.1 Klausel
++           ___________
+-
+-              Mit Klauseln fa[t man zunÜchst einmal Aktionen zusammen. Sol-
+0           che Klauseln sind z. B. die 'BLOCK'-Klausel (fa[t nur zusammen),
+0           die 'REFINE'-Klausel (ersetzt Text in einer anderen Klausel) und
+0           die 'PROC'-Klausel (beschreibt ein Unterprogramm). Au[erdem sind
+0           Klauseln  ein formales Mittel zur Beschreibung der Kontrollflu[-
+0           struktur eines Programmes.  Durch Klauseln werden mehrere zusam-
+0           menhÜngende  Aktionen zu bestimmten Gruppen zusammengefa[t,  wie
+0           z. B.  bei der  'IF'- oder  der  'LOOP'-Klausel.  Diese  Gruppen
+0           zerfallen zum Teil wieder in Untergruppen,  z. B. in den 'THEN'-
+0           und 'ELSE'-Teil bei der 'IF'-Klausel. All diese Gruppen bzw. Un-
+0           tergruppen laufen unter speziellen Arbeitsregeln ab.  So gibt es
+0           bestimmte   Klauseln,    die   Sequenzen   verarbeiten    (z. B.
+0           'BLOCK'-Klausel),  solche,   die  Selektionen  behandeln  (z. B.
+0           'IF'-Klausel),  und solche,  die Iterationen verarbeiten  (z. B.
+0           'LOOP'-Klausel).
+-
+-              Eine Klausel kann nun wiederum andere Klauseln enthalten. Die
+0           Aktionen und Bedingungen innerhalb der Klauseln werden durch Um-
+0           gangssprache beschrieben (freier Text). Der PCP erkennt die ver-
+0           schiedenen Klauseln an den jeweiligen Keywords  bzw.  SchlÇssel-
+0           w°rtern.  FÇr  diese gelten bestimmte Syntaxregeln  (Reihenfolge
+0           der Keywords, gleicher Typ von °ffnendem und zugeh°rigem schlie-
+0           [enden Keyword etc.).
+-
+-
+0           Beispiel:
++           ________
+-
+               Die 'IF'-Klausel dient (wie auch die 'CASE'-Klausel) zur Aus-
+0           wahl von Aktionen,  die nur unter einer bestimmten Bedingung ab-
+0           laufen sollen  (Fallunterscheidung / Selektion).  Sie wird durch
+-
+
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                     8
+1
+            3. Bestandteile des Pseudocode              Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+            das Keyword  (IF er°ffnet,  mit IF)  abgeschlossen,  und mit den
++                        ___                ___
+0           Keywords THEN, ELSE oder ELSEIF weiter untergliedert:
++                    ____  ____      ______
+-
+
+0                (IF <Bedingung> THEN <Aktion(en)> IF)
+0
+0                oder:
+0
+0                (IF <Bedingung> THEN <Aktion(en)>
+0                                ELSE <Aktion(en)> IF)
+0
+0                oder:
+0
+0                (IF <Bedingung> THEN <Aktion(en)>
+0                ELSEIF <Bedingung> THEN <Aktion(en)>
+0                                ...... IF)
+-
+-              Eine vollstÜndige Liste der im Rahmen des PCP geltenden Klau-
+0           seln  (mit  den  entsprechenden Keywords dazu)  entnehme man der
+0           Syntaxbeschreibung im Anhang dieses Handbuches.  Der PCP ist  so
+0           konstruiert,  da[  durch  einfache  TabellenÜnderung auch andere
+0           bzw. weitere Klauseln eingebaut werden k°nnen.
+-
+-
+-
+            3.2 Verfeinerung (Refinement)
++           _____________________________
+-
+-              WÜhrend die Prozedur eine  Klausel  ist,  die  auf  Mehrfach-
+0           verwendbarkeit ausgerichtet ist,  soll die Verfeinerung (Refine-
+0           ment) lediglich dazu dienen,  einen Programmtext Çbersichtlicher
+0           zu gestalten. Sie erscheint deshalb nicht im fortlaufenden Text,
+0           sondern  wird  ausgelagert.  Im Programmtext selbst steht an der
+0           Stelle, an der nachher das Refinement textlich substituiert wer-
+0           den soll, nur eine Referenz darauf.  Diese Referenz benennt also
+-
+
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                     9
+1
+            3. Bestandteile des Pseudocode              Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+            eine  noch nÜher zu beschreibende Aktion.  Aus welchen Einzelak-
+0           tionen bzw.  Klauseln diese besteht,  wird erst  an  der  Stelle
+0           ersichtlich, an der die Verfeinerung aufgelistet ist.
+-
+-              Mit  dieser  Technik der stufenweisen Verfeinerungen kann man
+0           z. B.  auch verschiedene Abstraktionsebenen  in  einem  Programm
+0           deutlicher zum Vorschein bringen.
+-
+-
+0           Beispiel:
++           ________
+-
+               Zur     Veranschaulichung    soll    das    obige    Beispiel
+0           ('Karte_ziehen') dienen. Es wird nun so abgeÜndert, da[ bestimm-
+0           te Aktionen, die selbst wieder in mehrere Einzelaktionen zerfal-
+0           len, als Refinements ausgelagert und am Ende des Programmes noch
+0           einmal genauer aufgelistet werden. Au[erdem wird noch eine zwei-
+0           te  Prozedur  definiert,  die im Unterschied zu den Refinements,
+0           die ja immer nur an einer Stelle im Programm  referiert  werden,
+0           an  mehreren  Stellen  aufgerufen  wird  (auch innerhalb von Re-
+0           finements).
+-
+0           Karte_ziehen:
+                (PROGRAM
+
+                      Taste fuer gewuenschte Fahrkarte druecken
+
+            Bezahlen: (IF
+                      Geldanzeige leuchtet nicht auf
+                      THEN
+                        an anderen Automaten gehen
+                      ELSE
+                        REFINE :Geld_einwerfen
+
+                        (IF
+                        Karte wird nicht ausgegeben
+                        THEN
+                          CALL :Geld_zurueckfordern ;
+                          an anderen Automaten gehen
+                        ELSE
+                          REFINE :Karte_entnehmen
+                        IF)
+
+                      IF)  :Bezahlen
+
+            Geld_zurueckfordern:
+                (PROC
+                  Korrekturknopf druecken
+-
+
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    10
+1
+            3. Bestandteile des Pseudocode              Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+                  (IF
+                  Geld wird zurueckgegeben
+                  THEN
+                    Geld entnehmen
+                  ELSE
+                    REFINE :Gewalt_anwenden
+                  IF)
+
+                PROC)
+
+                PROGRAM)
+
+            Geld_einwerfen:
+                (REFINE
+
+                  (WHILE
+                  geforderter Betrag noch nicht bezahlt
+                  LOOP
+                    Muenze einwerfen
+
+                    (IF
+                    Muenze wird nicht akzeptiert
+                    oder falsche Anzeige leuchtet auf
+                    THEN
+                      CALL  :Geld_zurueckfordern ;
+                      an anderen Automaten gehen ;
+                      LEAVE :Bezahlen
+                    IF)
+
+                  WHILE)
+
+                REFINE)
+
+            Karte_entnehmen:
+                (REFINE
+                  Fahrkarte herausnehmen
+
+                  (IF
+                  eingezahlter Betrag war groesser
+                  als Fahrkarte kostet
+                  THEN
+                    (IF
+                    Restgeld wird ausgegeben
+                    THEN
+                      Geld entnehmen
+                    ELSE
+                      CALL :Geld_zurueckfordern
+                    IF)
+                  IF)
+
+                REFINE)
+
+            Gewalt_anwenden:
+                (REFINE
+                  gegen Automaten treten
+
+                  (IF
+                  Geld wird zurueckgegeben
+                  THEN
+                    Geld entnehmen
+                  ELSE
+                    aergern
+                  IF)
+
+                REFINE)
+-
+-
+-
+-
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    11
+1
+            3. Bestandteile des Pseudocode              Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+-
+0           3.3 Labels und Label-Referenzen
++           _______________________________
+-
+-              Innerhalb des Pseudocode m°chte man manchmal  auch  die  M°g-
+0           lichkeit haben,  gewisse Objekte zu referieren,  z. B. eine Ver-
+0           feinerung oder eine bestimmte Aktion.  Das wird durch Labels und
+0           Label-Referenzen  verwirklicht.  Solche  Referenzen k°nnen sein:
+0           Namen von Klauseln, Prozeduren, Verfeinerungen, Anweisungen oder
+0           die Bezeichnung fÇr irgend etwas,  auf das Bezug genommen werden
+0           soll.
+-
+-
+0           Beispiel:
++           ________
+-
+               Im obigen Beispiel werden die Labels 'Karte_ziehen',  'Bezah-
+0           len', 'Geld_zurueckfordern', 'Geld_einwerfen', 'Karte_entnehmen'
+0           und 'Gewalt_anwenden' verwendet, die eine Prozedur,  ein Refine-
+0           ment  oder eine andere Klausel bezeichnen.  Sie werden referiert
+0           Çber eine CALL-, REFINE- oder LEAVE-Anweisung bzw. am Ende einer
+0           Klausel.
+-
+-
+-
+            4. Leistungen des Pseudocode-Prozessors (PCP)
++           _____________________________________________
+-
+-              Im folgenden soll nun genauer erlÜutert werden, welche Aufga-
+0           ben der PCP im einzelnen erfÇllt.
+-
+-
+-
+-
+0
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    12
+1
+            4. Leistungen des PCP                       Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+-
+0           4.1 Formale PrÇfung, Formatierung, Crossreference
++           _________________________________________________
+-
+-              ZunÜchst einmal nimmt der PCP  eine  Syntaxanalyse  vor.  Der
+0           Pseudocode  wird in Bezug auf die Klauseln bzw.  die zugeh°rigen
+0           SchlÇsselw°rter,  fÇr die bestimmte Syntaxregeln  gelten  (siehe
+0           Anhang 9.1), untersucht. Findet der PCP syntaktisch falsche Kon-
+0           struktionen, werden entsprechende Fehlermeldungen geschrieben.
+-
+-              Er hat au[erdem die Funktion,  den gesamten Text bzw. Pseudo-
+0           code, der in freiem Format eingegeben werden kann, auf sinnvolle
+0           Weise zu formatieren und auszugeben.  Das Programm wird  dadurch
+0           Çbersichtlicher und die Struktur besser erkennbar.  Diese forma-
+0           tierte Ausgabedatei kann auch selbst wieder zu weiteren Editier-
+0           zwecken benutzt und dann erneut als  Eingabedatei  fÇr  den  PCP
+0           verwendet werden.
+-
+-              Als  zusÜtzliche  Hilfe  erstellt  der  PCP noch eine Pretty-
+0           Print-Datei, die auf dem Drucker ausgegeben wird. Am Ende dieser
+0           Liste befindet sich eine Crossreference, die Aufschlu[ Çber alle
+0           im Pseudocode verwendeten Labels bzw.  Referenzen  darauf  geben
+0           soll.  Aus  ihr wird z. B.  ersichtlich,  in welchem Kontext ein
+0           bestimmtes Label oder eine  Label-Referenz  benutzt  wird.  Eine
+0           genaue ErklÜrung der Crossreference-Liste befindet sich in Kapi-
+0           tel 7. dieser Beschreibung.
+-
+-
+-
+-
+-
+-
+0
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    13
+1
+            4. Leistungen des PCP                       Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+-
+0           4.2 CodegerÇst
++           ______________
+-
+-              Neben  der  syntaktischen  Analyse  und  der Formatierung des
+0           Pseudocode erstellt der PCP automatisch ein CodegerÇst,  das den
+0           Rahmen fÇr den eigentlichen Programmcode bildet.  Dies geschieht
+0           auf folgende Weise:  die Keywords aus dem Pseudocode  werden  in
+0           die entsprechenden Keywords der Zielsprache Çbersetzt, der rest-
+0           liche Text, der die Bedingungen und Aktionen beschreibt, wird in
+0           Form von Kommentarzeilen (entsprechend den Regeln fÇr die jewei-
+0           lige Programmiersprache)  unverÜndert in das CodegerÇst Çbertra-
+0           gen.  Beim Erstellen des CodegerÇstes erfolgt,  wie auch bei der
+0           formalen PrÇfung des Pseudocode,  eine Formatierung des Ausgabe-
+0           textes.  Als Codierungsarbeit bleibt nun noch,  die Aktionen und
+0           Bedingungen aus dem CodegerÇst in  Anweisungen  der  Zielsprache
+0           umzusetzen.  Dadurch hat man erreicht, da[ man sich nur noch auf
+0           codierungstechnische Fragen zu konzentrieren braucht.
+-
+-              Bei der zur Zeit implementierten  Assembler-Version  des  PCP
+0           werden  im CodegerÇst Keywords bzw.  Assembler-Makros generiert,
+0           die die Semantik der Keywords fÇr Assembler-Programme  realisie-
+0           ren  (siehe: ÝSYL81¨).  Durch einfache TabellenÜnderung kann der
+0           PCP  aber auch Keywords  (bzw.  Makros)  in anderen Zielsprachen
+0           generieren.
+-
+-
+-
+-
+-
+-
+-
+-
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    14
+1
+            5. Benutzung des PCP                        Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+-
+0           5. Benutzung des Pseudocode-Prozessors (PCP)
++           ____________________________________________
+-
+-
+-
+-
+0           5.1 Die Eingabe
++           _______________
+-
+-              Wenn man die verschiedenen syntaktischen Einheiten,  die  vom
+0           PCP erkannt und verarbeitet werden k°nnen,  in Klassen zusammen-
+0           fassen will, kann man die folgende Einteilung vornehmen:
+-
+            -   Keywords
++           -   Keywords
++           -   Keywords
+-
+                Es gibt °ffnende (mit "(" beginnend), trennende, schlie[ende
+0               (mit ")" endend)  und unabhÜngige Keywords.  Sie werden alle
+0               gro[ geschrieben.
+-
+            -   Labels
++           -   Labels
++           -   Labels
+-
+                Sie werden daran erkannt, da[ sie mit einem ":" enden.
+-
+            -   Label-Referenzen
++           -   Label-Referenzen
++           -   Label-Referenzen
+-
+                Sie werden daran erkannt, da[ sie mit einem ":" anfangen.
+-
+            -   Kommentare
++           -   Kommentare
++           -   Kommentare
+-
+                Kommentarzeilen beginnen alle in der ersten Spalte mit einem
+0               "*".
+-
+-
+-
+
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    15
+1
+            5.1 Die Eingabe                             Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+            -   Kontrollanweisungen (Pragmas)
++           -   Kontrollanweisungen (Pragmas)
++           -   Kontrollanweisungen (Pragmas)
+-
+                Sie werden gro[ geschrieben und beginnen in der ersten Spal-
+0               te mit einem "-".
+-
+            -   Statement-Delimiter
++           -   Statement-Delimiter
++           -   Statement-Delimiter
+-
+                Durch den Statement-Delimiter  (";") wird eine Anweisung ex-
+0               plizit abgeschlossen.
+-
+            -   freier Text
++           -   freier Text
++           -   freier Text
+-
+                Als freier Text wird alles aufgefa[t,  was nicht unter  eine
+0               der obigen Rubriken fÜllt.
+-
+-              Eine  detaillierte Beschreibung der Syntax der hier genannten
+0           Elemente befindet sich in Kapitel 9.1 dieses Handbuches.
+-
+-
+0           5.1.1 Keywords
++           ______________
+-
+            Es werden vier Arten von Keywords unterschieden:
+-
+            -   °ffnende Keywords;
++           -   °ffnende
++           -   °ffnende
+0               sie beginnen alle mit "(" und leiten eine Klausel ein
+-
+            -   schlie[ende Keywords;
++           -   schlie[ende
++           -   schlie[ende
+0               sie enden alle mit ")" und beschlie[en eine Klausel
+-
+            -   trennende Keywords;
++           -   trennende
++           -   trennende
+0               sie kommen innerhalb einer Klausel vor und zergliedern diese
+0               in bestimmte Teile
+-
+-
+-
+
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    16
+1
+            5.1 Die Eingabe                             Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+            -   unabhÜngige Keywords;
++           -   unabhÜngige
++           -   unabhÜngige
+0               sie k°nnen Çberall stehen,  sowohl innerhalb als auch au[er-
+0               halb einer Klausel
+-
+-
+0           5.1.2 Labels
++           ____________
+-
+               Labels  k°nnen  vor  jeder  Anweisung  stehen  und dienen als
+0           Markierung.  Man benutzt  sie  zur  Kennzeichnung  von  Bl°cken,
+0           bestimmten Programmteilen und Prozeduren,  bei Verzweigungen als
+0           Sprungziel, zur Identifikation von Refinements etc..  Sie mÇssen
+0           innerhalb des Programmes eindeutig definiert sein. Das Label vor
+0           einem Refinement mu[ mit der Label-Referenz Çbereinstimmen,  die
+0           im zugeh°rigen REFINE-Statement verwendet wird.
+-
+-              Am Ende des formatierten Pseudocode wird eine  Crossreference
+0           ausgegeben  Çber sÜmtliche im Programm verwendeten Labels  (sie-
+0           he 7.).
+-
+-
+0           5.1.3 Label-Referenzen
++           ______________________
+-
+               Mit Hilfe von Label-Referenzen kann  man  Labels  ansprechen,
+0           die innerhalb des Programmes (bzw.  Pseudocodes) definiert sind.
+0           (Ob und wo ein bestimmtes Label definiert ist,  kann man  anhand
+0           der  Crossreference-Liste  feststellen;  siehe 7.).  Man benutzt
+0           Label-Referenzen in bestimmten Anweisungen, z. B.  um eine Klau-
+0           sel  zu verlassen oder zu wiederholen,  um zu einem anderen Teil
+0           im Programm zu verzweigen, um das Ende von Bl°cken zu markieren,
+0           um Verfeinerungen anzugeben, um Prozeduren aufzurufen etc..
+-
+-
+-
+-
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    17
+1
+            5.1 Die Eingabe                             Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+               Am Ende einer Klausel  wird  zusÜtzlich  eine  Label-Referenz
+0           generiert und angehÜngt,  wenn der Anfang der betreffenden Klau-
+0           sel mit einem Label gekennzeichnet  war  und  der  Programmierer
+0           selbst   keine  Label-Referenz  ans  Ende  gesetzt  hat   (siehe
+0           auch 7.).  So  erhÜlt  man eine bessere ûbersicht,  welches Kon-
+0           strukt jeweils beendet wurde. Der PCP ÇberprÇft,  ob am Ende ei-
+0           ner  Klausel  die  richtige Label-Referenz verwendet worden ist,
+0           wenn eine angegeben wurde.
+-
+-
+0           5.1.4 Kommentare
++           ________________
+-
+               Kommentarzeilen dienen dazu,  den Pseudocode mit zusÜtzlichen
+0           Kommentaren zu versehen, falls notwendig. Sie werden vom PCP un-
+0           verÜndert  in  die  formatierten  Dateien  und in das CodegerÇst
+0           Çbernommen.
+-
+-
+0           5.1.5 Kontrollanweisungen (Pragmas)
++           ___________________________________
+-
+               FÇr die Ausgabe auf den Drucker gibt es einige Kontrollanwei-
+0           sungen  (Pragmas),  die man zusÜtzlich innerhalb des Pseudocodes
+0           verwenden kann, und zwar folgende:
+-
+            -   -TITLE
++           -   -TITLE
++           -   -TITLE
+-
+                Damit kann auf dem Papier eine Titelzeile fÇr den Pseudocode
+0               erzeugt (bzw.  auch wieder gel°scht) werden.  Es erfolgt ein
+0               impliziter Seitenvorschub.
+-
+            -   -EJECT
++           -   -EJECT
++           -   -EJECT
+-
+                Dient dazu,  SeitenvorschÇbe zu steuern. Etwaige Titelzeilen
+0               bleiben unverÜndert und werden auf der neuen Seite gedruckt.
+-
+-
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    18
+1
+            5.1 Die Eingabe                             Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+            -   -SPACE
++           -   -SPACE
++           -   -SPACE
+-
+                Man kann damit eine oder mehrere Leerzeilen bei der  Ausgabe
+0               auf Drucker erzeugen.  Diese Leerzeilen werden (im Gegensatz
+0               zu im Text verwendeten Blank-Zeilen)  nicht  als  Statements
+0               gezÜhlt.
+-
+-              Die Print-Pragmas kommen nur zur Wirkung in der Pretty-Print-
+0           Datei  (siehe 5.2).  Im  CodegerÇst werden jeweils entsprechende
+0           Pragmas in der Zielsprache generiert.
+-
+-
+0           5.1.6 Freier Text
++           _________________
+-
+               Alle syntaktischen Elemente,  die nicht unter eine  der  oben
+0           genannten  Klassen  fallen,  werden  vom  PCP  als  freier  Text
+0           betrachtet und verarbeitet. Der freie Text dient zur informellen
+0           Beschreibung von sequentiellen VorgÜngen bzw. Aktionen.  Er wird
+0           verwendet,  um Bedingungen und Aktionen, die den Ablauf des Pro-
+0           grammes beschreiben, in Umgangssprache zu formulieren.
+-
+-              Alle Elemente,  die im freien Text  stehen,  werden  bei  der
+0           Formatierung  hintereinander  geschrieben.  Kommt ein Statement-
+0           Delimiter vor,  so wird fÇr das nÜchste Wort eine neue Zeile be-
+0           gonnen.
+-
+-
+0           5.1.7 Besonderheiten bei der Eingabe
++           ____________________________________
+-
+               Hier soll kurz aufgezÜhlt werden,  worauf bei der Eingabe des
+0           Pseudocode geachtet werden soll:
+-
+-
+0
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    19
+1
+            5.1 Die Eingabe                             Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+            -   Die Eingabedatei kann von beliebigem Format sein. Bei "fixed
++           -
++           -
+0               blocked" Dateien mu[ man darauf achten, da[ die letzten acht
+0               Spalten keine Nummern enthalten, da diese sonst mit eingele-
+0               sen und verarbeitet werden.
+-
+            -   Der Pseudocode kann in beliebiger  Form  eingegeben  werden.
++           -
++           -
+0               Ausnahmen  sind nur die Kommentare und die Kontrollanweisun-
+0               gen,  die in Spalte eins beginnen mÇssen.  Sie belegen immer
+0               eine ganze Eingabezeile, d. h. der gesamte in der betreffen-
+0               den  Zeile  stehende  Text  wird als zum Kommentar bzw.  zum
+0               Pragma geh°rend betrachtet und interpretiert.
+-
+            -   Innerhalb des freien Textes  soll  man  keine  Keywords  und
++           -
++           -
+0               Labels verwenden,  denn diese werden speziell formatiert und
+0               verarbeitet;  Label-Referenzen dagegen  kann  man  benutzen.
+0               Kommentarzeilen  und  Print-Pragmas werden nur dann erkannt,
+0               wenn sie in Spalte  eins  anfangen;  sonst  gelten  sie  als
+0               freier Text.
+-
+            -   Als  °ffnende  Keywords  dÇrfen nur "(PROGRAM" und "(REFINE"
++           -
++           -
+0               auf Top-Level verwendet werden,  das hei[t auf  dem  Üu[eren
+0               Level,  auf  dem noch kein Block er°ffnet worden ist.  Diese
+0               Klauseln dÇrfen nicht mit sich selbst geschachtelt sein  und
+0               mÇssen immer mit einem Label versehen sein  (siehe auch Syn-
+0               taxbeschreibung 9.1).  FÇr  die  Assembler-Version  gilt die
+0               Restriktion,  da[ fÇr Verfeinerungsnamen und fÇr  den  Namen
+0               des  Programmes  im  CodegerÇst  nur die ersten acht Zeichen
+0               verwendet werden k°nnen.
+-
+            -   Es wird vom PCP immer h°chstens eine ganze Zeile  (bzw.  ein
++           -
++           -
+0               Satz)  eingelesen;  man kann also nicht ein Wort  Çber  eine
+0               Zeile hinaus in der nÜchsten Zeile weiterschreiben  (der PCP
+0               wÇrde daraus zwei machen).
+-
+-
+-
+-
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    20
+1
+            5.1 Die Eingabe                             Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+               Ansonsten  sei  auf die Syntaxbeschreibung 9.1 im Anhang ver-
+0           wiesen.
+-
+-
+-
+            5.2 Ausgabedateien
++           __________________
+-
+-           Bei der Verarbeitung entstehen drei Ausgabedateien:
+-
+            -   Datei mit dem formatierten Pseudocode
++           -   Datei mit dem formatierten Pseudocode
++           -   Datei mit dem formatierten Pseudocode
+-
+                Der in der Eingabedatei stehende Pseudocode wird  formatiert
+0               (geschachtelte  Bl°cke  werden entsprechend eingerÇckt etc.)
+0               und hier ausgegeben.  Falls syntaktische Fehler  aufgetreten
+0               und  vom  Parser  erkannt  worden  sind,  werden  zusÜtzlich
+0               Fehlermeldungen  (hinter den betreffenden Statements) ausge-
+0               geben.  Sind die Fehler verbessert und  die  Fehlermeldungen
+0               entfernt, dann kann diese Datei wiederum als Eingabe verwen-
+0               det werden.
+-
+            -   Pretty-Print-Datei
++           -   Pretty-Print-Datei
++           -   Pretty-Print-Datei
+-
+                Sie enthÜlt denselben formatierten Pseudocode wie in der er-
+0               sten Datei,  ebenfalls mit etwaigen Fehlermeldungen. Sie ist
+0               speziell fÇr die Druckausgabe aufbereitet  und  wird  direkt
+0               auf  den Drucker ausgegeben.  So wird z. B.  jedes Statement
+0               mit einer Nummer versehen, die Blocktiefe wird angezeigt, es
+0               gibt Titelzeilen,  eine Page-Nummer und zusÜtzlich  am  Ende
+0               eine Crossreference, in der alle verwendeten Labels und ihre
+0               Referenzen aufgelistet werden. Die im Pseudocode verwendeten
+0               Pragmas (-TITEL, -EJECT, -SPACE) kommen hier zur Wirkung.
+-
+            -   CodegerÇst-Datei
++           -   CodegerÇst-Datei
++           -   CodegerÇst-Datei
+-
+                Sie enthÜlt das generierte CodegerÇst.  Die Keywords aus dem
+-
+
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    21
+1
+            5.2 Ausgabedateien                          Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+                Pseudocode werden in entsprechende Keywords der  Zielsprache
+0               Çbersetzt,  ebenso werden die Print-Pragmas in entsprechende
+0               aus der Zielsprache konvertiert.  Kommentarzeilen werden un-
+0               verÜndert Çbernommen.  Der Çbrige Text bzw.  Pseudocode wird
+0               in Form von Kommentaren  (der  Zielsprache)  ins  CodegerÇst
+0               Çbertragen.
+-
+                FÇr die Assembler-Version gilt:
+0               Das  CodegerÇst  entspricht  in  seiner  Struktur  (Keyword-
+0               Makros)     der    im    Strukturmakrobereich    empfohlenen
+0               (siehe: ÝSYL81¨).  Wie  die  oben  genannten Dateien ist die
+0               CodegerÇst-Datei formatiert.  Sie kann  nachher  unverÜndert
+0               vom  Programm  IEBUPDTE  (macht  aus  sequentiellen  Dateien
+0               zergliederte) verarbeitet werden,  denn sie enthÜlt auch die
+0               notwendigen  "./ ADD"-Karten etc.,  die fÇr alle Refinements
+0               generiert werden.
+0               Es werden ins CodegerÇst keine Fehlermeldungen  geschrieben;
+0               lediglich  eine Warnung kann am Ende des Programmes ausgege-
+0               ben werden, und zwar dann, wenn nach dem letzten generierten
+0               END- bzw. ENDCOPY-Statement die Eingabedatei noch Pseudocode
+0               enthÜlt.
+-
+-
+-
+            5.3 Aufruf des PCP
++           __________________
+-
+-              FÇr den Aufruf des PCP im Batch steht in der GMD.PROCLIB eine
++                                                           GMD.PROCLIB
++                                                           GMD.PROCLIB
+0           Prozedur mit dem Namen PCPARSER zur VerfÇgung.  In der  Prozedur
++                                  PCPARSER
++                                  PCPARSER
+0           werden  fÇr  die Ein- und Ausgabedateien folgende Filenamen ver-
+0           wendet:
+-
+            -   INDS     fÇr die Eingabedatei (Pseudocode)
++           -   INDS
++           -   INDS
+-
+-
+-
+
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    22
+1
+            5.3 Aufruf des PCP                          Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+            -   OUTDS    fÇr die Ausgabedatei (formatierter Pseudocode)
++           -   OUTDS
++           -   OUTDS
+-
+            -   OUTPRNT  fÇr die Pretty-Print-Datei
++           -   OUTPRNT
++           -   OUTPRNT
+-
+            -   OUTGEN   fÇr die CodegerÇst-Datei
++           -   OUTGEN
++           -   OUTGEN
+-
+-              INDS,  OUTDS und OUTGEN mÇssen  vom  Programmierer  angegeben
+0           werden. OUTPRNT wird per Default auf den Drucker gelegt und kann
+0           in der Prozedur Çber den Parameter PRINT gesteuert werden.
+-
+-           Ein Beispiel-Job k°nnte dann fogenderma[en aussehen:
+-
+-           //JOBNAME JOB ,......
+0           //*
+0           /*JOBPARM FORMS=3
+0           //*-------
+0           //PCTEST EXEC PCPARSER,
+0           //            INDS='GRZ001.DATA(PSCODE)'
+0           //OUTDS  DD DISP=SHR,DSN=GRZ001.OUTCODE
+0           //OUTGEN DD DISP=SHR,DSN=GRZ001.GENCODE
+-
+-              Als   Eingabe   (INDS)   wird   in  dem  Beispiel  die  Datei
+0           GRZ001.DATA(PSCODE)  angegeben;  OUTDS  und  OUTGEN  werden  auf
+0           sequentielle Dateien gelegt.
+-
+-
+-
+            6. Fehlermeldungen, Return-Codes
++           ________________________________
+-
+-              Die Fehlermeldungen,  die vom PCP ausgegeben werden wenn Syn-
+0           taxfehler  im Pseudocode erkannt werden,  sind alle selbsterklÜ-
+-
+
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    23
+1
+            6. Fehlermeldungen, Return-Codes            Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+            rend.  Vor einer Fehlermeldung wird auch immer das entsprechende
+0           'Token' angezeigt, das den Fehler verursachte, z. B.:
+-
+-                  .
+0                  .
+0                  .
+0                 (IF  ...
+0                  .
+0                  .
+0                  .
+0                 ELSE ...
+0
+0           +---> ELSE <---
+0           +---> PCPMSG04:  INVALID SEPARATING KEYWORD, WILL BE IGNORED
+0
+0                  .
+0                  .
+0                  .
+-
+-              Folgende  Return-Codes werden in AbhÜngigkeit von der Schwere
+0           der aufgetretenen Syntaxfehler gesetzt:
+-
+               0  -  Es wurden keine Fehler gefunden.
++              0
++              0
+-
+               4  -  Es wurden nur leichte Fehler  gefunden,  d. h.  es  gab
++              4
++              4
+0                    zwar Fehler,  aber der PCP konnte danach normal weiter-
+0                    arbeiten.
+-
+               8  -  Es wurden schwerere Fehler gefunden,  d. h.  es  wurden
++              8
++              8
+0                    vom PCP ein oder mehrere Tokens ignoriert, um weiterma-
+0                    chen zu k°nnen.
+-
+-
+-
+-
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    24
+1
+            6. Fehlermeldungen, Return-Codes            Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+               Die  Anzahl  der  aufgetretenen  Fehler wird zusammen mit dem
+0           Return-Code  am   Ende   der   Pretty-Print-Liste   hinter   der
+0           Crossreference ausgegeben.
+-
+-
+-
+            7. Die Crossreference-Liste
++           ___________________________
+-
+-              Die Crossreference-Liste,  die am Ende der Pretty-Print-Datei
+0           ausgegeben wird (siehe 5.2), ist in vier Spalten aufgeteilt:
+-
+            -   NAME
++           -   NAME
++           -   NAME
+-
+                In dieser Spalte sind alle Labels aufgelistet, die innerhalb
+0               des  Pseudocodes  definiert oder referiert  (Label-Referenz)
+0               werden. Sie sind in alphabetischer Reihenfolge sortiert.
+-
+            -   DEFINITION
++           -   DEFINITION
++           -   DEFINITION
+-
+                Hier wird fÇr jedes Label angegeben,  in  welchem  Statement
+0               (STMT)  und in welchem umgebenden Block  (BLKNAME)  es defi-
+0               niert ist.  Fehlt die Definition fÇr ein Label, so wird dies
+0               durch den String "--> MISSING <--" angezeigt.  Ist das Label
+0               im Üu[ersten Level definiert, auf dem noch kein Block er°ff-
+0               net  wurde,  so  wird als Blockname "--- TOP ---" angegeben.
+0               Ansonsten erscheint unter BLKNAME der Name des nÜchsten  be-
+0               nannten umgebenden Blockes  (bzw.  der Klausel),  in welchem
+0               das  Label  definiert ist.  Ist keiner der umgebenden Bl°cke
+0               mit   einem   Label   markiert,    so   wird   der    String
+0               "--> MISSING <--" ausgegeben,  denn zumindest  die  Üu[erste
+0               Klausel auf Top-Level ('PROGRAM'- oder 'REFINE'-Klausel) mu[
+0               einen Namen haben (siehe 9.1).
+-
+-
+-
+
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    25
+1
+            7. Die Crossreference-Liste                 Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+            -   REFERENCE(S)
++           -   REFERENCE(S)
++           -   REFERENCE(S)
+-
+                In dieser Spalte wird fÇr jedes Label angegeben, wo es Çber-
+0               all  referiert wird.  Gibt es fÇr ein bestimmtes Label keine
+0               Referenz, so wird dies durch den String "--- NONE ---" ange-
+0               zeigt. Die Çbrigen Angaben unter STMT und BLKNAME gelten wie
+0               oben.
+-
+            -   MODE
++           -   MODE
++           -   MODE
+-
+                Die Angaben in dieser Spalte beziehen sich  auf  die  Spalte
+0               'REFERENCE(S)'.  Hier steht bei jeder Referenz eines Labels,
+0               von welcher Art diese war (z. B. CALL, REFINE,  LEAVE,  GOTO
+0               etc.).  Wurde  ein  Label  als Markierung fÇr das Ende eines
+0               Blockes (bzw.  einer Klausel) verwendet,  so wird dies durch
+0               "END-OF-BLOCK"  angezeigt.  Wenn  diese  Markierung  vom PCP
+0               angehÜngt wurde, so erscheint noch der Zusatz ", ADDED".
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+0
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    26
+1
+            8. Beispiel                                 Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+-
+0           8. Beispiel
++           ___________
+-
+-              Zu dem in Kapitel 3.2 beschriebenen Beispiel folgen  nun  die
+0           Listen des Pseudocode,  des formatierten Pseudocode, der Pretty-
+0           Print-Datei und des CodegerÇsts.
+-
+-
+-
+            8.1 Pseudocode
++           ______________
+-
+-
+-           -TITLE 'Pseudocode-Prozessor   ******   Testbeispiel'
+            -SPACE
+            *---------------------------------------------*
+            *                                             *
+            *           Kommentar                         *
+            *                                             *
+            *---------------------------------------------*
+            -SPACE 2
+            Karte_ziehen:
+                (PROGRAM
+
+                      Taste fuer gewuenschte Fahrkarte druecken
+
+            Bezahlen: (IF
+                      Geldanzeige leuchtet nicht auf
+                      THEN
+                        an anderen Automaten gehen
+                      ELSE
+                        REFINE :Geld_einwerfen
+
+                        (IF
+                        Karte wird nicht ausgegeben
+                        THEN
+                          CALL :Geld_zurueckfordern ;
+                          an anderen Automaten gehen
+                        ELSE
+                          REFINE :Karte_entnehmen
+                        IF)
+
+                      IF)  :Bezahlen
+-
+-
+-
+-
+0
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    27
+1
+            8.1 Beispiel - Pseudocode                   Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-           Geld_zurueckfordern:
+                (PROC
+                  Korrekturknopf druecken
+
+                  (IF
+                  Geld wird zurueckgegeben
+                  THEN
+                    Geld entnehmen
+                  ELSE
+                    REFINE :Gewalt_anwenden
+                  IF)
+
+                PROC)
+
+                PROGRAM)
+            -EJECT
+            Geld_einwerfen:
+                (REFINE
+
+                  (WHILE
+                  geforderter Betrag noch nicht bezahlt
+                  LOOP
+                    Muenze einwerfen
+
+                    (IF
+                    Muenze wird nicht akzeptiert
+                    oder falsche Anzeige leuchtet auf
+                    THEN
+                      CALL  :Geld_zurueckfordern ;
+                      an anderen Automaten gehen ;
+                      LEAVE :Bezahlen
+                    IF)
+
+                  WHILE)
+
+                REFINE)
+
+            Karte_entnehmen:
+                (REFINE
+                  Fahrkarte herausnehmen
+
+                  (IF
+                  eingezahlter Betrag war groesser
+                  als Fahrkarte kostet
+                  THEN
+                    (IF
+                    Restgeld wird ausgegeben
+                    THEN
+                      Geld entnehmen
+                    ELSE
+                      CALL :Geld_zurueckfordern
+                    IF)
+                  IF)
+
+                REFINE)
+
+            Gewalt_anwenden:
+                (REFINE
+                  gegen Automaten treten
+
+                  (IF
+                  Geld wird zurueckgegeben
+                  THEN
+                    Geld entnehmen
+                  ELSE
+                    aergern
+                  IF)
+
+                REFINE)
+-
+-
+-
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    28
+1
+            8.2 Beispiel - Format. Pseudocode                           Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+0           8.2 Formatierter Pseudocode
++           ___________________________
+-
+0           -TITLE 'Pseudocode-Prozessor   ******   Testbeispiel'
+            -SPACE
+            *---------------------------------------------*
+            *                                             *
+            *           Kommentar                         *
+            *                                             *
+            *---------------------------------------------*
+            -SPACE 2
+            Karte_ziehen:
+                      (PROGRAM
+
+                         Taste fuer gewuenschte Fahrkarte druecken
+
+            Bezahlen:    (IF
+                            Geldanzeige leuchtet nicht auf
+                         THEN
+                            an anderen Automaten gehen
+                         ELSE
+                            REFINE :Geld_einwerfen
+
+                            (IF
+                               Karte wird nicht ausgegeben
+                            THEN
+                               CALL :Geld_zurueckfordern ;
+                               an anderen Automaten gehen
+                            ELSE
+                               REFINE :Karte_entnehmen
+                            IF)
+
+                         IF) :Bezahlen
+
+            Geld_zurueckfordern:
+                         (PROC
+                            Korrekturknopf druecken
+
+                            (IF
+                               Geld wird zurueckgegeben
+                            THEN
+                               Geld entnehmen
+                            ELSE
+                               REFINE :Gewalt_anwenden
+                            IF)
+
+                         PROC) :Geld_zurueckfordern
+
+                      PROGRAM) :Karte_ziehen
+            -EJECT
+            Geld_einwerfen:
+                      (REFINE
+
+                         (WHILE
+                            geforderter Betrag noch nicht bezahlt
+                         LOOP
+                            Muenze einwerfen
+
+                            (IF
+                               Muenze wird nicht akzeptiert oder falsche Anzeige
+                               leuchtet auf
+                            THEN
+                               CALL :Geld_zurueckfordern ;
+                               an anderen Automaten gehen ;
+                               LEAVE :Bezahlen
+                            IF)
+
+                         WHILE)
+
+                      REFINE) :Geld_einwerfen
+-
+
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                                    29
+1
+            8.2 Beispiel - Format. Pseudocode                           Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+            Karte_entnehmen:
+                      (REFINE
+                         Fahrkarte herausnehmen
+
+                         (IF
+                            eingezahlter Betrag war groesser als Fahrkarte kostet
+                         THEN
+                            (IF
+                               Restgeld wird ausgegeben
+                            THEN
+                               Geld entnehmen
+                            ELSE
+                               CALL :Geld_zurueckfordern
+                            IF)
+                         IF)
+
+                      REFINE) :Karte_entnehmen
+
+            Gewalt_anwenden:
+                      (REFINE
+                         gegen Automaten treten
+
+                         (IF
+                            Geld wird zurueckgegeben
+                         THEN
+                            Geld entnehmen
+                         ELSE
+                            aergern
+                         IF)
+
+                      REFINE) :Gewalt_anwenden
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                                    30
+1
+            8.3 Beispiel - Pretty-Print-Datei           Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+-
+0           8.3 Pretty-Print-Datei
++           ______________________
+-
+-              Die Pretty-Print-Liste befindet sich als Anhang am Ende  die-
+0           ser Dokumentation.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    31
+1
+            8.4 Beispiel - CodegerÇst                                   Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+-
+0           8.4 CodegerÇst
++           ______________
+-
+-
+-           ./ ADD NAME=KARTE_ZI
+            KARTE_ZI  TITLE 'PSEUDOCODE-PROZESSOR   ******   TESTBEISPIEL'
+             SPACE
+            *---------------------------------------------*
+            *                                             *
+            *           KOMMENTAR                         *
+            *                                             *
+            *---------------------------------------------*
+             SPACE 2
+            KARTE_ZI  $PROC
+
+                                                   @ * TASTE FUER GEWUENSCHTE
+                                                   @ * FAHRKARTE DRUECKEN
+
+            BEZAHLEN     $IF
+                                                   @ * GELDANZEIGE LEUCHTET NICHT
+                                                   @ * AUF
+                         THEN
+                                                   @ * AN ANDEREN AUTOMATEN GEHEN
+                         ELSE
+                            COPY GELD_EIN
+
+                            $IF
+                                                   @ * KARTE WIRD NICHT AUSGEGEBEN
+                            THEN
+                               ICALL GELD_ZURUECKFORDERN @ * ;
+                                                   @ * AN ANDEREN AUTOMATEN GEHEN
+                            ELSE
+                               COPY KARTE_EN
+                            IF$ ,
+
+                         IF$ BEZAHLEN
+
+            GELD_ZURUECKFORDERN $PROC
+                                                   @ * KORREKTURKNOPF DRUECKEN
+
+                            $IF
+                                                   @ * GELD WIRD ZURUECKGEGEBEN
+                            THEN
+                                                   @ * GELD ENTNEHMEN
+                            ELSE
+                               COPY GEWALT_A
+                            IF$ ,
+
+                         PROC$ GELD_ZURUECKFORDERN
+
+                      PROC$ KARTE_ZI
+                      END KARTE_ZI
+            ./ ADD NAME=GELD_EIN
+              TITLE 'GELD_EINWERFEN'
+            GELD_EIN  $BLOCK
+
+                         $WHILE
+                                                   @ * GEFORDERTER BETRAG NOCH
+                                                   @ * NICHT BEZAHLT
+                         LOOP
+                                                   @ * MUENZE EINWERFEN
+
+                            $IF
+                                                   @ * MUENZE WIRD NICHT AKZEPTIERT
+-
+
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                                    32
+1
+            8.4 Beispiel - CodegerÇst                                   Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-                                                  @ * ODER FALSCHE ANZEIGE
+                                                   @ * LEUCHTET AUF
+                            THEN
+                               ICALL GELD_ZURUECKFORDERN @ * ;
+                                                   @ * AN ANDEREN AUTOMATEN GEHEN ;
+                               LEAVE BEZAHLEN
+                            IF$ ,
+
+                         WHILE$ ,
+
+                      BLOCK$ GELD_EIN
+                      ENDCOPY GELD_EIN
+            ./ ADD NAME=KARTE_EN
+              TITLE 'KARTE_ENTNEHMEN'
+
+            KARTE_EN  $BLOCK
+                                                   @ * FAHRKARTE HERAUSNEHMEN
+
+                         $IF
+                                                   @ * EINGEZAHLTER BETRAG WAR
+                                                   @ * GROESSER ALS FAHRKARTE
+                                                   @ * KOSTET
+                         THEN
+                            $IF
+                                                   @ * RESTGELD WIRD AUSGEGEBEN
+                            THEN
+                                                   @ * GELD ENTNEHMEN
+                            ELSE
+                               ICALL GELD_ZURUECKFORDERN
+                            IF$ ,
+                         IF$ ,
+
+                      BLOCK$ KARTE_EN
+                      ENDCOPY KARTE_EN
+            ./ ADD NAME=GEWALT_A
+              TITLE 'GEWALT_ANWENDEN'
+
+            GEWALT_A  $BLOCK
+                                                   @ * GEGEN AUTOMATEN TRETEN
+
+                         $IF
+                                                   @ * GELD WIRD ZURUECKGEGEBEN
+                         THEN
+                                                   @ * GELD ENTNEHMEN
+                         ELSE
+                                                   @ * AERGERN
+                         IF$ ,
+
+                      BLOCK$ GEWALT_A
+                      ENDCOPY GEWALT_A
+-
+-
+-
+-
+-
+-
+-
+-
+-
+
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                                    33
+1
+            9. Anhang                                   Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+-
+0           9. Anhang
++           _________
+-
+-
+-
+-
+0           9.1 Syntaxbeschreibung
++           ______________________
+-
+-
+-
+-           Notation:
++           ________
+-
+            :          - Definitionszeichen
+-
+            |          - Alternative
+-
+            » ... º    - Klammerung
+-
+            < ... >    - Option
+-
+            *          - Iteration
+0                        (einmal bis beliebig oft)
+-
+            .          - Ende der Regel
+-
+-              Alle Zeichenketten, die bei den Syntaxregeln in einfache Quo-
+0           tes eingeschlossen sind,  sind atomare Elemente,  aus denen sich
++                                          atomare Elemente
++                                          atomare Elemente
+0           bestimmte Symbole zusammensetzen. Zeichenketten,  die in doppel-
+0           ten Quotes stehen,  sind terminale Symbole,  d. h.  Symbole, die
++                                    terminale Symbole
++                                    terminale Symbole
+0           genau durch die angegebene Zeichenkette definiert sind. Alle Çb-
+0           rigen nicht in Quotes und Doppelquotes eingeschlossenen Zeichen-
+-
+
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    34
+1
+            9.1 Syntaxbeschreibung                      Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+            ketten sind Metasymbole.
++                       Metasymbole
++                       Metasymbole
+-
+-              Setzt sich die rechte Seite einer Regel  (Definition) nur aus
+0           atomaren Elementen bzw. aus Bestandteilen zusammen, die wiederum
+0           aus atomaren Elementen aufgebaut sind,  so werden die  einzelnen
+0           Teile direkt miteinander verkettet. Bei allen Çbrigen Definitio-
+0           nen mÇssen die einzelnen Bestandteile durch mindestens ein Blank
+0           voneinander getrennt werden.
+-
+-
+-
+            Syntax:
++           ______
+-
+-           letter:            'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' |
+0                              'h' | 'i' | 'j' | 'k' | 'l' | 'm' | 'n' |
+0                              'o' | 'p' | 'q' | 'r' | 's' | 't' | 'u' |
+0                              'v' | 'w' | 'x' | 'y' | 'z' |
+0                              'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' |
+0                              'H' | 'I' | 'J' | 'K' | 'L' | 'M' | 'N' |
+0                              'O' | 'P' | 'Q' | 'R' | 'S' | 'T' | 'U' |
+0                              'V' | 'W' | 'X' | 'Y' | 'Z' |
+0                              '$' | '@' | '#' .
+-
+            digit:             '0' | '1' | '2' | '3' | '4' |
+0                              '5' | '6' | '7' | '8' | '9' .
+-
+            special:           '_' .
+-
+            alphanum:          letter | digit | special .
+-
+            number:            digit* .
+-
+            label:             letter <alphanum*> ':' .
+-
+-
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    35
+1
+            9.1 Syntaxbeschreibung                      Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+            label-reference:   ':' letter <alphanum*> .
+-
+            stmt-delimiter:    ";" .
+-
+            program:           main-program <refinement*> .
+-
+            main-program:      label PROGRAM-construct
+0                              <label-reference> <stmt-delimiter> .
+-
+            refinement:        label REFINE-construct
+0                              <label-reference> <stmt-delimiter> .
+-
+            PROGRAM-construct: "(PROGRAM"
+0                              action*
+0                              <postlude*>
+0                              "PROGRAM)" .
+-
+            REFINE-construct:  "(REFINE"
+0                              action*
+0                              <postlude*>
+0                              "REFINE)" .
+-
+            action:            <label>
+0                              » construct  <label-reference>  | statement |
+0                              text º
+0                              <stmt-delimiter> .
+-
+            postlude:          label* "POSTLUDE" action* .
+-
+            construct:         PROC-construct | IF-construct |
+0                              CASE-construct | WHILE-construct |
+0                              LOOP-construct | FOR-construct |
+0                              BLOCK-construct .
+-
+            statement:         REFINE-stmt | CALL-stmt | GOTO-stmt |
+0                              LEAVE-stmt | REPEAT-stmt | SIGNAL-stmt |
+0                              IF-stmt .
+-
+
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    36
+1
+            9.1 Syntaxbeschreibung                      Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+            PROC-construct:    "(PROC"
+0                              action*
+0                              <postlude*>
+0                              "PROC)" .
+-
+            IF-construct:      "(IF" condition
+0                              "THEN" <action*>
+0                              < »"ELSEIF" condition "THEN" <action*>º* >
+0                              <"ELSE" <action*>>
+0                              <postlude*>
+0                              "IF)" .
+-
+            condition:         text <stmt-delimiter> .
+-
+            CASE-construct:    "(CASE"
+0                              »"ON" condition "DO" <action*>º*
+0                              <"ELSE" <action*>>
+0                              <postlude*>
+0                              "CASE)" .
+-
+            WHILE-construct:   "(WHILE" condition
+0                              "LOOP" loop-action*
+0                              <postlude*>
+0                              "WHILE)" .
+-
+            LOOP-construct:    "(LOOP" loop-action*
+0                              <"UNTIL" condition>
+0                              <postlude*>
+0                              "LOOP)" .
+-
+            FOR-construct:     "(FOR" loop-action*
+0                              <postlude*>
+0                              "FOR)" .
+-
+            BLOCK-construct:   "(BLOCK"
+0                              action*
+0                              <postlude*>
+-
+
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    37
+1
+            9.1 Syntaxbeschreibung                      Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+                               "BLOCK)" .
+-
+            loop-action:       action   |    WHILE-expression    |    UNTIL-
+0                              expression .
+-
+            WHILE-expression:  <label> "WHILE" condition "LOOP" .
+-
+            UNTIL-expression:  <label> "UNTIL" condition "LOOP" .
+-
+            REFINE-stmt:       "REFINE" label-reference .
+-
+            CALL-stmt:         "CALL" label-reference .
+-
+            GOTO-stmt:         "GOTO" label-reference .
+-
+            LEAVE-stmt:        "LEAVE" label-reference .
+-
+            REPEAT-stmt:       "REPEAT" label-reference .
+-
+            SIGNAL-stmt:       "SIGNAL" label-reference .
+-
+            IF-stmt:           "IF" condition
+0                              »"GOTO" | "LEAVE" | "REPEAT" | "SIGNAL"º .
+-
+            text:              freier Text .
+-
+-              Freier Text ist beliebiger umgangssprachlicher Text,  der al-
++              Freier Text
++              Freier Text
+0           les enthalten darf bis auf SchlÇsselw°rter und Labels (denn die-
+0           se werden speziell formatiert);  Label-Referenzen dagegen k°nnen
+0           darin enthalten sein.  Die Verwendung  des  Statement-Delimiters
+0           innerhalb  des Textes fÇhrt zu einer entsprechenden Formatierung
+0           (siehe 5.1.6).
+-
+-
+-
+-
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    38
+1
+            9.1 Syntaxbeschreibung                      Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+               Eine gesonderte Stellung nehmen die Kommentare und  die  Kon-
++                                                  Kommentare           Kon-
++                                                  Kommentare           Kon-
+0           trollanweisungen  (Pragmas)  ein,  denn sie sind formatgebunden.
++           trollanweisungen  (Pragmas)
++           trollanweisungen  (Pragmas)
+0           Kommentare  und  Pragmas  mÇssen in der ersten Spalte einer Ein-
+0           gabezeile beginnen.
+-
+-           comment:           "*" <text> .
+-
+            EJECT-pragma:      "-EJECT" .
+-
+            SPACE-pragma:      "-SPACE" <number> .
+-
+            TITLE-pragma:      "-TITLE" <»"'" text "'"º*> .
+-
+-              Das Blank als Delimiter kann weggelassen werden  bei  comment
+0           vor text und im TITLE-pragma vor und nach text.
+-
+-
+-
+            9.2 Code-Tabelle
++           ________________
+-
+-              Es  folgt  hier  eine  Liste mit sÜmtlichen Keywords,  die im
+0           Pseudocode verwendet werden dÇrfen, und den jeweils dazugeh°ren-
+0           den Keywords bzw.  (Assembler-) Makros,  die im CodegerÇst dafÇr
+0           generiert werden (Code-Tabelle).
+-
+-              (PROGRAM    -->    $PROC
+0              PROGRAM)    -->    PROC$
+0              (PROC       -->    $PROC
+0              PROC)       -->    PROC$
+0              (REFINE     -->    $BLOCK
+0              REFINE)     -->    BLOCK$
+0              (BLOCK      -->    $BLOCK
+-
+
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    39
+1
+            9.2 Code-Tabelle                            Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+               BLOCK)      -->    BLOCK$
+0              (IF         -->    $IF
+0              THEN        -->    THEN
+0              ELSE        -->    ELSE
+0              ELSEIF      -->    ELSEIF
+0              IF)         -->    IF$
+0              (CASE       -->    $CASE
+0              ON          -->    ON
+0              DO          -->    DO
+0              CASE)       -->    CASE$
+0              (WHILE      -->    $WHILE
+0              WHILE)      -->    WHILE$
+0              (LOOP       -->    $LOOP
+0              LOOP)       -->    LOOP$
+0              (FOR        -->    $FOR
+0              FOR)        -->    FOR$
+0              WHILE       -->    WHILE
+0              UNTIL       -->    UNTIL
+0              LOOP        -->    LOOP
+0              IF          -->    IF
+0              REFINE      -->    COPY
+0              CALL        -->    ICALL
+0              GOTO        -->    GOTO
+0              LEAVE       -->    LEAVE
+0              REPEAT      -->    REPEAT
+0              SIGNAL      -->    SIGNAL
+0              POSTLUDE    -->    POSTLUDE
+-
+-              Diese  Tabelle  kann  jedoch  auch  erweitert oder fÇr andere
+0           Zielsprachen abgeÜndert werden.
+-
+-
+-
+-
+-
+
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    40
+1
+            10. Literatur                               Pseudocode-Prozessor
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+
+-
+-
+0           10. Literatur
++           _____________
+-
+-
+            ÝBIR80¨  BIRKENBIHL, K.
++           ÝBIR80¨  BIRKENBIHL, K
++           ÝBIR80¨  BIRKENBIHL, K
+0                    Projekterfahrung   mit   fortgeschrittenen    Software-
+                     Implementationsverfahren
+0                    GMD Interner Bericht RZ-80.206 (1980)
+-           ÝCAI75¨  CAINE, S.H., GORDON, E.K.
++           ÝCAI75¨  CAINE, S.H., GORDON, E.K
++           ÝCAI75¨  CAINE, S.H., GORDON, E.K
+0                    PDL - a tool for software design
+0                    Proc. Mat. Comp. Conf. AFISP, pp 271-276 (1975)
+-           ÝIBM80¨  IBM
++           ÝIBM80¨  IBM
++           ÝIBM80¨  IBM
+0                    Pseudocode - presentation guide
+0                    IBM Corporation, New York 10604 (1980)
+-           ÝING80¨  INGENBLEEK, B.
++           ÝING80¨  INGENBLEEK, B
++           ÝING80¨  INGENBLEEK, B
+0                    STRUBOL, Version 2.3
+0                    GMD Interner Bericht RZ-80.212 (1980)
+-           ÝJOR78¨  JORDAN, W., URBAN, H.
++           ÝJOR78¨  JORDAN, W., URBAN, H
++           ÝJOR78¨  JORDAN, W., URBAN, H
+0                    Strukturierte Programmierung
+0                    Springer-Verlag, Berlin, Heidelberg, New York (1978)
+-           ÝSCH78¨  SCHULZ, A.
++           ÝSCH78¨  SCHULZ, A
++           ÝSCH78¨  SCHULZ, A
+0                    Methoden des Softwareentwurfs  und  Strukturierte  Pro-
+                     grammierung
+0                    de Gruyter Lehrbuch, Berlin, New York (1978)
+-           ÝSYL81¨  SYLVESTER, P.
++           ÝSYL81¨  SYLVESTER, P
++           ÝSYL81¨  SYLVESTER, P
+0                    Makros  und  andere Hilfsmittel zum strukturierten Pro-
+                     grammieren in ASSEMBLER, Version 3.0
+                     (Benutzeranleitung)
+0                    GMD Interner Bericht RZ-81.201 (1981)
+-
+-
+-
+-
+-
+            ××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××
+            GMD-Z1.BN   Brigitte Stumm
+            April 1985                                                    41
+1PSEUDOCODE-PROCESSOR  --- VERSION 2.3 ---  GMD/Z1.BN                    PAGE   1
+0Pseudocode-Prozessor   ******   Testbeispiel
+0LINE LVL PSEUDOCODE
+-
+
+ 0001   0 *---------------------------------------------*
+ 0002   0 *                                             *
+ 0003   0 *           Kommentar                         *
+ 0004   0 *                                             *
+ 0005   0 *---------------------------------------------*
+
+
+ 0006   1 Karte_ziehen:
+ 0007   1           (PROGRAM
+ 0008   1
+ 0009   1              Taste fuer gewuenschte Fahrkarte druecken
+ 0010   1
+ 0011   2 Bezahlen:    (IF
+ 0012   2                 Geldanzeige leuchtet nicht auf
+ 0013   2              THEN
+ 0014   2                 an anderen Automaten gehen
+ 0015   2              ELSE
+ 0016   2                 REFINE :Geld_einwerfen
+ 0017   2
+ 0018   3                 (IF
+ 0019   3                    Karte wird nicht ausgegeben
+ 0020   3                 THEN
+ 0021   3                    CALL :Geld_zurueckfordern ;
+ 0022   3                    an anderen Automaten gehen
+ 0023   3                 ELSE
+ 0024   3                    REFINE :Karte_entnehmen
+ 0025   3                 IF)
+ 0026   2
+ 0027   2              IF) :Bezahlen
+ 0028   1
+ 0029   2 Geld_zurueckfordern:
+ 0030   2              (PROC
+ 0031   2                 Korrekturknopf druecken
+ 0032   2
+ 0033   3                 (IF
+ 0034   3                    Geld wird zurueckgegeben
+ 0035   3                 THEN
+ 0036   3                    Geld entnehmen
+ 0037   3                 ELSE
+ 0038   3                    REFINE :Gewalt_anwenden
+ 0039   3                 IF)
+ 0040   2
+ 0041   2              PROC) :Geld_zurueckfordern
+ 0042   1
+ 0043   1           PROGRAM) :Karte_ziehen
+1PSEUDOCODE-PROCESSOR  --- VERSION 2.3 ---  GMD/Z1.BN                    PAGE   2
+0Pseudocode-Prozessor   ******   Testbeispiel
+0LINE LVL PSEUDOCODE
+-
+ 0044   1 Geld_einwerfen:
+ 0045   1           (REFINE
+ 0046   1
+ 0047   2              (WHILE
+ 0048   2                 geforderter Betrag noch nicht bezahlt
+ 0049   2              LOOP
+ 0050   2                 Muenze einwerfen
+ 0051   2
+ 0052   3                 (IF
+ 0053   3                    Muenze wird nicht akzeptiert oder falsche Anzeige
+ 0054   3                    leuchtet auf
+ 0055   3                 THEN
+ 0056   3                    CALL :Geld_zurueckfordern ;
+ 0057   3                    an anderen Automaten gehen ;
+ 0058   3                    LEAVE :Bezahlen
+ 0059   3                 IF)
+ 0060   2
+ 0061   2              WHILE)
+ 0062   1
+ 0063   1           REFINE) :Geld_einwerfen
+ 0064   0
+ 0065   1 Karte_entnehmen:
+ 0066   1           (REFINE
+ 0067   1              Fahrkarte herausnehmen
+ 0068   1
+ 0069   2              (IF
+ 0070   2                 eingezahlter Betrag war groesser als Fahrkarte kostet
+ 0071   2              THEN
+ 0072   3                 (IF
+ 0073   3                    Restgeld wird ausgegeben
+ 0074   3                 THEN
+ 0075   3                    Geld entnehmen
+ 0076   3                 ELSE
+ 0077   3                    CALL :Geld_zurueckfordern
+ 0078   3                 IF)
+ 0079   2              IF)
+ 0080   1
+ 0081   1           REFINE) :Karte_entnehmen
+ 0082   0
+ 0083   1 Gewalt_anwenden:
+ 0084   1           (REFINE
+ 0085   1              gegen Automaten treten
+ 0086   1
+ 0087   2              (IF
+ 0088   2                 Geld wird zurueckgegeben
+ 0089   2              THEN
+ 0090   2                 Geld entnehmen
+ 0091   2              ELSE
+ 0092   2                 aergern
+ 0093   2              IF)
+ 0094   1
+ 0095   1           REFINE) :Gewalt_anwenden
+1PSEUDOCODE-PROCESSOR  --- VERSION 2.3 ---  GMD/Z1.BN                    PAGE   3
+-C R O S S R E F E R E N C E   O F   L A B E L S
+-NAME                        LINE BLKNAME                     TYPE
+-
+ Bezahlen                    0011 Karte_ziehen                DEFINITION
+                             0027 Karte_ziehen                END-OF-BLOCK
+                             0058 Geld_einwerfen              LEAVE
+
+ Geld_einwerfen              0044 --- TOP ---                 DEFINITION
+                             0016 Bezahlen                    REFINE
+                             0063 --- TOP ---                 END-OF-BLOCK, ADDED
+
+ Geld_zurueckfordern         0029 Karte_ziehen                DEFINITION
+                             0021 Bezahlen                    CALL
+                             0041 Karte_ziehen                END-OF-BLOCK, ADDED
+                             0056 Geld_einwerfen              CALL
+                             0077 Karte_entnehmen             CALL
+
+ Gewalt_anwenden             0083 --- TOP ---                 DEFINITION
+                             0038 Geld_zurueckfordern         REFINE
+                             0095 --- TOP ---                 END-OF-BLOCK, ADDED
+
+ Karte_entnehmen             0065 --- TOP ---                 DEFINITION
+                             0024 Bezahlen                    REFINE
+                             0081 --- TOP ---                 END-OF-BLOCK, ADDED
+
+ Karte_ziehen                0006 --- TOP ---                 DEFINITION
+                             0043 --- TOP ---                 END-OF-BLOCK, ADDED
+
+1PSEUDOCODE-PROCESSOR  --- VERSION 2.3 ---  GMD/Z1.BN                    PAGE   4
+
+-FINAL MESSAGES:
+-
+           RETURN-CODE = 0
+
+           NO SYNTACTICAL ERRORS FOUND
+
+
+           WARNING:  THE NAMES OF PROGRAM- AND REFINE-CLAUSES HAVE BEEN
+                     TRUNCATED TO 8 CHARACTERS IN THE GENERATED CODE
+                     DATASET.
