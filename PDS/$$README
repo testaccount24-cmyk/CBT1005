@@ -1,0 +1,116 @@
+
+GMD-SPTS Distribution
+
+    This package has been brought to the CBTTAPE by
+
+    Peter Sylvester
+    peter@edelweb.eu
+
+    W.M. McKeeman:
+    It is as important to forbid non-sense
+    as it is to permit good sense.
+    D. Gries:
+    The importance of style in the language
+    cannot be overestimated.
+    L. Reiners:
+    Denken und Ausdruck sind aufs innigste verkettet.
+    Wer seinen Stil verbessert, schult auch sein Denken.
+
+SPTS is (whatever you prefer) :
+
+          Structured Programming Tool Set
+          System Programmer's Tool Set
+          Sylvester Peter's Toy Set
+
+   It has three functional components :
+
+     1: SPTS MACLIB
+
+        The core functionality are assembler macros for structured
+        programming:
+
+        - a large set of control flow statements
+        - statement like conditional expressions
+        - composition of expressions ($EX EX$ ORELSE, ANDTHEN)
+        - basic comparison expressions ($EXPR$ and TRUECC)
+        - assignment statements (LET)
+        - Organisation of code and static data using LTORG
+
+        Usage requires at least the SLAC version of ASMH.
+
+        The macros can be used without the other tools.
+
+     2 SPTS PCPARSER
+
+        A tool to work on structured pseudo code version
+        of some software/program. PCPARSER transforms the
+        pseudo code into an assembler skeleton and produces
+        a documentation. The assembler skeleton is provided
+        as IEBUPDTE input (program refinements are translated
+        into COPYLIB members.
+        PCPARSER is written in STRUBOL, an enhanced version
+        of SPITBOL. Source is included for inspiration.
+
+        The pseudo code combines
+        - a set of control flow statements
+          translated into corresponding macros
+        - free form text as pseudo code
+          translated to comments (actually @ macro)
+
+     3: SPTS SASLIST
+
+        A program acting on the assembler listing (SLAC version)
+        to enhance readability. Using is not required.
+
+
+The package (PDS) contains the following members:
+
+   $$README:
+
+        This member
+
+   $LICENCE:
+
+        Copyright and licencing, don't worry
+
+   CNTL (XMI packed PDS):
+         A set of jobs for inspiration to install SPTS parts.
+
+         You can recover the content using the TSO commands:
+
+            ALLOC DA(SPTS.CBTTAPE) FI(RECEIVE)
+            RECEIVE INFILE(RECEIVE)
+
+   EXAMPLES (XMI packed PDS):
+
+         A small set of examples, assembler programs may not compile
+         or link.
+
+   INFO (XMI packed PDS):
+
+         German documentation
+
+   LINKLIB (XMI packed PDS):
+
+         The PCPARSER and SASLIST load modules.
+
+   MACLIB (XMI packed PDS):
+
+         The assembler structured macros
+
+   PROCLIB (XMI packed PDS):
+
+         A set of JCL procedures.
+
+   SASLOBJ:
+
+         A compiled SASLIST object
+
+   SOURCE (XMI packed PSD):
+
+         The PCPARSER and SASLIST source
+
+
+Alles hat einmal ein Ende, nur die Wurst hat zwei.
+Everything comes to an end.  But for a sausage there are
+   two.

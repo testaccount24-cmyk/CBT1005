@@ -1,0 +1,13 @@
+2025-03-28 17:13:53.594488 - Received CBT.V508.FILE1005.PDS from FILE1005.XMI 
+2025-03-28 17:13:53.595471 - Found $$$#DATE.txt (text/plain) in CBT.V508.FILE1005.PDS, moved to PDS/$$$#DATE
+2025-03-28 17:13:53.596034 - Found $$README.txt (text/plain) in CBT.V508.FILE1005.PDS, moved to PDS/$$README
+2025-03-28 17:13:53.596643 - Found $LICENCE.txt (text/plain) in CBT.V508.FILE1005.PDS, moved to PDS/$LICENCE
+2025-03-28 17:13:53.597234 - Found @FIL1005.txt (text/plain) in CBT.V508.FILE1005.PDS, moved to PDS/@FIL1005
+2025-03-28 17:13:53.599742 - Found CNTL.xmi (application/xmit) in CBT.V508.FILE1005.PDS, moved to PDS/CNTL
+2025-03-28 17:13:53.605655 - Found EXAMPLES.xmi (application/xmit) in CBT.V508.FILE1005.PDS, moved to PDS/EXAMPLES
+2025-03-28 17:13:53.611259 - Found INFO.xmi (application/xmit) in CBT.V508.FILE1005.PDS, moved to PDS/INFO
+2025-03-28 17:13:53.614875 - Found LINKLIB.xmi (application/xmit) in CBT.V508.FILE1005.PDS, moved to PDS/LINKLIB
+2025-03-28 17:13:53.624940 - Found MACLIB.xmi (application/xmit) in CBT.V508.FILE1005.PDS, moved to PDS/MACLIB
+2025-03-28 17:13:53.630503 - Found PROCLIB.xmi (application/xmit) in CBT.V508.FILE1005.PDS, moved to PDS/PROCLIB
+2025-03-28 17:13:53.636042 - Found SASLOBJ.bin (application/octet-stream) in CBT.V508.FILE1005.PDS, moved to PDS/SASLOBJ
+2025-03-28 17:13:53.638366 - Found SOURCE.xmi (application/xmit) in CBT.V508.FILE1005.PDS, moved to PDS/SOURCE
