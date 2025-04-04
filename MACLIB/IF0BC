@@ -1,0 +1,93 @@
+         MACRO
+&NAME    IF0BC &COND,&LABEL,&GENCOND1,&GENCOND2
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*
+.*  OPTIMIZED BRANCH TO END OF PROCEDURE I.E.
+.*  IF &LABEL=Z&PROC THEN BCR &COND,&PROCREG ELSE BC &COND,&LABEL
+.*
+.*  NOTE: THERE MUST BE NO INSTRUCTION BETWEEN &LABEL AND PROC$,
+.*        WHICH REQUIRES ALIGNMENT TO FULLWORD BOUNDARY.
+.*        F.E. INLINE PARAMETER LISTS FOR SYSTEM MACROS LIKE IN
+.*             CLOSE (PIPAPO)        .
+.*             REPLACE THIS BY USING EXECUTE AND LIST FORM
+.*             CLOSE MF=(E,L1)             <--CODE
+.*        L1   CLOSE (PIPAPO),MF=L         <--DATA | CONST
+.*
+.*             OR ISSUE NOOPT MACRO BEFORE
+.*
+         GBLC  &BLKID(10),&PRCID(4),&BLKTYPE(10),&SPACE,&PRCTYPE(4)
+         GBLA  &BLK,&PRC,&PRCREG(4)
+         LCLA  &I
+         LCLC  &T,&C,&P,&Q,&D,&S
+         LCLB  &SB
+         GBLB  &OPT
+.*
+         AIF   (NOT &OPT).NOOPT
+&C       SETC  '1'
+         AIF   ('&GENCOND1' EQ '').NOGENC1
+&C       SETC  '(&GENCOND1)/(&GENCOND1)'
+.NOGENC1 AIF   ('&GENCOND2' EQ '').NOGENC2
+&C       SETC  '&C*(1-(&GENCOND2)/(&GENCOND2))'
+.NOGENC2 ANOP
+         AIF   (&PRC EQ 0).NOPROC
+.* OPTIMIZE ONLY BASIC PROCEDURES
+.* OTHER TYPES ALWAYS REQUIRE TERMINATION FUNCTIONS
+         AIF   ('&PRCTYPE(&PRC)'(1,1) NE 'B').NOPROC
+&I       SETA  &BLK
+&P       SETC  '&PRCID(&PRC)'
+&T       SETC  '-&LABEL)'
+         AIF   ('&C' EQ '1').LOOP
+         AIF   (K'&LABEL LT 4).LOOP
+         AIF   ('&LABEL'(1,3) NE '@@T').FTEST
+         AIF   ('&BLKTYPE(&I))' EQ 'IT').FTEST
+&T       SETC  '&LABEL'(4,K'&LABEL-3)
+&T       SETC  '-@@X&T+@@Y&T-@@W&T)'
+         AGO   .LOOP
+.FTEST   AIF   ('&LABEL'(1,3) NE '@@F').ZTEST
+&T       SETC  '&LABEL'(4,K'&LABEL-3)
+&T       SETC  '-@@V&T)'
+         AGO   .LOOP
+.ZTEST   AIF   ('&LABEL'(1,3) NE '@@Z').LOOP
+&T       SETC  '&LABEL'(4,K'&LABEL-3)
+&T       SETC  '-@@X&T)'
+.LOOP    ANOP
+&I       SETA  &I-1
+         AIF   ('&P' EQ '&BLKID(&I)').OK
+         AIF   ('&C' EQ '1').TESTLP
+         AIF   ('&BLKTYPE(&I)' NE 'IT').TESTLP
+&T       SETC  '-@@X&BLKID(&I)+@@Y&BLKID(&I)&T'
+         AGO   .LOOP
+.* NO OPTIMIZATION IN WHILE OR LOOP CONSTRUCT
+.TESTLP  AIF   ('&BLKTYPE(&I)'(1,1) NE 'W' AND                         -
+               '&BLKTYPE(&I)'(1,1)  NE 'U' AND                         -
+               '&BLKTYPE(&I)'(1,1)  NE 'L').LOOP
+.*
+.NOPROC  AIF   ('&C' EQ '1').NOOPT
+         DC    (&C)AL2(X'4700'+16*(&COND)),(&C)S(&LABEL)
+         AGO   .MEND
+.NOOPT   AIF   ('&GENCOND2' NE '').MEND
+&NAME    BC    &COND,&LABEL
+         AGO   .MEND
+.OK      ANOP
+&T       SETC  '(@@Y&PRCID(&PRC)&T'
+         AIF   ('&NAME' EQ '').NONAME
+&NAME    DS    0H
+.NONAME  ANOP
+.* IF THE LENGTH OF A SETC SYMBOL OR OPERAND EXCEEDS 255,
+.* THE ASSEMBLER PRODUCES A SYSTEM ABEND.
+&T       SETC  '&T/&T'
+&D       SETC  '@@1&SYSNDX'
+&Q       SETC  '@@2&SYSNDX'
+&D       EQUN  &T
+&Q       EQUN  &C
+&T       SETC  '&D'
+&C       SETC  '&Q'
+&S       SETC  '&PRCREG(&PRC)'
+.*    DC    (&T*&C)AL2(X'4700'+16*(&COND)),(&T*&C)S(&LABEL),((1-&T)*&C)-
+               AL2(X'0700'+16*(&COND)+&S)
+     DC (&C)AL2(X'0700'+16*(&COND)+&S+&T*(X'4000'-&S)),(&T*&C)S(&LABEL)
+.MEND    ANOP
+         MEND

@@ -1,0 +1,131 @@
+./ ADD NAME=INFOPRNT
+INFOPRNT  TITLE 'PRINT SPTS INFOS'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*                                                                     *
+* COPYRIGHT: COPYRIGHT BY GESELLSCHAFT FUER MATHEMATIK UND            *
+*                                      DATENVERARBEITUNG MBH BONN,    *
+*                         - Z1 - BEREICH BONN -                       *
+*                         RIEMENSCHNEIDERSTR. 11                      *
+*                         5300 BONN 2                                 *
+*                                                                     *
+*            FURTHER COPIES OF THIS PROGRAM MAY BE OBTAINED           *
+*            BY WRITING TO THE ABOVE ADDRESS.                         *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+*        I N F O P R N T                                              *
+*                                                                     *
+*                                                                     *
+* <CLASS>: UTILITY                                                    *
+*                                                                     *
+*                                                                     *
+* <FUNCTION/OPERATION>:                                               *
+*        INFOPRINT DRUCKT DIE SPTS-INFO-DATEI. ALLE SAETZE            *
+*        WERDEN DABEI UEBERSETZT UM VERSCHIEDENE                      *
+*        REPRAESENTATIONEN VON SONDERZEICHEN VERARBEITEN              *
+*        ZU KOENNEN.                                                  *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+* <ENTRY POINTS>:                                                     *
+*        INFOPRNT                                                     *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+* <DD-STATEMENTS/DATA SETS>:                                          *
+*        INFOIN    - EINGABEDATEI (RECFM=VBA,LRECL=137)               *
+*        SYSPRINT  - AUSGABEDATEI                                     *
+*                                                                     *
+*                                                                     *
+* <NORMAL EXIT>:                                                      *
+*        BR 14                                                        *
+*                                                                     *
+*                                                                     *
+* <ERROR EXIT>:                                                       *
+*        NONE                                                         *
+*                                                                     *
+*                                                                     *
+* <RETURN CODES>:                                                     *
+*        000   OK                                                     *
+*        012   EINGABEDATEI LIESS SICH NICHT OEFFNEN                  *
+*                                                                     *
+*                                                                     *
+* <EXTERNAL ROUTINES>:                                                *
+*        NONE                                                         *
+*                                                                     *
+*                                                                     *
+* <TABLES/WORK AREAS>:                                                *
+*        DCB                                                          *
+*                                                                     *
+*                                                                     *
+* <ATTRIBUTES>:                                                       *
+*        -                                                            *
+*                                                                     *
+*                                                                     *
+* <RESTRICTIONS>:                                                     *
+*        -                                                            *
+*                                                                     *
+*                                                                     *
+* <AUTHORIZATION REQUIRED>:                                           *
+*        -                                                            *
+*                                                                     *
+* <RELATED PROGRAMS>:                                                 *
+*        IEBPTPCH                                                     *
+*                                                                     *
+*                                                                     *
+* <STORAGE>:                                                          *
+*        PROGRAM:  ?                                                  *
+*        DYNAMIC:  0                                                  *
+*        BUFFER :  0                                                  *
+*                                                                     *
+*                                                                     *
+* <LOAD MODULE CREATION>:                                             *
+*      SOURCE LANGUAGE      : SPTS                                    *
+*      COMPILE LIBRARIES    : SYS1.MACLIB, SYS2.SPTS.MACLIB           *
+*      COMPILE PARAMETERS   : -                                       *
+*      LINK-EDIT LIBRARIES  : -                                       *
+*      LINK-EDIT PARAMETERS : -                                       *
+*      LINK-EDIT INPUT      : -                                       *
+*      DESTINATION LIBRARIES: -                                       *
+*                                                                     *
+*      GENERATING DECK      : SYS2.SPTS.SAMPLE                        *
+*                                                                     *
+*                                                                     *
+* <STATUS>:                                                           *
+*          CHANGE LEVEL - 0.0               27MAR85                   *
+*                                                                     *
+*                                                                     *
+* <AUTHOR>: BEN UTZER                                                 *
+*                                                                     *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+ EJECT
+INFOPRNT  $PROC
+                                       @ * OEFFNE PRINT DATEI ;
+                                       @ * OEFFNE INFO DATEI ;
+             $IF
+                                       @ * INFO DATEI OFFEN
+             THEN
+                COPY DRUCKEN           @ * ;
+                                       @ * SCHLIESSE DRUCK DATEI ;
+                                       @ * SCHLIESSE INFO DATEI ;
+             ELSE
+                                       @ * FEHLERMELDUNG
+             IF$ ,
+          PROC$ INFOPRNT
+          END INFOPRNT
+./ ADD NAME=DRUCKEN
+  TITLE 'DRUCKEN'
+DRUCKEN   $BLOCK
+             $LOOP
+                                       @ * LIES INFO DATEI
+             WHILE
+                                       @ * NOT EOF
+             LOOP
+                                       @ * UEBERSETZE MIT TABELLE ;
+                                       @ * GIB AUS
+             LOOP$ ,
+EOFR         $PROC
+                                       @ * SETZE EOF INDIKATOR
+             PROC$ EOFR
+          BLOCK$ DRUCKEN
+          ENDCOPY DRUCKEN

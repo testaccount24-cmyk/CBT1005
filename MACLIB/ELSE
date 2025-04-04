@@ -1,0 +1,45 @@
+         MACRO                                         STRUCT MACRO SET
+&LABEL   ELSE &CALLER=ELSE
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                            PAHL (GMD-IST/RZ) 00JAN73
+.*      " CONDITION "THEN" BLOCK "ELSE" BLOCK "IF)"             27MAR75
+.*       END "THEN" PART OF "IF" CLAUSE,
+.*       BEGIN "ELSE" PART OF "IF" CLAUSE.
+.*
+         GBLA  &BLK,&BLKDCNT(30),&BLKCC(30)
+         GBLC  &BLKTYPE(30),&BLKID(30),&BLKNAME(30)
+         GBLA  &PRCREG(04),&PRC
+         GBLC  &PRCID(04)
+         LCLC  &T,&C,&DC,&B
+         LCLA  &I
+&LABEL   SASLIST MACRO,'ELSE'
+.*
+&C       SETC  '&BLKTYPE(&BLK)'
+         AIF   ('&C'             NE 'IT' AND                           -
+               '&C'              NE 'CD').YELSE       NO "THEN"/"DO"
+         AIF   ('&C' NE 'CD').NOCASE
+&DC      SETC  '&BLKDCNT(&BLK)'
+.NOCASE  ANOP
+&B       SETC  '&BLKID(&BLK)&DC'
+@@Y&B      DS    0H
+      IF0BC    15,@@Z&BLKID(&BLK),(@@X&B-@@V&B)*(@@Y&B-@@W&B)
+         AIF   ('&LABEL' EQ '').NOLAB
+&LABEL   DS    0S(&LABEL)              ID LABEL
+.NOLAB   AIF   ('&BLKNAME(&BLK)' EQ '').NOXREF
+         DS    0S(&BLKNAME(&BLK))      ID LABEL
+.NOXREF  AIF   ('&C' EQ 'CD').FCD
+@@F&B    EQU               @@Z&BLKID(&BLK)-(@@X&B-@@V&B)/(@@X&B-@@V&B)*X
+               (@@Z&BLKID(&BLK)-@@V&B)
+         AGO   .FCDEND
+.FCD     ANOP
+@@F&B    EQU   *
+.FCDEND  ANOP
+@@V&B      DS    0H
+&BLKTYPE(&BLK) SETC '&C'(1,1).'E' "ELSE" PART
+         AGO  .MEND
+.YELSE   MNOTE 12,'****** &CALLER: NOT EXPECTED.  IGNORED.'
+.MEND    SASLIST MACEND
+         MEND

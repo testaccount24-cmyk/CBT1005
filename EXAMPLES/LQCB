@@ -1,0 +1,1185 @@
+./  ADD NAME=LQCB
+LQCB     TITLE 'PROGRAM DESCRIPTION'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*                                                                     *
+* COPYRIGHT: COPYRIGHT BY GESELLSCHAFT FUER MATHEMATIK UND            *
+*                                      DATENVERARBEITUNG MBH BONN,    *
+*                         - RECHENZENTREN -                           *
+*                         SCHLOSS BIRLINGHOVEN                        *
+*                         5205 ST. AUGUSTIN 1                         *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+*        L Q C B                                                      *
+*                                                                     *
+*                                                                     *
+* <CLASS>:                                                            *
+*        TSO-COMMAND                                                  *
+*                                                                     *
+* <FUNCTION/OPERATION>:                                               *
+*        LQCB PRINTS INFORMATION ABOUT QCB'S AND QEL'S IN SYSTEM.     *
+*        THE USER SPECIFIES HIS REQUEST BY ONE OF THE FOLLOWING       *
+*        OPERANDS OF THE LQCB COMMAND; THE USER RESTRICTS THE         *
+*        SEARCH THROUGH THE QCB-QUEUES USING THESE OPERANDS.          *
+*        IF NO OPERAND IS SPECIFIED, ALL MAJOR QCBS, ALL MINOR QCBS   *
+*        AND ALL QELS ARE INTERPRETED:                                *
+*                                                                     *
+*        MAJOR(MAJORNAME<,PREFIX>)                                    *
+*        MINOR(MINORNAME<,PREFIX>)                                    *
+*        USER/U(USERNAME<,PREFIX>)                                    *
+*        CONFLICT/ALL                                                 *
+*                                                                     *
+*        IF THE USER DOESN'T SPECIFY ANY OPERAND, THE FOLLOWING       *
+*        DEFAULT IS ASSUMED:                                          *
+*                                                                     *
+*        LQCB USER(&SYSID,PREFIX) ALL                                 *
+*                                                                     *
+*        WHERE &SYSID IS THE USER'S USERID.                           *
+*                                                                     *
+*        IF THE OPERANDS MAJOR, MINOR OR USER ARE SPECIFIED           *
+*        WITHOUT SUBPARAMETERS, A DEFAULT VALUE OF ('',PREFIX)        *
+*        IS ASSUMED, I.E. ALL MAJOR-NAMES, MINOR-NAMES, OR            *
+*        USER-NAMES WILL BE SELECTED.                                 *
+*                                                                     *
+*        IF THE USER SPECIFIES A PARAMETER 'MAJOR/MINOR/USER(VALUE)', *
+*        INFORMATIONS OF QCBS ARE EXTRACTED, IF THE MAJOR/MINOR/USER- *
+*        NAME IS THE SAME AS VALUE.                                   *
+*                                                                     *
+*        IF THE USER SPECIFIES 'MAJOR/MINOR/USER(VALUE,PREFIX)',      *
+*        INFORMATIONS OF QCBS ARE EXTRACTED, IF A PREFIX OF THE       *
+*        MAJOR/MINOR/USER-NAME IS THE SAME AS VALUE.                  *
+*                                                                     *
+*        A SPECIFICATION OF 'VALUE' MUST CORRESPOND TO THE FOLLOWING  *
+*        SYNTAX:                                                      *
+*        VALUE : QUOTE('), ANY STRING WITH ' WRITTEN AS '', QUOTE('); *
+*                LETTER X, QUOTE('), HEXADECIMAL STRING, QUOTE(');    *
+*                STRING WITHOUT PARENTHESES  .                        *
+*                                                                     *
+*        THE SPECIFICATION OF CONFLICT MODIFIES THE SEARCH CRITERIUM  *
+*        AS FOLLOWS:                                                  *
+*        THE LIST OF QCBS EXTRACTED IS CHECKED FOR CONFLICTS AND      *
+*        CRITICAL RESOURCES, I.E. IF MORE THAN ONE USER HAVE          *
+*        ISSUED AN ENQ-OPERATION FOR THE SAME RESOURCE AND AT LEAST   *
+*        ONE OF THESE REQUEST IS AN EXCLUSIVE REQUEST, THE RESOURCE   *
+*        IS INTERPRETED AS IN CONFLICT.                               *
+*        RESOURCES WHOSE MAJOR-NAMES START WITH 'SYSZ' AND SOME       *
+*        OTHER RESOURCES STARTING WITH 'SYS' ARE ALWAYS ASSUMED       *
+*        TO BE IN CONFLICT (WITH ITSELF).                             *
+*                                                                     *
+*                                                                     *
+*        EXAMPLE:                                                     *
+*            LQCB MAJOR('SYSDSN') MINOR(X'0404') USER(GRZ,PREFIX) ALL *
+*                                                                     *
+*                                                                     *
+* <ENTRY POINTS>:                                                     *
+*        LQCB - CSECT NAME                                            *
+*                                                                     *
+*                                                                     *
+* <INPUT>:                                                            *
+*        REGISTER 1 POINTS TO THE CPPL PARAMETER LIST (SEE CPPL-MACRO)*
+*                                                                     *
+*                                                                     *
+* <OUTPUT>:                                                           *
+*        INFORMATION ABOUT MAJOR-, MINOR-QCBS AND QEL(USER)-ELEMENTS: *
+*                                                                     *
+*         MAJOR: #MAJOR NAME# < = X'????'>                            *
+*         MINOR: #SCOPE# LENGTH = #LENGTH#                            *
+*          #MINOR NAME#                                               *
+*         < = X'????'                                                 *
+*         < | X'????'  >...>                                          *
+*         < *** USER CHAIN IS DEFECTIVE *** >                         *
+*         USER --#STATUS##JOBTYPE##JOBNAME# < = X'????'>              *
+*                                                                     *
+*         | NO CONFLICTS FOUND                                        *
+*                                                                     *
+*                                                                     *
+*      WHERE                                                          *
+*      #MAJOR NAME#     IS A QCB-MAJOR NAME,                          *
+*      #LENGTH#         IS THE LENGTH OF THE FOLLOWING <MINORNAME>,   *
+*      #SCOPE#          IS ANY OF SYSTEM/SYSTEMS/STEP/MINNOENQ,       *
+*      #MINORNAME#      IS A QCB MINORNAME,                           *
+*      #STATUS#         IS A LIST OF EXCL/SHR,MUST COMPLETE,RESERVE,  *
+*      #JOBTYPE#        IS ANY OF TSO-USER,/BATCH-JOB,/STARTED TASK,  *
+*      #JOBNAME#        IS 'THE' JOBNAME OF THE ADDRESS SPACE, WHICH  *
+*                          ISSUED THE ENQ MACRO INSTRUCTION.          *
+*                                                                     *
+*                                                                     *
+*      X'????' STANDS FOR A HEXADECIMAL INTERPRETATION OF THE         *
+*      PRECEDING TEXT/NAME.                                           *
+*      IF THE FIELD CONTAINS NON-PRINTABLE BYTES, AN ADDITIONAL       *
+*      HEXADECIMAL INTERPRETATION OF THE FIELD WILL BE PRINTED.       *
+*                                                                     *
+*      ALL OUTPUT IS MADE USING THE PUTLINE SERVICE FUNCTION.         *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+* <DD-STATEMENTS/DATA SETS>:                                          *
+*        NONE                                                         *
+*                                                                     *
+*                                                                     *
+* <NORMAL EXIT>:                                                      *
+*        VIA BR 14                                                    *
+*                                                                     *
+*                                                                     *
+* <ERROR EXIT>:                                                       *
+*        NONE                                                         *
+*                                                                     *
+*                                                                     *
+* <RETURN CODES>:                                                     *
+*        0   THE REQUESTED FUNCTION WAS PERFORMED WITHOUT             *
+*            ERROR.                                                   *
+*        >0  THE WAS AN INTERNAL ERROR. THE OUTPUT IS INCOMPLETE      *
+*            IN ANY WAY.                                              *
+*                                                                     *
+* <EXTERNAL ROUTINES>:                                                *
+*        QCBEXTR         - GET INFORMATION ABOUT QCB'S                *
+*                                                                     *
+*                                                                     *
+* <TABLES/WORK AREAS>:                                                *
+*        CVT, QCB'S, ASVT, ASCB, CSCB                                 *
+*                                                                     *
+* <ATTRIBUTES>:                                                       *
+*        REFRESHABLE                                                  *
+*                                                                     *
+*                                                                     *
+* <RESTRICTIONS>:                                                     *
+*        CAN BE USED ONLY IN A TSO-ENVIRONMENT                        *
+*                                                                     *
+*                                                                     *
+* <AUTHORIZATION REQUIRED>:                                           *
+*        NONE                                                         *
+*                                                                     *
+*                                                                     *
+* <RELATED PROGRAMS>:                                                 *
+*        NONE                                                         *
+*                                                                     *
+*                                                                     *
+* <STORAGE>:                                                          *
+*        PROGRAM:  ?                                                  *
+*        DYNAMIC:  ?                                                  *
+*        BUFFER :  ?                                                  *
+*                                                                     *
+*                                                                     *
+* <LOAD MODULE CREATION>:                                             *
+*      SOURCE LANGUAGE      : ASSEMBLER                               *
+*      COMPILE LIBRARIES    : GMD.SOURCE.CMDLIB(LQCB), SYS1.MACLIB,   *
+*                             RZ.MACLIB                               *
+*      COMPILE PARAMETERS   :                                         *
+*      LINK-EDIT LIBRARIES  : SYSLIB(RZ.LINKLIB)                      *
+*      LINK-EDIT PARAMETERS : XREF,LIST,MAP,REFR                      *
+*      LINK-EDIT INPUT      :                                         *
+*      DESTINATION LIBRARIES: GMD.CMDLIB(LQCB)                        *
+*                                                                     *
+*      GENERATING DECK      : GMD.JCL(LQCB)                           *
+*                                                                     *
+*                                                                     *
+* <STATUS>:                                                           *
+*          CHANGE LEVEL - 1.0            23OCT81                      *
+*                                                                     *
+*                                                                     *
+* <NOTES>:  PROCEDURE :                                               *
+*           SAMPLE JOB:                                               *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+* <AUTHOR>:                                                           *
+*        PETER SYLVESTER GMD-RZ.BN                                    *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         TITLE 'PROGRAMME START AND DECLARATIONS'
+         PRINT GEN
+LQCB     $PROC BASE=R11,ID='LQCB-V1.0-23OCT81-SYLVESTER'
+            CVT  DSECT=YES,LIST=NO
+            SASLIST DATA
+            COPY LQCBTSOI DECL. AND INIT. OF TSO ENVIRONMENT ACCESS
+         COPY LQCBMYDC       MY OWN DATA DECLARATION
+         COPY LQCBHEXD       SOME DECLARATIONS FOR HEX EDITING
+         COPY LQCBPDEF       PREPARE DEFAULTS
+         COPY LQCBPARS       PARSE COMMAND BUFFER
+         COPY LQCBQCBX       EXTRACT QCB INFORMATIONS
+         COPY LQCBPAS1       INTERPRETE QCB-EXTRACT LIST PASS 1
+         COPY LQCBPAS2       INTERPRETE QCB-EXTRACT LIST PASS 2
+         COPY LQCBTERM       TERMINATE THE PROGRAMME
+         COPY LQCBVCHK       VALIDITY CHECK EXIT ROUTINES
+         COPY LQCBTSYN       TSO SYNTAX DEFINITIONS
+         END   LQCB
+./ ADD NAME=LQCBTSOI
+ TITLE 'DECLARATIONS AND INITIALIZATIONS OF TSO ENVIRONMENT ACCESS'
+**
+***      SOME DSECTS
+**
+            IKJCPPL ,
+            IKJPPL ,
+            IKJPTPB ,
+            IKJIOPL ,
+            IKJCSPL ,
+            IKJCSOA ,
+         DATA
+PRMS        PARSE MF=L
+MYIOPL      DS    4F                     PARAMETER BLOCK FOR PUTLINE
+MYPTPB      PUTLINE MF=L
+ECB         DC    F'0'
+REPL        DC    F'0'
+CPPLP       DS    F                          SPACE 2
+RPDL        EQUR  5
+         CONST ,
+PTPBCONST PUTLINE MF=L,OUTPUT=(*-*,TERM,SINGLE,INFOR)
+PUTLINE#    EQUN  *-PTPBCONST
+BLANKMSG    DC     F'1'
+            DC     A(BLANKTEXT)
+BLANKTEXT   DC     H'6',H'0',CL2'  '
+         CODE
+PUTLINE     $PROC TYPE=(B,I),RETURN=R2
+               LET   PTPBOPUT-PTPB+MYPTPB:F,:=,R1
+               PUTLINE MF=(E,MYIOPL)
+            PROC$
+                                                 SPACE
+**
+***      SAVE POINTER TO CPPL FOR LATER USE
+***      INITIALIZE PUTLINE PARAMETER BLOCKS
+**
+            LET   CPPLP,:=,R1
+            #USE  R1,CPPL
+            #USE  R2,IOPL,:MYIOPL
+               LET  IOPLUPT,:=,CPPLUPT
+               LET  IOPLECT,:=,CPPLECT
+               LET  IOPLECB,->,ECB
+               LET  ECB,:=,0
+               LET   (MYPTPB,PUTLINE#),:=,PTPBCONST
+               LET IOPLIOPB,->,MYPTPB
+            #DROP R2
+            #DROP R1
+            TITLE 'PUTLINE DATA AREAS FOR MAJOR QCB INFORMATIONS'
+         CONST
+MAJMESSMODEL DC    Y(*-*),H'0'
+            DC     C' MAJOR: ''12345678'''
+            DC     C' = X''F1F2F3F4F5F6F7F8'''
+         DATA ,
+MAJMESSAGE  DC     F'1'
+            DC     A(MAJMESSTEXT)
+MAJMESSTEXT DC     Y(*-*)
+            DC     H'0'
+            DC     C' MAJOR: '''
+MAJMESSNAME DC     C'12345678',C''''
+MAJMESS#S   EQUN   *-MAJMESSTEXT
+            DC     C' = '
+MAJMESSHEX  DC     C'X''F1F2F3F4F5F6F7F8'''
+MAJMESS#L   EQUN   *-MAJMESSTEXT
+         CODE
+            LET   (MAJMESSTEXT,MAJMESS#L),:=,MAJMESSMODEL
+            LET   MAJMESSAGE,:=,1
+            LET   MAJMESSAGE+4,->,MAJMESSTEXT
+            TITLE 'PUTLINE DATA AREAS FOR MINOR QCB INFORMATIONS'
+         CONST
+MINMESSCMOD DC     H'14',H'0',C' MINOR: '''''
+MINMESSCCON DC     H'14',H'0',C'      | '''''
+MINMESS1MOD DC     H'20',H'0',C'        LENGTH ='
+         DATA ,
+MINMESS1    DC     F'3'
+MINMESS1MOA DC     A(MINMESS1MOD)
+MINMESS1INA DC     A(MINMESS1INS)
+MINMESS1LEA DC     A(MINMESS1LEN)
+MINMESS1INS DC     Y(*-*),H'7',CL23' '
+MINMESS1LEN DC     Y(*-*),H'16',C' NNN'
+              SPACE
+MINMESS2    DC     F'2'
+MINMESS2DP  DS     A
+MINMESS2A   DC     A(MINMESS2SEG)
+MINMESS2SEG DC    Y(*-*),H'9'
+MINMESS2TEXT DC    CL64' '
+MINMESSHEX  DC     F'1'
+MINMESSHEXA DC     A(MINMESSHEXSEG)
+MINMESSHEXSEG  DC  Y(*-*),H'0',C' '
+MINMESSHEXB DC C'=',C' '
+MINMESSHEXT DC CL67'X''??????'' '
+         CONST
+MINDEFECT   DC     F'1'
+            DC     A(MINDEFM)
+MINDEFM     DC     H'37',H'0',C'  *** USER CHAIN IS DEFECTIVE ***'
+         CODE
+            LET   MINMESS1,:=,3
+            LET   MINMESS1MOA,->,MINMESS1MOD
+            LET   MINMESS1INA,->,MINMESS1INS
+            LET   MINMESS1LEA,->,MINMESS1LEN
+            LET   MINMESS2,:=,2
+            LET   MINMESS2A,->,MINMESS2SEG
+            LET   MINMESS2SEG+2:H,:=,9
+            LET   MINMESSHEX,:=,1
+            LET   MINMESSHEXA,->,MINMESSHEXSEG
+            LET   (MINMESSHEXSEG+2,3),:=,=X'000040'
+            LET   (MINMESSHEXB,2),:=,=C'? '
+            TITLE 'PUTLINE DATA AREAS FOR USER QCB INFORMATIONS'
+         CONST ,
+USERMESST1  DC     Y(USERMESS#),H'0'
+            DC     C' USER : , '
+USERMESS#   EQUN   *-USERMESST1
+USERMESSMO1 DC     Y(*-*),Y(8),C'''12345678'' = X''F1F2F3F4F5F6F7F8'''
+         DATA ,
+PTPBUSER    PUTLINE MF=L
+USERMESSAGE DC     F'3'
+USERMESST   DC     A(USERMESST1)
+USERMESSND  DC     A(USERMESSNAM)
+USERMESSINA DC     A(USERMESSINS)
+USERMESSNAM DC     Y(*-*),Y(8),C''''
+USERMESSN1  DC     C'12345678',C''''
+USERMESSN#S EQUN   *-USERMESSNAM
+            DC     C' = '
+USERMESSHEX DC     C'X''F1F2F3F4F5F6F7F8'''
+USERMESSN#L EQUN   *-USERMESSNAM
+            DS     0F
+USERMESSINS DC     Y(*-*),H'10',CL43' '
+         CODE ,
+            LET   USERMESSAGE,:=,3
+            LET   USERMESST,->,USERMESST1
+            LET   USERMESSINA,->,USERMESSINS
+            LET   USERMESSINS+2:H,:=,10
+            LET   USERMESSND,->,USERMESSNAM
+            LET   (USERMESSNAM,USERMESSN#L),:=,USERMESSMO1
+         CONST
+NOOUTPUTMESS DC     F'1'
+            DC     A(*+4)
+            DC     H'29',H'0',C'  *** NO QCB(S) FOUND ***'
+NOCONFLMESS DC     F'1'
+            DC     A(*+4)
+            DC     H'34',H'0',C'  *** NO CONFLICT(S) FOUND ***'
+         CODE ,
+         ENDCOPY LQCBTSOI
+./ ADD NAME=LQCBHEXD
+  TITLE 'MACROS, CONSTANTS AND SUBROUTINES FOR HEXADECIMAL EDITING'
+         MACRO
+&NAME    NONPRINT
+&NAME    BCTR  R2,0
+         EX    R2,TRTMVC
+         EX    R2,TRTTRT
+         TRUECC NZ
+         MEND
+NONPRINTABLECHARS DC X'01010101010101010101010101010101'
+                  DC X'01010101010101010101010101010101'
+                  DC X'01010101010101010101010101010101'
+                  DC X'01010101010101010101010101010101'
+                  DC X'00010101010101010101000000000000'
+                  DC X'00010101010101010101010000000000'
+                  DC X'00000101010101010101010000000000'
+                  DC X'01010101010101010101000000000000'
+                  DC X'01010101010101010101010101010101'
+                  DC X'01010101010101010101010101010101'
+                  DC X'01010101010101010101010101010101'
+                  DC X'01010101010101010101010101010101'
+                  DC X'01000000000000000000010101010101'
+                  DC X'01000000000000000000010101010101'
+                  DC X'01010000000000000000010101010101'
+                  DC X'00000000000000000000010101010101'
+DELNONPRINTABLES  DC X'4B4B4B4B4B4B4B4B4B4B4B4B4B4B4B4B'
+                  DC X'4B4B4B4B4B4B4B4B4B4B4B4B4B4B4B4B'
+                  DC X'4B4B4B4B4B4B4B4B4B4B4B4B4B4B4B4B'
+                  DC X'4B4B4B4B4B4B4B4B4B4B4B4B4B4B4B4B'
+                  DC X'404B4B4B4B4B4B4B4B4B4A4B4C4D4E4F'
+                  DC X'504B4B4B4B4B4B4B4B4B4B5B5C5D5E5F'
+                  DC X'60614B4B4B4B4B4B4B4B4B6B6C6D6E6F'
+                  DC X'4B4B4B4B4B4B4B4B4B4B7A7B7C7D7E7F'
+                  DC X'4B4B4B4B4B4B4B4B4B4B4B4B4B4B4B4B'
+                  DC X'4B4B4B4B4B4B4B4B4B4B4B4B4B4B4B4B'
+                  DC X'4B4B4B4B4B4B4B4B4B4B4B4B4B4B4B4B'
+                  DC X'4B4B4B4B4B4B4B4B4B4B4B4B4B4B4B4B'
+                  DC X'4BC1C2C3C4C5C6C7C8C94B4B4B4B4B4B'
+                  DC X'4BD1D2D3D4D5D6D7D8D94B4B4B4B4B4B'
+                  DC X'4B4BE2E3E4E5E6E7E8E94B4B4B4B4B4B'
+                  DC X'F0F1F2F3F4F5F6F7F8F94B4B4B4B4B4B'
+TRTMVC   MVC   TRTBUFFER(*-*),0(R1)
+TRTTRT   TRT   TRTBUFFER(*-*),NONPRINTABLECHARS
+HEXTAB   DC    C'0123456789ABCDEF'
+         CODE ,
+**
+***      <R1> -> INPUT STRING
+***      <R2> = INPUT STRING LENGTH
+***      <R3> -> OUTPUT AREA
+***
+*** EXAMPLE:      X'123456' ->  C'X''123456''' (R2 = 3)
+**
+HEXEDIT  $PROC TYPE=(L,I)
+            LET  (0(R3),2),:=,=C'X'''
+            LET  R4,:=,0
+            $FOR R2,TIMES,LOOP
+               LET  R3,->,2(,R3)
+               IC   R4,0(,R1)
+               SRDL R4,4
+               IC   R0,HEXTAB(R4)
+               STC  R0,0(,R3)
+               LET  R4,:=,0
+               SLDL R4,4
+               IC   R0,HEXTAB(R4)
+               STC  R0,1(,R3)
+               LET  R1,->,1(,R1)
+            FOR$
+            LET  2(R3):C,:=,C''''
+         PROC$
+         ENDCOPY LQCBHEXD
+./ ADD NAME=LQCBPDEF
+         TITLE 'PREPARE DEFAULTS'
+**
+***      INITIALIZE SCAN PARAMETER DEFAULTS
+**
+            LET   HISTORY,:=,0                  SET DEFAULT HISTORY
+            LET   CONALLSW,:=,0                 ALL QCBS
+            BLANK MAJORN,8                     ALL MAJOR NAMES
+            LET   MAJORL,:=,0
+            BLANK MINORN,255                   ALL MINOR NAMES
+            LET   MINORL,:=,0
+            BLANK USERN,8                      &SYSID,PREFIX
+            LET   P2,->,USERN
+            LET   P2+4,->,DUMMY
+            XCALL JAUN,:P2
+            IF    R15,¬=,0,SIGNAL,JAUNERROR
+            LET   USERL,:=,6
+         ENDCOPY LQCBPDEF
+./ ADD NAME=LQCBPARS
+         TITLE 'COMMAND PARSING'
+**
+***      CHECK INPUT FROM QCB-COMMAND
+**
+            LET   R2,:=,CPPLP
+            LM    R2,R5,0(R2)
+            LET   ECB,:=,0
+            LET   REPL,:=,0
+PARSE       $BLOCK
+               PARSE UPT=(R3),ECT=(R5),ECB=ECB,PCL=OPERNDS,ANS=REPL,   *
+               CBUF=(R2),MF=(E,PRMS)
+               IF  R15,¬=,0,SIGNAL,PARSEERROR
+**
+***      INTERPRETE PARSE OUTPUT AND MOFIFY PARAMETERS FOR QCBEXTR
+**
+                                                     SPACE
+               #USE  RPDL,IKJPARMD,REPL
+**
+***      MAJOR PARAMETER
+**
+               $IF   MAJORP:H,¬=,0,THEN
+                  LET R2,:=,0
+                  $IF LMAJ+6,:,X'80',THEN
+                     LET  R2,:=,LMAJ+4:H
+                     LET  MAJORL,:=,R2
+                     LET  R3,:=,LMAJ:F
+                     $IF  R2,>,0,THEN
+                        LET  (MAJORN,R2),:=,0(R3)
+                     IF$
+                  IF$
+                  $IF MAJORO:H,=,1,THEN
+                     LET  MAJORL,:=,-,MAJORL
+                  IF$
+               IF$
+**
+***      MINOR PARAMETER
+**
+               $IF   MINORP:H,¬=,0,THEN
+                  LET R2,:=,0
+                  $IF LMIN+6,:,X'80',THEN
+                     LET  R2,:=,LMIN+4:H
+                     LET  MINORL,:=,R2
+                     LET  R3,:=,LMIN:F
+                     $IF  R2,>,0,THEN
+                        LET  (MINORN,R2),:=,0(R3)
+                     IF$
+                  IF$
+                  $IF MINORO:H,=,1,THEN
+                     LET  MINORL,:=,-,MINORL
+                  IF$
+               IF$
+**
+***      USER PARAMETER
+**
+               $IF   USERP:H,¬=,0,THEN
+                  LET R2,:=,0
+                  $IF  LUSER+6,:,X'80',THEN
+                     LET  R2,:=,LUSER+4:H
+                     LET  R3,:=,LUSER:F
+                     $IF  R2,>,0,THEN
+                        LET  (USERN,8),:=,=CL8' '
+                        LET  (USERN,R2),:=,0(R3)
+                     IF$
+                  IF$
+                  $IF USERO:H,=,1,THEN
+                     LET  USERL,:=,LUSER+4:H
+                  ELSEIF  R2,=,0,THEN
+                     LET  USERL,:=,0
+                  ELSE
+                     LET  USERL,:=,8
+                  IF$
+               IF$
+**
+***      CONFLICT / ALL PARAMETER
+**
+               $IF   CONFLICT:H,=,1,THEN
+                  LET  CONALLSW,:,PARAMETERCONFLICTWANTED
+               IF$
+               #DROP RPDL
+**
+***      RELEASE PARSE ROUTINE OUTPUT AREA
+**
+            BLOCK$    PARSE
+            IKJRLSA   REPL
+         ENDCOPY LQCBPARS
+./ ADD NAME=LQCBQCBX
+            TITLE 'EXTRACT QCB INFORMATIONS'
+**
+***      CALL THE QCB EXTRACT PROGRAM
+**
+             LET   QSTRINGP,->,MAJORN
+             LET   QLENGTHP,->,MAJORL
+             LET   RSTRINGP,->,MINORN
+             LET   RLENGTHP,->,MINORL
+             LET   EAREAP,->,BUFFER
+             LET   EAREALP,->,EAREAL
+             LET   EAREAL,:=,BUFFER#
+             XCALL QCBEXTR,:QCBEXTRPARM
+             IF    R15,¬=,0,SIGNAL,QCBEXTRERROR
+          ENDCOPY LQCBQCBX
+./ ADD NAME=LQCBPAS1
+         TITLE 'INTERPRETE QCB EXTRACTION LIST PASS 1'
+**
+***      INTERPRETE THE QCB-EXTRACT-LIST
+***      SET HIGH ORDER BIT IN FIRST BYTE OF EACH ELEMENT
+***      TO INDICATE THE ELEMENT TO BE PRINTED
+**
+                                              SPACE
+            LET   RUSER,:=,0
+            LET   RMINOR,:=,0
+            LET   RMAJOR,:=,0
+            LET   CONALLSW,¬:,EXCLFOUND+SHRFOUND+CONFLFOUND+MEINGRP
+            #USE  REL,QCBSAREA,:BUFFER+4
+            #USE  RELCOUNT
+            $FOR (RELCOUNT,:=,BUFFER:F),TIMES,LOOP
+**
+***      MAJOR QCB ELEMENT
+**
+               $IF    QCBSTYPE,=,QCBSMAJT,THEN
+                  LET   RMAJOR,:=,REL
+                  LET   RMINOR,:=,0
+                  LET   RUSER,:=,0
+**
+***      MINOR QCB ELEMENT
+**
+               ELSEIF QCBSTYPE,=,QCBSMINT,THEN
+                  LET   RMINOR,:=,REL
+                  LET   RUSER,:=,0
+**
+***      USER QCB ELEMENT
+**
+               ELSEIF QCBSTYPE,=,QCBSQELT,THEN
+                  $IF   RUSER,=,0,THEN    FIRST USER OF A GROUP ?
+                     LET  RUSER,:=,REL     KEEP IT IN MIND AND DEL BITS
+                     LET  CONALLSW,¬:,                                 -
+               EXCLFOUND+SHRFOUND+CONFLFOUND+MEINGRP
+**
+***      ALL 'SYSZ....' QCB'S AND SOME 'SYS.....' ARE ASSUMED
+***      TO BE IN CONFLICT FOR THEY DESCRIBE VERY CRITICAL RESOURCES
+***
+**
+                     $IF CONALLSW,:,PARAMETERCONFLICTWANTED
+                     ANDTHEN RMAJOR,¬=,0
+                     ANDTHEN ,
+                      $EX (QCBSMAJN-QCBSAREA(RMAJOR),4),=,=CL4'SYSZ'
+                      ORELSE (QCBSMAJN-QCBSAREA(RMAJOR),8),=,'SYSIEFSD'
+                      ORELSE (QCBSMAJN-QCBSAREA(RMAJOR),8),=,'SYSVTOC '
+                      EX$
+                     THEN
+                        LET CONALLSW,:,CONFLFOUND
+                     IF$
+                  IF$
+**
+***      'ALL' SPECIFIED:
+**
+                  $IF   CONALLSW,¬:,PARAMETERCONFLICTWANTED,THEN
+                     LET R2,:=,USERL
+                     $IF R2,=,0,ORELSE,(QCBSQELN,R2),=,USERN,THEN
+                         LET QCBSTYPE,:,X'80'
+                         SIGNAL SETMAJMIN
+                     IF$
+                  ELSE
+**
+***      'CONFLICT' SPECIFIED:
+**
+**
+***      TEST SHR/EXCL BIT TO DETERMINE, IF THERE IS AN ENQ CONFLICT
+**
+                     $IF   QCBSEXCL,=,1,THEN
+                        $IF  CONALLSW,M,SHRFOUND+EXCLFOUND,THEN
+                            LET CONALLSW,:,CONFLFOUND
+                        IF$
+                        LET  CONALLSW,:,EXCLFOUND
+                     ELSE
+                        $IF  CONALLSW,:,EXCLFOUND,THEN
+                            LET CONALLSW,:,CONFLFOUND
+                        IF$
+                        LET  CONALLSW,:,SHRFOUND
+                     IF$
+**
+***   FIRST TEST, IF WE ARE IN A USER GROUP
+**
+                     LET R2,:=,USERL
+                     $IF R2,=,0,ORELSE,(QCBSQELN,R2),=,USERN,THEN
+                        LET CONALLSW,:,MEINGRP
+                     IF$
+**
+***   DO WE WANT TO PRINT THE USER GROUP ?
+**
+                     $IF   CONALLSW,:,MEINGRP+CONFLFOUND
+                     THEN
+**
+***   RUSER POINTS TO THE FIRST USER OF A GROUP NOT PROCESSED
+**
+                        $LOOP
+                           LET   QCBSTYPE-QCBSAREA(RUSER),:,X'80'
+                           LET   RUSER,+,QCBSELEN-QCBSAREA(,RUSER)
+                        UNTIL RUSER,>,REL
+                        LOOP$
+                        SIGNAL SETMAJMIN
+                     IF$
+**
+***   MARK THE MAJOR QCB ENTRY AND THE MINOR QCB
+**
+                  POSTLUDE SETMAJMIN
+                     $IF  RMAJOR,¬=,0,THEN
+                         LET QCBSTYPE-QCBSAREA(RMAJOR),:,X'80'
+                     IF$
+                     $IF  RMINOR,¬=,0,THEN
+                         LET QCBSTYPE-QCBSAREA(RMINOR),:,X'80'
+                     IF$
+                  IF$
+               IF$
+                  LET   REL,+,QCBSELEN
+            FOR$
+            #DROP RELCOUNT
+            #DROP REL
+          ENDCOPY LQCBPAS1
+./ ADD NAME=LQCBPAS2
+             TITLE 'LIST THE QCBS'
+**
+***      PRINT ALL ELEMENTS IN LIST
+**
+            SPACE
+            #USE  REL,QCBSAREA,:BUFFER+4
+            #USE  RELCOUNT
+            $FOR (RELCOUNT,:=,BUFFER:F),TIMES,LOOP
+**
+***      ELEMENTS TO BE PRINTED HAVE HIGH ORDER BIT SET
+**
+***      MAJOR QCB ELEMENT
+**
+               $IF    QCBSTYPE,=,(X'80'+QCBSMAJT):N,THEN
+                LET  CONALLSW,:,ANYOUTPUT
+                  $IF HISTORY,¬=,0,THEN
+                      ICALL PUTLINE,:BLANKMSG
+                      ICALL PUTLINE,:BLANKMSG
+                  IF$
+                  LET HISTORY,=,1
+                  LET   (MAJMESSNAME,8),=,QCBSMAJN
+                  $IF
+                     LET  R1,->,QCBSMAJN
+                     LET  R2,:=,8
+                     NONPRINT
+                  THEN
+                     TR    MAJMESSNAME(8),DELNONPRINTABLES
+                     LET   MAJMESSTEXT,:=,MAJMESS#L
+                     LET   R1,->,QCBSMAJN
+                     LET   R2,:=,8
+                     LET   R3,->,MAJMESSHEX
+                     ICALL HEXEDIT
+                  ELSE
+                     LET   MAJMESSTEXT,:=,MAJMESS#S
+                  IF$
+                  ICALL PUTLINE,:MAJMESSAGE
+**
+***      MINOR QCB ELEMENT
+**
+               ELSEIF QCBSTYPE,=,(X'80'+QCBSMINT):N,THEN
+                  LET  CONALLSW,:,ANYOUTPUT
+                  $IF HISTORY,¬=,0,THEN
+                      ICALL PUTLINE,:BLANKMSG
+                  IF$
+                  LET HISTORY,=,1
+**
+***      PROCESS MINOR ENTRY NAME FIELD
+**
+                  LET    R3,:=,QCBSMLEN
+                  LET    R4,->,QCBSMINN
+                  LET    MINMESS2DP,->,MINMESSCMOD
+                  $LOOP
+                     $IF    R3,>,64,THEN
+                        LET   R2,:=,64
+                     ELSE
+                        LET   R2,:=,R3
+                     IF$
+                     LET    MINMESS2SEG,:=,R2,+,4
+                     LET    (MINMESS2TEXT,R2),:=,0(R4)
+                     TR     MINMESS2TEXT,DELNONPRINTABLES
+                     ICALL PUTLINE,:MINMESS2
+                     LET    MINMESS2DP,->,MINMESSCCON
+                     LET    R3,-,64
+                     LET    R4,->,64(,R4)
+                  UNTIL R3,<=,0
+                  LOOP$
+**
+***      IF MINOR QCB NAME CONTAINS NONPRINTABLE CHARACTERS
+***      WE BUILD A HEXADECIMAL INTERPRETATION OF ITS CONTENTS.
+**
+                  $IF
+                     LET    R2,:=,QCBSMLEN
+                     LET  R1,->,QCBSMINN
+                     NONPRINT
+                  THEN
+                     LET  R4,->,QCBSMINN
+                     LET  R5,=,QCBSMLEN
+                     LET  R3,->,MINMESSHEXT
+                     LET   MINMESSHEXB:C,:=,C'='
+                     $LOOP
+                        $IF   R5,>,32,THEN
+                           LET  R2,:=,32
+                        ELSE
+                           LET R2,:=,R5
+                        IF$
+                        LET   MINMESSHEXSEG,:=,R2,*,2,+,10
+                        LET   R1,:=,R4
+                        ICALL HEXEDIT
+                        ICALL PUTLINE,:MINMESSHEX
+                        LET   MINMESSHEXB:C,:=,C'|'
+                        LET   R5,-,32
+                        LET   R4,->,32(,R4)
+                     UNTIL R5,<=,0
+                     LOOP$
+                  IF$
+**
+***      BUILD THE SYSTEM/SYSTEMS/STEP FLAG INSERT
+**
+                  LET   (MINMESS1INS,4),:=,=X'00040007'
+                  LET   R2,->,MINMESS1INS+4
+                  $IF QCBSSCOP,:,X'80',THEN
+                     LET  MINMESS1INS,+,8
+                     LET  (0(R2),8),:=,=C' SYSTEM,'
+                     LET  R2,->,8(,R2)
+                  IF$
+                  $IF QCBSSCOP,:,X'40',THEN
+                     LET  MINMESS1INS,+,9
+                     LET  (0(R2),9),:=,=C' SYSTEMS,'
+                     LET  R2,->,9(,R2)
+                  IF$
+                  $IF QCBSSCOP,:,X'20',THEN
+                     LET  MINMESS1INS,+,6
+                     LET  (0(R2),6),:=,=C' STEP,'
+                     LET  R2,->,6(,R2)
+                  IF$
+**
+***      PROCESS MINOR SCOPE AND LENGTH FIELDS
+**
+                  LET    MINMESS1LEN+2:H,:=,16
+                  LET    MINMESS1LEN:H,:=,8
+                  LET    MINMESS1LEN+4:C,:=,C' '
+                  LET    R2,:=,QCBSMLEN
+                  CVD    R2,TEMP8
+                  OI     TEMP8+7,X'0F'
+                  UNPK   MINMESS1LEN+5(3),TEMP8+6(2)
+                  $IF    MINMESS1LEN+5:C,=,C'0',THEN
+                      LET  (MINMESS1LEN+5,2),:=,MINMESS1LEN+6
+                      LET  MINMESS1LEN+7:C,:=,C' '
+                      $IF    MINMESS1LEN+5:C,=,C'0',THEN
+                         LET  (MINMESS1LEN+5,2),:=,MINMESS1LEN+6
+                         LET MINMESS1LEN:H,-,2
+                      ELSE
+                         LET MINMESS1LEN:H,-,1
+                      IF$
+                  IF$
+                  ICALL PUTLINE,:MINMESS1
+**
+***      USER CHAIN DEFECTIVE ?
+**
+                  $IF   QCBSMDEF,=,1,THEN
+                     ICALL PUTLINE,:MINDEFECT
+                  IF$
+**
+***      USER QCB ELEMENT
+**
+               ELSEIF QCBSTYPE,=,(X'80'+QCBSQELT):N,THEN
+                  LET  CONALLSW,:,ANYOUTPUT
+**
+***      BUILD THE FLAG INSERT
+**
+                  LET HISTORY,=,1
+                  LET  USERMESSINS,:=,4
+                  LET  R2,->,USERMESSINS+4
+                  $IF QCBSEXCL,=,1,THEN
+                     LET  USERMESSINS,+,4
+                     LET  (0(R2),4),:=,=C'EXCL'
+                     LET  R2,->,4(,R2)
+                  ELSE
+                     LET  USERMESSINS,+,3
+                     LET  (0(R2),3),:=,=C'SHR'
+                     LET  R2,->,3(,R2)
+                  IF$
+                  $IF QCBSMC,=,1,THEN
+                     LET  USERMESSINS,+,15
+                     LET  (0(R2),15),:=,=C', MUST COMPLETE'
+                     LET  R2,->,15(,R2)
+                  IF$
+                  $IF QCBSRESV,=,1,THEN
+                     LET  USERMESSINS,+,9
+                     LET  (0(R2),9),:=,=C', RESERVE'
+                     LET  R2,->,9(,R2)
+                  IF$
+                  $IF     QCBSUSRT,=,QCBSBTCH,THEN
+                     LET  USERMESSINS,+,11
+                     LET  (0(R2),11),:=,=C', BATCH JOB'
+                     LET  R2,->,11(,R2)
+                  ELSEIF  QCBSUSRT,=,QCBSTSOU,THEN
+                     LET  USERMESSINS,+,10
+                     LET  (0(R2),10),:=,=C', TSO USER'
+                     LET  R2,->,10(,R2)
+                  ELSEIF  QCBSUSRT,=,QCBSSTC,THEN
+                     LET  USERMESSINS,+,14
+                     LET  (0(R2),14),:=,=C', STARTED TASK'
+                     LET  R2,->,14(,R2)
+                  ELSEIF  QCBSUSRT,=,QCBSSYST,THEN
+                     LET  USERMESSINS,+,22
+                     LET  (0(R2),22),:=,=C', SYSTEM ADDRESS SPACE'
+                     LET  R2,->,22(,R2)
+                  IF$
+**
+***      CHECK IF WE HAVE NONPRINTABLE CHARACTERS IN USER NAME.
+***      IF YES, APPEND A HEXADECIMAL INTERPRETATION OF IT.
+**
+                  LET    (USERMESSN1,8),:=,QCBSQELN
+                  TR     USERMESSN1(8),DELNONPRINTABLES
+                  $IF
+                     LET  R1,->,QCBSQELN
+                     LET  R2,:=,8
+                     NONPRINT
+                  THEN
+                     LET  USERMESSNAM,:=,USERMESSN#L
+                     LET  R1,->,QCBSQELN
+                     LET  R2,:=,8
+                     LET  R3,->,USERMESSHEX
+                     ICALL HEXEDIT
+                  ELSE
+                     LET  USERMESSNAM,:=,USERMESSN#S
+                  IF$
+**
+***      PUT OUT THE 'USER' MESSAGE
+**
+                  ICALL PUTLINE,:USERMESSAGE
+               IF$
+**
+***      SKIP TO NEXT ELEMENTS
+**
+               LET   REL,+,QCBSELEN
+            FOR$
+            #DROP RELCOUNT
+            #DROP REL
+**
+***      IF NO OUTPUT, SAY IT
+**
+            $IF  CONALLSW,¬:,ANYOUTPUT,THEN
+               $IF  CONALLSW,:,PARAMETERCONFLICTWANTED,THEN
+                  ICALL  PUTLINE,:NOCONFLMESS
+               ELSE
+                  ICALL  PUTLINE,:NOOUTPUTMESS
+               IF$
+            IF$
+          ENDCOPY LQCBPAS2
+./ ADD NAME=LQCBTERM
+            TITLE 'THIS IS THE END'
+**
+***      EXITS
+**
+         POSTLUDE  PARSEERROR
+            LET       RETCODE,:=,28
+         POSTLUDE  QCBEXTRERROR
+            LET       RETCODE,:=,24
+         POSTLUDE  JAUNERROR
+            LET       RETCODE,:=,20
+         PROC$     LQCB,RC=RETCODE
+         ENDCOPY   LQCBTERM
+./  ADD  NAME=LQCBVCHK
+         TITLE 'VALIDITY CHECK SUBROUTINES'
+VALIDITYCHECKLENGHT8 $PROC BASE=R11,TYPE=(L,I)
+             LET   R15,=,0(,R1)
+             $IF   (4(R15),2),<=,=H'8'
+             THEN
+                LET   R15,:=,0
+             ELSE
+                LET   R15,:=,4
+             IF$
+          PROC$    VALIDITYCHECKLENGHT8,RC=R15
+                                                  SPACE 5
+VALIDITYCHECKLENGTH255 $PROC BASE=R11,TYPE=(L,I)
+             LET   R15,:=,0(,R1)
+             $IF   (4(R15),2),<=,=H'255'
+             THEN
+                LET   R15,:=,0
+             ELSE
+                LET   R15,:=,4
+             IF$
+          PROC$    VALIDITYCHECKLENGTH255,RC=R15
+         ENDCOPY   LQCBVCHK
+./ ADD NAME=LQCBTSYN
+         TITLE 'TSO SYNTAX DEFINITION'
+OPERNDS  IKJPARM
+MAJORP   IKJKEYWD
+         IKJNAME  'MAJOR',SUBFLD=MAJORS
+MINORP   IKJKEYWD
+         IKJNAME  'MINOR',SUBFLD=MINORS
+USERP    IKJKEYWD
+         IKJNAME  'USER',SUBFLD=USERS
+CONFLICT IKJKEYWD  DEFAULT='ALL'
+         IKJNAME  'CONFLICT'
+         IKJNAME  'ALL'
+MAJORS   IKJSUBF
+LMAJ     IKJIDENT 'MAJOR-NAME',                                        -
+               HEX,                                                    -
+               MAXLNTH=16,                                             -
+               VALIDCK=VALIDITYCHECKLENGHT8,                           -
+               FIRST=ANY,OTHER=ANY,                                    -
+               HELP=('A MAJOR NAME OR A MAJORNAME-PREFIX, I.E. A MAXIMU-
+               M OF 8 CHARACTERS, SPECIFIED AS QUOTED, UNQUOTED OR HEXA-
+               DECIMAL STRING')
+MAJORO   IKJKEYWD
+         IKJNAME  'PREFIX'
+MINORS   IKJSUBF
+LMIN     IKJIDENT 'MINOR-NAME',                                        -
+               HEX,                                                    -
+               MAXLNTH=510,                                            -
+               VALIDCK=VALIDITYCHECKLENGTH255,                         -
+               FIRST=ANY,OTHER=ANY,                                    -
+               HELP=('A MINOR NAME OR A MINORNAME-PREFIX, I.E. A MAXIMU-
+               M OF 255 CHARACTERS, SPECIFIED AS QUOTED, UNQUOTED OR HE-
+               XADECIMAL STRING')
+MINORO   IKJKEYWD
+         IKJNAME  'PREFIX'
+USERS    IKJSUBF
+LUSER    IKJIDENT 'USER-NAME',                                         -
+               HEX,                                                    -
+               MAXLNTH=16,                                             -
+               VALIDCK=VALIDITYCHECKLENGHT8,                           -
+               FIRST=ANY,OTHER=ANY,                                    -
+               HELP=('A USER NAME OR A USERNAME-PREFIX, I.E. A MAXIMUM -
+               OF 8 CHARACTERS, SPECIFIED AS QUOTED, UNQUOTED OR HEXADE-
+               CIMAL STRING')
+USERO    IKJKEYWD
+         IKJNAME  'PREFIX'
+         IKJENDP
+         ENDCOPY   LQCBTSYN
+./ ADD   NAME=LQCBMYDC
+         TITLE 'MY OWN DECLARATIONS'
+         DATA ,
+RETCODE        DS    F
+MAJORN         DC    CL8' '
+MINORN         DC    CL255' '
+USERN          DC    CL8'&&SYSID'
+MAJORL         DC    F'0'
+MINORL         DC    F'0'
+USERL          DC    F'-6'
+HISTORY        DC    B'00000000'            SOME BOOLEANS
+CONALLSW       DC    B'00000000'            SOME BOOLEANS
+PARAMETERCONFLICTWANTED EQUN 1           CONFLICT PARAMETER WAS SPEC.
+EXCLFOUND               EQUN 2           AN USER WITH EXCL WAS FOUND
+SHRFOUND                EQUN 4           AN USER WITH SHR WAS FOUND
+CONFLFOUND              EQUN 8           A CONFLICT WAS FOUND, I.E.
+*                                        AT LEAST SHR/EXCL OR EXCL/EXCL
+MEINGRP                 EQUN 16
+ANYOUTPUT               EQUN 32          ANY OUTPUT PRINTED
+DUMMY          DS    CL8
+TEMP8          DS    D
+P2             DS    2F
+               @EXTRACT DSECT=QCBEXTR
+               DATA
+QCBEXTRPARM    DS    0F                  PARAMETER LIST FOR QCBEXTR
+QSTRINGP       DS    A                   -> MAJORN
+QLENGTHP       DS    A                   -> MAJORL
+RSTRINGP       DS    A                   -> MINORN
+RLENGTHP       DS    A                   -> MINORL
+EAREAP         DS    A                   -> BUFFER
+EAREALP        DS    A                   -> EAREAL
+EAREAL         DS    F                   OUTPUT BUFFER LENGTH
+TRTBUFFER      DS    CL255               BUFFER TO TEST NONPRINTABLES
+BUFFER         DS    F                   OUTPUT AREA OF QCBEXTR
+               DS    100000X             FIRST WORD = # OF ELEMENTS
+BUFFER#        EQUN  *-BUFFER
+RELCOUNT       EQUR  R9
+**
+***THE FOLLOWING 4 REGISTERS ARE USED DURING INTERPRETATION
+***OF THE OUTPUT FROM THE QCBEXTR PROGRAMME.
+***
+***
+**
+REL            EQUR  R8               POINTS TO THE CURRENT ELEMENT
+RMAJOR         EQUR  R7               POINTS TO THE LAST MAJOR ELEMENT
+RMINOR         EQUR  R6               POINTS TO THE LAST MINOR ELEMENT
+RUSER          EQUR  R5               POINTS TO THE FIRST QEL ELEMENT
+*                                     OF A GROUP OF QEL ELEMENTS,
+*                                     THE ELEMENTS FOLLOWING UP TO REL
+*                                     ARE NOT YET PROCESSED.
+         CONST ,
+         ENDCOPY   LQCBMYDC
+./  ADD  NAME=PARSE
+         MACRO
+&NAME    PARSE &UPT=,&ECT=,&ECB=,&PCL=,&ANS=,&CBUF=,&UWA=,&MF=
+.**********************************************************************
+.*
+.*
+.*   FUNCTION:
+.*
+.*       - CAN BE USED TO PASS CONTROL TO THE PARSE SERVICE ROUTINE.
+.*         BUILDS ALSO THE PARSE PARAMETER LIST (PPL) AND PLACES ITS
+.*         ADDRESS INTO REGISTER 1.
+.*       - BUILDS THE PARSE PARAMETER LIST (PPL)
+.*
+.*   INPUT:
+.*       - &NAME
+.*         NAME OF THE PPL OR FIRST INSTRUCTION OF MACRO GENERATION
+.*       - &UPT=(REG)|ADDR
+.*         ADDRESS OF USER PROFILE TABLE
+.*       - &ECT=(REG)|ADDR
+.*         ADDRESS OF ENVIRONMENT CONTROL TABLE
+.*       - &ECB=(REG)|ADDR
+.*         ADDRESS OF AN EVENT CONTROL BLOCK
+.*       - &PCL=(REG)|ADDR
+.*         ADDRESS OF PARAMETER CONTROL LIST
+.*       - &ANS=(REG)|ADDR
+.*         ADDRESS OF AN FULLWORD IN WHICH THE PARSE SERVICE ROUTINE
+.*         PLACES A POINTER TO THE PARAMETER DESCRIPTOR LIST (PDL)
+.*       - &CBUF=(REG)|ADDR
+.*         ADDRESS OF THE COMMAND BUFFER
+.*       - &UWA=(REG)|ADDR
+.*         ADDRESS OF A USER SUPPLIED WORK AREA WHICH IS PASSED TO A
+.*         VALIDITY CHECKING ROUTINE
+.*       - &MF=(E,ADDR)
+.*         EXECUTE FORM, ADDR IS THE ADDRESS OF THE PPL
+.*       - &MF=L
+.*         LIST FORM, CREATES THE PPL
+.*
+.*   AUTOR:
+.*       K. STRELAU, GMD-RZ.BN
+.*
+.**********************************************************************
+         LCLA  &A
+         LCLC  &C
+.**********************************************************************
+.*
+.*     CHECK MACRO OPTIONS
+.*
+.**********************************************************************
+         AIF   (T'&MF EQ 'O').ERR1   MF OMITTED
+         AIF   (N'&SYSLIST EQ 0).MF1 POSITIONAL PARAMETERS INVALID
+         AIF   (T'&SYSLIST(1) NE 'O' OR N'&SYSLIST GT 1).ERR2
+.MF1     AIF   ('&MF' EQ 'L').L1 LIST FORM OF MACRO
+         AIF   ('&MF(1)' NE 'E').ERR1
+         AIF   (T'&MF(2) EQ 'O').ERR1
+         AIF   (T'&NAME EQ 'O').MF1A
+&NAME    DS    0H
+.MF1A    AIF   ('&MF(2)' EQ '(1)').E1
+         AIF   ('&MF(2)'(1,1) EQ '(').WARN1
+         LA    1,&MF(2) .          LOAD ADDRESS OF PPL IN REG 1
+        AGO   .E1
+.MF1B   ANOP
+&A      SETA  K'&MF(2)-2
+&C      SETC  '&MF(2)'(2,&A)
+        LR    1,&C   LOAD ADDRESS OF PPL IN REG 1
+.**********************************************************************
+.*
+.*    EXECUTE FORM
+.*
+.**********************************************************************
+.E1      AIF   (T'&UPT EQ 'O').E2  UPT OMITTED
+         AIF   ('&UPT'(1,1) EQ '(').E1A REGISTER FORM
+         LA    14,&UPT .           LOAD ADDRESS OF UPT
+         ST    14,0(0,1) .         STORE UPT ADDRESS IN PPL
+         AGO   .E2
+.E1A     ANOP
+&A       SETA  K'&UPT-2
+&C       SETC  '&UPT'(2,&A)
+         ST    &C,0(0,1) .         STORE UPT ADDRESS IN PPL
+.E2      AIF   (T'&ECT EQ 'O').E3
+         AIF   ('&ECT'(1,1) EQ '(').E2A
+         LA    14,&ECT .           LOAD ADDRESS OF ECT
+         ST    14,4(0,1) .         STORE ECT ADDRESS IN PPL
+         AGO   .E3
+.E2A     ANOP
+&A       SETA  K'&ECT-2
+&C       SETC  '&ECT'(2,&A)
+         ST    &C,4(0,1) .         STORE ECT ADDRESS IN PPL
+.E3      AIF   (T'&ECB EQ 'O').E4
+         AIF   ('&ECB'(1,1) EQ '(').E3A
+         LA    14,&ECB .           LOAD ADDRESS OF ECB
+         ST    14,8(0,1) .         STORE ECB ADDRESS IN PPL
+         AGO   .E4
+.E3A     ANOP
+&A       SETA  K'&ECB-2
+&C       SETC  '&ECB'(2,&A)
+         ST    &C,8(0,1) .         STORE ECB ADDRESS IN PPL
+.E4      AIF   (T'&PCL EQ 'O').E5
+         AIF   (T'&PCL EQ 'V').E4B
+         AIF   ('&PCL'(1,1) EQ '(').E4A
+         L     14,=V(&PCL) .       LOAD ADDRESS OF PCL
+         ST    14,12(0,1) .        STORE PCL ADDRESS IN PPL
+         AGO   .E5
+.E4A     ANOP
+&A       SETA  K'&PCL-2
+&C       SETC  '&PCL'(2,&A)
+         ST    &C,12(0,1) .        STORE PCL ADDRESS IN PPL
+         AGO   .E5
+.E4B     L     14,&PCL .           LOAD ADDRESS OF PCL
+         ST    14,12(0,1) .        STORE PCL ADDRESS IN PPL
+.E5      AIF   (T'&ANS EQ 'O').E6
+         AIF   ('&ANS'(1,1) EQ '(').E5A
+         LA    14,&ANS .           LOAD ADDRESS OF ANSWER PLACE
+         ST    14,16(0,1) .        STORE ANS ADDRESS IN PPL
+         AGO   .E6
+.E5A     ANOP
+&A       SETA  K'&ANS-2
+&C       SETC  '&ANS'(2,&A)
+         ST    &C,16(0,1) .        STORE ANS ADDRESS IN PPL
+.E6      AIF   (T'&CBUF EQ 'O').E7
+         AIF   ('&CBUF'(1,1) EQ '(').E6A
+         LA    14,&CBUF .          LOAD CBUF ADDRESS
+         ST    14,20(0,1) .        STORE CBUF ADDRESS IN PPL
+         AGO   .E7
+.E6A     ANOP
+&A       SETA  K'&CBUF-2
+&C       SETC  '&CBUF'(2,&A)
+         ST    &C,20(0,1) .        STORE CBUF ADDRESS IN PPL
+.E7      AIF   (T'&UWA EQ 'O').E8
+         AIF   ('&UWA'(1,1) EQ '(').E7A
+         LA    14,&UWA .           LOAD UWA ADDRESS
+         ST    14,24(0,1) .        STORE UWA ADDRESS IN PPL
+         AGO   .E8
+.E7A     ANOP
+&A       SETA  K'&UWA-2
+&C       SETC  '&UWA'(2,&A)
+         ST    &C,24(0,1) .        STORE UWA ADDRESS IN PPL
+.E8      LINK  EP=IKJPARS .        LINK TO PARS SERVICE ROUTINE
+         MEXIT
+.**********************************************************************
+.*
+.*      LIST FORM
+.*
+.**********************************************************************
+.L1      ANOP
+&NAME    DC    F'0'          PTR TO UPT
+         DC    F'0'          PTR TO ECT
+         DC    F'0'          PTR TO ECB
+         DC    F'0'          PTR TO PCL
+         DC    F'0'          PTR TO ANS
+         DC    F'0'          PTR TO CBUF
+         DC    F'0'          PTR TO UWA
+         MEXIT
+.**********************************************************************
+.*
+.*      ERROR AND WARNING MESSAGES
+.*
+.**********************************************************************
+.ERR1    MNOTE 8,'INVALID OR OMITTED MF PARAMETER'
+         MEXIT
+.ERR2    MNOTE  8,'POSITIONAL PARAMETERS ARE INVALID'
+         MEXIT
+.WARN1   MNOTE 0,'PARAMETER LIST ADDRESS IN MF PARAMETER NOT IN REG 1'
+         AGO   .MF1B
+         MEND

@@ -1,0 +1,2244 @@
+./ ADD NAME=WHATTODO
+DAS LAYOUT DER KOSTENMELDUNGEN AENDERN:
+LINKS SUMME, RECHTS DETAILIERT NACH CPU UND EXCPS, DAMIT
+MAN DAS IM IOF BESSER LESEN KANN.
+
+DIE STRUKTUREN INSTITUT, PROJEKT, GRUPPE, USER MUESSEN NOCHMAL
+BEDACHT WERDEN. ES IST WUENSCHENSWERT, IN ALLEN DIESEN ENTRIES
+ZU AKKUMULIEREN.
+
+DIE BERECHNUNG DER SMF6 RECORDS SOLLTE IN EINEM UNTERPROGRAMM
+GESCHEHEN, DAS AUCH IN DER ABRECHNUNG VERWENDET WIRD.
+DIE STRUKTUR DES ACCCON IST INZWISCHEN ZIEMLICH GEWUCHERT.
+
+DIE PREISE SOLLTE DIE TATSAECHLICH ZU ZAHLENDEN SEIN UND NICHT DER
+FIKTIVE PREISE.
+
+WENN RACF NICHT AKTIV IST, BLUBBERT DAS PROGRAMM ZUVIEL.
+
+./ ADD NAME=IEFUACC
+IEFUACC   TITLE 'IEFUACC  --  PROGRAM DESCRIPTION'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*                                                                     *
+* COPYRIGHT: COPYRIGHT BY GESELLSCHAFT FUER MATHEMATIK UND            *
+*                                      DATENVERARBEITUNG MBH BONN,    *
+*                         - RECHENZENTREN -                           *
+*                         SCHLOSS BIRLINGHOVEN                        *
+*                         5205 ST. AUGUSTIN 1                         *
+*                                                                     *
+*            FURTHER COPIES OF THIS PROGRAM MAY BE OBTAINED           *
+*            BY WRITING TO THE ABOVE ADDRESS.                         *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+*        I E F U A C C                                                *
+*                                                                     *
+*                                                                     *
+* <CLASS>:                                                            *
+*        SMF EXIT ROUTINE                                             *
+*                                                                     *
+* <FUNCTION/OPERATION>:                                               *
+*                                                                     *
+*        1. THE PROGRAM INTERCEPTS ALL SMF RECORDS THAT ARE USED      *
+*        IN DURING THE MONTHLY ACCOUNTING PROCESS. IT EXTRACTS        *
+*        VALUES FROM THESE RECORDS AND ACCUMULATES THEM. THE          *
+*        ACCUMULATED DATA ARE SAVED IN RACF USER DATA ENTRIES.        *
+*        THE PROGRAM ACCINFO CAN BE USED TO LIST THE ACCUMULATED      *
+*        DATA. THE MONTHLY ACCOUNTING ROUTINES DO NOT USE THE         *
+*        ACCUMULATED SMF DATA IN THE RACF ENTRIES, BUT THE ORIGINAL   *
+*        SMF RECORDS. THE RACF USERDATA ARE A VEHICLE TO ENABLE       *
+*        USERS TO CONTROL THEIR BUDGET DURING A MONTH.                *
+*                                                                     *
+*        2. THE ACCOUNTING PROGRAMS USE WORK ON THE FOLLOWING         *
+*        OBJECTS: SMF-RECORDS CONTAINED DATA TO BE COUNTED, AND A     *
+*        DATABASE CONTAINING INFORMATIONS ABOUT INDIVIDUAL USERS      *
+*        AND USER GROUPS (CALLED ACCOUNT USER AMD ACCOUNT GROUP IN    *
+*        THE SEQUEL). THE ACCOUNTING PROGRAMS USE DIFFERENT           *
+*        ALGORITHM TO DETERMINE ACCOUNT USERS AND ACCOUNT GROUPS      *
+*        FROM DATA IN ALL SMF RECORDS. IN SOME CASES IT IS NOT        *
+*        POSSIBLE TO EXTRACT ALL NECESSARY INFORMATION FROM ONE       *
+*        SMF RECORDS. FOR EXAMPLE, TYPE 6 RECORDS DO NOT CONTAIN      *
+*        ENOUGH INFORMATIONS ABOUT THE USER. A JOB MAY COME FROM      *
+*        ANOTHER NJE SYSTEM.                                          *
+*                                                                     *
+*        3. THE DATABASE IS IMPLEMENTED USING RACF USERDATA FIELDS    *
+*        OF RACF USER ENTRIES AND RACF GROUP ENTRIES.                 *
+*                                                                     *
+*        4. THE EXIT ROUTINE CAN ONLY INSPECT ONE SMF RECORD AT       *
+*        ONE TIME AND HAS TO FIND OUT THE ACCOUNT USER AND ACCOUNT    *
+*        GROUP. THE EXIT USES DIFFERENT ALGORITHMS FOR THE THREE      *
+*        RECORD TYPES INTERCEPTED BY THE EXIT:                        *
+*                                                                     *
+*        TYPE 6  :                                                    *
+*           THE EXIT EXPECTS THAT THERE IS A NON-BLANK JMRUSEID       *
+*           IN EACH INSPECTED SMF RECORD. IF THE VALUE OF THIS        *
+*           FIELD IS THE NAME OF A RACF USERID, IT IS USED AS         *
+*           ACCOUNT USER AND THE DEFAULT ACCOUNT GROUP FOR THIS       *
+*           USERID IS USED AS ACOOUNT GROUP. IF THE VALUE OF          *
+*           JMRUSEID IS THE NAME OF A RACF GROUP, IT IS USED AS       *
+*           ACCOUNT GROUP AND THE FIRST 6 CHARACTERS OF THE           *
+*           JOBNAME ARE USED AS ACCOUNT USER.                         *
+*                                                                     *
+*        TYPE 30 :                                                    *
+*           THE EXIT USES THE FIRST 6 CHARACTERS OF THE JOBNAME       *
+*           AS ACCOUNT USER. IS THERE IS A NON-BLANK JMRUSEID         *
+*           FIELD, ITS VALUE IS USED AS ACCOUNT GROUP. IF JMRUSEID    *
+*           CONTAINS BLANKS THE DEFAU.LT ACCOUNT GROUP OF THE         *
+*           ACCOUNT USER IS USED AS ACCOUNT GROUP.                    *
+*                                                                     *
+*        TYPE 248:                                                    *
+*           THE EXIT USES THE DATA QUALIFIER AS ACCOUNT USER AND      *
+*           THE SMFF8ACC FIELD AS ACCOUNT GROUP.                      *
+*                                                                     *
+*        5. THERE MUST BE ONE OR MORE EXIT ROUTINES FOR SMF OR JES2   *
+*        THAT FILL THE JMRUSEID FIELD FOR TYPE6 AND TYPE 30 RECORDS.  *
+*        THE TYPE 248 RECORD IS FILLED BY THE SPACESMF PROGRAM.       *
+*                                                                     *
+*        6. THERE IS NO SPECIAL PROGRAM THAT RESETS THE ACCUMULATED   *
+*        DATA TO ZERO AT THE BEGINNING OF A NEW MONTH. THIS PROGRAM   *
+*        USES A TIME STAMP IN THE ACCUMULATED DATA TO SAVE THE        *
+*        TIME WHEN THE LAST UPDATE OCCURS, AND IF THE PREVIOUS UPDATE *
+*        ACCURRED IN THE PREVIOUS MONTH DATA ARE RESET.               *
+*        THE CONSEQUENCE IS THAT THE ACCINFO PROGRAM USED IN THE      *
+*        FIRST USER'S JOB OF A NEW MONTH SHOWS THE ACCUMULATED DATA   *
+*        OF THE PREVIOUS MONTH BECAUSE SMF RECORDS ARE NORMALLY       *
+*        WRITTEN ONLY BY THE USER JOB DURING STEP TERMINATION.        *
+*                                                                     *
+*        7. IEFUACC ALSO INFORMS THE USER ABOUT THE COSTS OF EACH     *
+*        JOB STEP AND THE TOTAL JOB. TO DO THIS IT PERFORMS A         *
+*        THE SAME CALCULATIONS AS ACCINFO FOR THE CPU AND EXCP        *
+*        COSTS OF EACH JOB-STEP AND THE WHOLE JOB AND THEN            *
+*        GENERATES THE FOLLOWING MESSAGE TO THE JOB LOG:              *
+*                                                                     *
+*        "IEFUACC CPU-ZEIT     <CPUTIME> = <COSTS> DM,                *
+*         ABW. EXCPS <EXCPDIFF> = <COSTS> DM, SUMME <COSTS> DM"       *
+*                                                                     *
+*        <CPUTIME>, <EXCPDIFF> AND <COSTS> ARE DEFINED BY THE         *
+*        PROGRAMS ACCCON AND ACCINFO.                                 *
+*                                                                     *
+*        IEFUACC CALLS MODULE IEFYS TO PUT THE FOLLOWING MESSAGE      *
+*        TO THE JCL MESSAGE DATA SET:                                 *
+*                                                                     *
+*        "IEFUACC CPUTOTAL <CPUTIME>, EXCPS <EXCPS>", WHERE           *
+*                                                                     *
+*        <CPUTIME> AND <EXCPS> ARE DEFINED BY THE PROGRAMS ACCCON     *
+*        AND ACCINFO.                                                 *
+*                                                                     *
+*        FOR TSO SESSION WE WILL NOT GENERATE MESSAGES AT JOB END.    *
+*                                                                     *
+*                                                                     *
+* <ENTRY POINTS>:                                                     *
+*        IEFUACC                                                      *
+*                                                                     *
+*                                                                     *
+* <INPUT>:                                                            *
+*        GENERAL REGISTER 1 POINTS TO THE RECORD DESCRIPTOR WORD OF   *
+*        AN SMF RECORD.                                               *
+*                                                                     *
+*        FOR DETAILS ABOUT THE CONTENTS OF SMF RECORDS SEE ALSO       *
+*        OS/VS2 MVS SPL: SYSTEM MANAGEMENT FACILITIES GC28-1030-2     *
+*                                                                     *
+*        THE PROGRAM INTERCEPTS THE FOLLOWING SMF RECORD TYPES:       *
+*                                                                     *
+*          6 JES2 OUTPUT WRITER                                       *
+*         30 COMMON ADDRESS SPACE WORK DATA                           *
+*        248 SPACE ACCOUNTING BY PROGRAM SPACE SMF                    *
+*                                                                     *
+*        IF  IEFUACC IS CALLED WITH A TYPE 30 RECORD (BY IEFACTRT)    *
+*        GENERAL REGISTER 0 CONTAINS THE CONTENTS OF REGISTER 12      *
+*        AT ENTRY TO IEFACTRT. THIS REGISTER IS REQUIRED WHEN         *
+*        IEFUACC CALL THE JCL MESSAGE MODULE IEFYS.                   *
+*                                                                     *
+*        RACF USER DATA ARE IDENTIFIED BY THREE LEVEL KEYS            *
+*        TEMPLATE-TYPE.ENTRYNAME.DATAKEY, WHERE                       *
+*                                                                     *
+*        TEMPLATE-TYPE IS 'USER' OR 'GROUP', ENTRY NAME IS THE NAME   *
+*        OF A RACF USERID OR GROUP AND DATAKEY IS AN EIGHT BYTE KEY.  *
+*                                                                     *
+*        THE PROGRAM USES THE FOLLOWING KEYS (ONLY THE DATAKEY        *
+*        NAMES ARE SHOWN) AND THE STRUCTURE OF THE DATA FIELDS.       *
+*                                                                     *
+*        IN ENTRIES OF TEMPLATE TYPE USER:                            *
+*                                                                     *
+*        DATAKEY               FORMAT  LENGTH    INTERPRETATION       *
+*                                                                     *
+*        UACCNAME                          16    ACCOUNT GROUP NAME   *
+*           LAST UPDATE        TOD          8                         *
+*           NAME               CHAR         8                         *
+*                                                                     *
+*        UBATCH                            20    BATCH USAGE          *
+*           LAST UPDATE        TOD          8                         *
+*           CPUTIME IN SEC/100 BIN          4                         *
+*           EXCPS              BIN          4                         *
+*           JOBS               BIN          4                         *
+*                                                                     *
+*        UTSO                              20    TSO USAGE            *
+*           LAST UPDATE        TOD          8                         *
+*           CPUTIME IN SEC/100 BIN          4                         *
+*           EXCPS              BIN          4                         *
+*           SESSIONS           BIN(ANZAHL)  4                         *
+*                                                                     *
+*        USPACE                            12    SPACE USAGE          *
+*           LAST UPDATE        TOD          8                         *
+*           ACC. KBYTES        FLOAT(ANZ.)  4                         *
+*                                                                     *
+*        UOUTPT                            16    SPOOL OUTPUT         *
+*           LAST UPDATE        TOD          8                         *
+*           PAGES              BIN(ANZAHL)  4                         *
+*           EXCPS              BIN(ANZAHL)  4                         *
+*                                                                     *
+*                                                                     *
+*        IN ENTRIES OF TEMPLATE TYPE GROUP:                           *
+*                                                                     *
+*                                                                     *
+*        GACCNAME                          16    ACCOUNT GROUP NAME   *
+*           LAST UPDATE        TOD          8                         *
+*           NAME               CHAR         8                         *
+*                                                                     *
+*        GSPACE                            12    GROUP SPACE          *
+*           LAST UPDATE        TOD          8                         *
+*           ACC. KBYTES        FLOAT        4                         *
+*                                                                     *
+*        GBATCHSU                          20    USER BATCH USAGE SUM *
+*           LAST UPDATE        TOD          8                         *
+*           CPUTIME IN SEC/100 BIN          4                         *
+*           EXCPS              BIN          4                         *
+*           JOBS               BIN          4                         *
+*                                                                     *
+*        GTSOSU                            20    USER TSO USAGE SUM   *
+*           LAST UPDATE        TOD          8                         *
+*           CPUTIME            BIN          4                         *
+*           EXCPS              BIN          4                         *
+*           SESSIONS           BIN          4                         *
+*                                                                     *
+*        GSPACESU                          16    USER SPACE SUM       *
+*           LAST UPDATE        TOD          8                         *
+*           ACC. KBYTES        FLOAT        4                         *
+*           MEASURES           BIN          4                         *
+*                                                                     *
+*        GOUTPTSU                          16    USER SPOOL SUM       *
+*           LAST UPDATE        TOD          8                         *
+*           PAGES              BIN          4                         *
+*           EXCPS              BIN          4                         *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+* <OUTPUT>:                                                           *
+*                                                                     *
+*                                                                     *
+* <DD-STATEMENTS/DATA SETS>:                                          *
+*        NONE                                                         *
+*                                                                     *
+*                                                                     *
+* <NORMAL EXIT>:                                                      *
+*        VIA BR14                                                     *
+*                                                                     *
+*                                                                     *
+* <ERROR EXIT>:                                                       *
+*        NONE                                                         *
+*                                                                     *
+*                                                                     *
+* <RETURN CODES>:                                                     *
+*        ALWAYS ZERO (= WRITE SMF RECORD)                             *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+* <EXTERNAL ROUTINES>:                                                *
+*        RACFUD      INTERFACE TO RACF USER DATA                      *
+*        ACCCON      ACCOUNTING CONSTANTS RETRIEVAL ROUTINE           *
+*        EDDATE      CONVERTS DATE/TIME REPRESENTATIONS               *
+*        GTTIME      GETS CURRENT TOD TIME STAMP                      *
+*                                                                     *
+*                                                                     *
+* <TABLES/WORK AREAS>:                                                *
+*                                                                     *
+*                                                                     *
+* <ATTRIBUTES>:                                                       *
+*        RENT,REFR,REUS                                               *
+*                                                                     *
+*                                                                     *
+* <RESTRICTIONS>:                                                     *
+*        IT IS ASSUMED THAT ALL SMF RECORDS WRITTEN TO THE            *
+*        SMF DATA SETS ARE USED IN THE ACCOUNTING PROGRAMS.           *
+*                                                                     *
+*        FOR SOME SMF RECORDS IEFU84 IS INVOKED IN SRB OR LOCKED      *
+*        MODE. IN THE CURRENT VERSION OF MVS (SP1.3.0) THIS           *
+*        ALSO DONE FOR TYPE 30 INTERVAL RECORDS. THESE ARE USED       *
+*        FOR BILLING TSO SESSIONS. WE DECIDED NOT TO USE              *
+*        THE EXITS IEFU83/IEFU84 TO INTERCEPT SMF RECORDS OF TYPE 30. *
+*        WE USED THE JOB END TYPE 30 RECORD SHOWN TO THE              *
+*        SMF EXIT IEFACTRT. WE HAVE PROGRAMMED AN IEFACTRT EXIT       *
+*        THAT CALLS IEFUACC VIA THE SMFEXIT MACRO.                    *
+*                                                                     *
+*        THE INTERCEPTED SMF RECORDS DO NOT CONTAIN A TIME STAMP.     *
+*        THE TIME STAMP IS PUT INTO THE RECORDS AFTER THIS PROGRAM    *
+*        WAS CALLED.                                                  *
+*                                                                     *
+*        THERE MUST BE SOME OTHER SMF OR JES2 EXIT THAT FILLS THE     *
+*        JMRUSEID FIELD FOR THE DESIRED PROCESSING OF TYPE 6 RECORDS. *
+*        FOR TYPE 30 RECORDS WE CAN IMPLEMENT THE ALGORITHM TO        *
+*        DETERMINE THE ACCOUNT GROUP IN THIS PROGRAM BECAUSE ALL      *
+*        NECESSARY INFORMATIONS (RACF USER/RACF GROUP) ARE CONTAINED  *
+*        IN THIS RECORD.                                              *
+*                                                                     *
+*        WHEN WE WILL HAVE INSTALLED JES2/SP1.3.3, WE ARE ABLE TO     *
+*        PROCESS TYPE 6 RECORDS IN A JES2 SMF EXIT, WHICH ALLOWS      *
+*        US TO USE JES2 CONTROL BLOCKS SAVELY.                        *
+*                                                                     *
+*                                                                     *
+* <AUTHORIZATION REQUIRED>:                                           *
+*                                                                     *
+*        CF. <INPUT>.                                                 *
+*                                                                     *
+* <RELATED PROGRAMS>:                                                 *
+*        ACCINFO            INFO PROGRAM FOR SMF DATA IN RACF         *
+*        AB0011             INTERPRETS SMF RECORDS FOR ACCOUNTING     *
+*        SPACESMF           WRITES SPACE ACCOUNTING RECORDS           *
+*                                                                     *
+* <STORAGE>:                                                          *
+*        PROGRAM:  ?                                                  *
+*        DYNAMIC:  ?                                                  *
+*        BUFFER :  ?                                                  *
+*                                                                     *
+*                                                                     *
+* <LOAD MODULE CREATION>:                                             *
+*      SOURCE LANGUAGE      :    ASSEMBLER H (SLAC VERSION)           *
+*      COMPILE LIBRARIES    :    SYS2.SPTS.MACLIB                     *
+*                                SYS1.MACLIB                          *
+*                                SYS1.AMODGEN                         *
+*      COMPILE PARAMETERS   :                                         *
+*      LINK-EDIT LIBRARIES  :    --                                   *
+*      LINK-EDIT PARAMETERS :    XREF,REFR,RENT,REUS,MAP              *
+*      LINK-EDIT INPUT      :                                         *
+*      DESTINATION LIBRARIES:    RZ.LINKLIB(IEFUACC)                  *
+*                                SYS1.LPALIB(IEFUACC)                 *
+*                                                                     *
+*      GENERATING DECK      :    RZ.JCL(IEFUACC)                      *
+*                                RZ.GENLIB.MVS(S...UACC)              *
+*                                                                     *
+* <STATUS>:                                                           *
+*          CHANGE LEVEL - 1.0    83-07-11                             *
+*                         1.1    83-12-09 (JOB LOG MESSAGES ETC.)     *
+*                         1.2    84-02-24 ERROR IN SPOOLOUT CALC.     *
+*                         1.3    84-04-06 ERROR IN SPACE GROUP COUNT  *
+*                         1.4    85-05-10 EDITCOST *.** LATER         *
+*                         1.5    86-09-12 VECTOR FEATURE INFO ADDED   *
+*                         1.9    89-08-02 PSF PAGE MODE COUNTER       *
+*                                                                     *
+* <NOTES>:                                                            *
+*                                                                     *
+*                                                                     *
+* <AUTHOR>: P.SYLVESTER GMD-RZ.BN                                     *
+*                                                                     *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+ TITLE 'THE MAIN PROGRAM - DECLARATIONS AND MAIN PART'
+IEFUACC   CSECT
+$BASE     EQUR  11
+IEFUACC   $PROC ID='IEFUACC-V1.5-09SEP86-SYLVESTER',BASE=$BASE
+                                       @ * SAVE PARAMETERS ;
+$PARM     EQUR  R5
+          DATA ,
+MESSR12   DS    F
+          CODE ,
+          LET   MESSR12,:=,R0
+          #USE  $PARM,,R1
+          SPACE 3
+          GBLB &TESTWTP
+&TESTWTP  SETB 0
+          MACRO
+&LABEL    WTP  &MESSAGE
+          GBLB &TESTWTP
+          LCLC &M,&REF
+          AIF  (NOT &TESTWTP).NOWTP
+&M        SETC '&MESSAGE'(2,K'&MESSAGE-2)
+&REF      SETC   'IEFM&SYSNDX'
+&LABEL    DS     0H
+          PUSH   PRINT,NOPRINT
+          PRINT  NOGEN,NOPRINT
+          CSECT
+          ENTRY  &REF
+&REF      WTO    'IEFUACC &M',MF=L
+IEFUACC   CSECT
+          CODEX ,
+&LABEL    L      R1,=V(&REF)
+          WTO    MF=(E,(1))
+          POP    PRINT,NOPRINT
+          MEXIT
+.NOWTP    AIF  ('&LABEL' EQ '').MEND
+&LABEL    DS   0H
+.MEND     MEND
+ SPACE 2
+          MACRO
+&LABEL    WARN   &MESSAGE
+          LCLC   &M,&REF
+&M        SETC   '&MESSAGE'(2,K'&MESSAGE-2)
+&REF      SETC   'IEFM&SYSNDX'
+&LABEL    DS     0H
+          PUSH   PRINT,NOPRINT
+          PRINT  NOGEN,NOPRINT
+          CSECT
+          ENTRY  &REF
+&REF      WTO    'IEFUACC &M',ROUTCDE=(11),MF=L
+IEFUACC   CSECT
+          CODEX ,
+&LABEL    L      R1,=V(&REF)
+          WTO    MF=(E,(1))
+          POP    PRINT,NOPRINT
+          MEND
+          SPACE 2
+          MACRO
+&LABEL    NOTIFY &MESSAGE,&ROUTCDE=(2,10,11),&DESC=(2)
+          LCLC   &M,&REF,&INDEX,&LOC
+          LCLA   &I,&J,&L,&K
+&M        SETC   '&MESSAGE'(2,K'&MESSAGE-2)
+&INDEX    SETC   '&SYSNDX'
+&LOC      SETC   '&SYSLOC'
+&REF      SETC   'MESC&SYSNDX'
+&LABEL    DS     0H
+          PUSH   PRINT,NOPRINT
+          PRINT  NOGEN,NOPRINT
+          AIF    (N'&SYSLIST GT 1).PARMS
+          CSECT
+          ENTRY  &REF
+&REF      WTO    'IEFUACC  &M',ROUTCDE=&ROUTCDE,DESC=&DESC,MF=L
+&LOC      LOCTR
+&LABEL    L      R1,=V(&REF)
+          WTO    MF=(E,(1))
+          POP    PRINT,NOPRINT
+          MEXIT
+.PARMS    ANOP
+          L    R1,=V(&REF)
+          B    0(,R1)
+$R&SYSNDX DS   0H
+          DATAX ,
+          DS   0F
+$D&SYSNDX WTO  'IEFUACC  &M',ROUTCDE=&ROUTCDE,DESC=&DESC,MF=L
+$L&SYSNDX EQUN *-$D&SYSNDX
+          CSECT
+          ENTRY &REF
+          PUSH  USING
+          USING &REF,R1
+&REF      LA    R1,$C&SYSNDX
+          POP   USING
+          MVC  $D&SYSNDX.($L&SYSNDX),0(R1)
+&J        SETA 1
+.PLOOP    ANOP
+&L        SETA K'&M-1
+&I        SETA 1
+.FLOOP    AIF  ('&M'(&I,2) EQ '%&J').FOUND
+&I        SETA &I+1
+          AIF  (&I LT &L).FLOOP
+.NEXT     ANOP
+&J        SETA &J+1
+          AIF  (&J LT N'&SYSLIST).PLOOP
+          WTO  MF=(E,$D&SYSNDX)
+          B    $R&SYSNDX
+$C&SYSNDX WTO  'IEFUACC  &M',ROUTCDE=&ROUTCDE,DESC=&DESC,MF=L
+&LOC      LOCTR
+          POP    PRINT,NOPRINT
+          MEXIT
+.FOUND    ANOP
+&K        SETA &I+2
+.KLOOP    AIF  (&K GT &L).MOVE
+          AIF  ('&M'(&K,1) NE '.').MOVE
+&K        SETA &K+1
+          AGO  .KLOOP
+.MOVE     ANOP
+&K        SETA &I-&K
+          MVC  $D&SYSNDX+12+&I.(&K),&SYSLIST(&J+1)
+          AGO  .NEXT
+          MEND
+          MACRO
+&NAME     HEXEDIT &P1,&P2,&LEN
+&NAME     LET   WORK,:=,&P1.
+          UNPK  &P2.(&LEN-1),WORK(&LEN/2)
+          UNPK  &P2.+&LEN-1(1),&P2.+&LEN.-2(1)
+          MVZ   &P2.(&LEN),=&LEN.X'0F'
+          TR    &P2.(&LEN),=C'0123456789ABCDEF'
+          MEND
+          DATA ,
+WORK      DS    F
+          SPACE 2
+          CODE ,
+ SPACE 2
+ TITLE 'THE PROGRAM'
+             CODE ,
+ SPACE
+                                       @ * TRY GET A LIST OF ACCOUNTING
+                                       @ * CONSTANTS VIA ACCCON
+             DATA ,
+ACCCON_PARAMETER_LIST DS     0F
+ACCCON_P1_ADDRESS     DS     F
+ACCCON_P2_ADDRESS     DS     F
+ACCCON_AREA           DS     XL400
+ACCCON_AREA#          EQUN   100
+ACCCON_AREA_LENGTH    DS     F
+ SPACE 2
+             CODE ,
+ SPACE 2
+             LET   ACCCON_AREA_LENGTH,:=,100
+             LET   ACCCON_P1_ADDRESS,->,ACCCON_AREA_LENGTH
+             LET   ACCCON_P2_ADDRESS,->,ACCCON_AREA
+             OI    ACCCON_P2_ADDRESS,X'80'
+             XCALL ACCCON,:ACCCON_PARAMETER_LIST
+***********************************************************************
+*                                                                     *
+*                                                                     *
+*        THE PROGRAM ACCCON RETURNS THE FOLLOWING DATA:               *
+*                                                                     *
+*        PARM1:    NUMBER OF ELEMENTS = NUMBER OF WORDS(4 BYTES)      *
+*        PARM2:    CONTAINS THE FOLLOWING ELEMENTS                    *
+*                                                                     *
+*        OFF FORMAT DESCRIPTION                                       *
+*        00 FLOAT  PRICE FOR 1 BATCH CPU-SEC.                         *
+*        4  FLOAT  PRICE FOR 1 TSO CPU-SEC.                           *
+*        8  FLOAT  PRICE FOR 1 BATCH SERVICE UNIT                     *
+*        12 FLOAT  PRICE FOR 1 TSO SERVICE UNIT                       *
+*        16 FLOAT  PRICE FOR 1 OUTPUT PAGE                            *
+*        20 FLOAT  PRICE FOR 1 BYTE ON LFD                            *
+*        24 FLOAT  PRICE FOR 1 GMD TAPE PER MONTH                     *
+*        28 FLOAT  PRICE FOR 1 PRIVATE TAPE PER MONTH                 *
+*        32 FIXED  MEANVALUE OF EXCP'S PER SECOND CPU-TIME (BATCH)    *
+*        36 FIXED  MEANVALUE OF EXCP'S PER SECOND CPU-TIME (DIALOG)   *
+*        40 FIXED  NUMBER OF DD DATA/*-CARDS PER EXCP                 *
+*        44 FIXED  LINES PRINTED WITH ONE PRINTER-EXCP                *
+*        48 FIXED  NUMBER OF LINES PER OUTPUT-PAGE                    *
+*        52 FIXED  NUMBER OF LFD UNIT TYPES ( N_T )                   *
+*        56 CHAR   1. UNIT TYPE (3350)                                *
+*        64 FLOAT     NUMBER OF KBYTES PER TRACK                      *
+*           CHAR    ...                                               *
+*           FLOAT   ...                                               *
+* N_T*12+56 FIXED NUMBER OF EXTERNAL WRITER ROUTINES ( N_W )          *
+* N_T*12+60 CHAR   1. NAME                                            *
+*           CHAR    ...                                               *
+*  N_T*12+                                                            *
+*  N_W*8+60 FIXED NUMBER OF GMD REMOTE PRINTERS ( N_P )               *
+*  N_T*12+                                                            *
+*  N_W*8+64 FIXED 1. REMOTE STATION                                   *
+*           FIXED   ...                                               *
+*  N_T*12+                                                            *
+*  N_W*8+                                                             *
+*  N_P*4+64 FIXED NUMBER OF DEVICES EXCLUDED FROM ACCOUNTING ( N_E )  *
+*  N_T*12+                                                            *
+*  N_W*8+                                                             *
+*  N_P*4+68 CHAR   1. DEVICE NAME                                     *
+*           CHAR    ...                                               *
+*                                                                     *
+***********************************************************************
+             SPACE 2
+             $IF
+                                       @ * LIST IS NOT OK
+                $EX$  R15,¬=,0
+             ORELSE ACCCON_AREA_LENGTH,>,ACCCON_AREA#
+             THEN
+                                       @ * NOTIFY USER "ACCOUNTING
+                                       @ * CONSTANTS COULD NOT BE
+                                       @ * OBTAINED"
+                NOTIFY 'ACCOUNTING CONSTANTS COULD NOT BE OBTAINED'
+                LEAVE IEFUACC
+             IF$ ,
+             WTP 'ACCOUNTING CONSTANTS FOUND'
+             SPACE 2
+ SPACE
+                                       @ * GET A TIME STAMP FOR FURTHER
+                                       @ * PROCESSING
+                      DATA  ,
+GTTIME_PARAMETER_LIST    DS  0F
+EDDATE_PARAMETER_LIST    DS  0F
+A_EDDATE_CODE            DS  F
+A_EDDATE_INPUT_DATE      DS  F
+A_EDDATE_OUTPUT_DATE     DS  F
+A_EDDATE_INPUT_TIME      DS  F
+A_EDDATE_OUTPUT_TIME     DS  F
+ SPACE
+CURRENT_DATE_TOD   DS  CL8
+CURRENT_DATE_DIN   DS  CL8
+LAST_UPDATE_DIN    DS  CL8
+HEX16              DS  CL16
+             CODE ,
+                                       @ * GET A TIME STAMP FOR FURTHER
+                                       @ * PROCESSING
+             LET  GTTIME_PARAMETER_LIST,->,CURRENT_DATE_TOD
+             XCALL GTTIME,:GTTIME_PARAMETER_LIST
+             $IF  R15,¬=,0,THEN
+                NOTIFY 'UNSUCCESSFUL TO GET TIME OF DAY CLOCK'
+                LEAVE IEFUACC
+             IF$
+             LET   A_EDDATE_CODE,->,=F'14'
+             LET   A_EDDATE_INPUT_DATE,->,CURRENT_DATE_TOD
+             LET   A_EDDATE_OUTPUT_DATE,->,CURRENT_DATE_DIN
+             OI    A_EDDATE_OUTPUT_DATE,X'80'
+             XCALL EDDATE,:EDDATE_PARAMETER_LIST
+ TITLE 'MAIN PART OF PROGRAM'
+             #USE  $BASE,MAINPART,:MAINPART,NOMSG
+MAINPART     DS    0H
+EDITCOST        $PROC TYPE=(L,I),RETURN=R7
+                   $IF
+                      LET  (0(R1),9),:=,'    -*.**'
+                      CE  6,=E'-100000000'
+                      TRUECC >
+                   ANDTHEN
+                      LET  (0(R1),9),:=,'     *.**'
+                      CE  6,=E'1000000000'
+                      TRUECC <
+                   THEN
+                      LR    R2,R1
+                      $IF
+                         CE  6,=E'-1000000'
+                         TRUECC >
+                      ANDTHEN
+                         CE  6,=E'10000000'
+                         TRUECC <
+                      THEN
+                         LET   (0(R2),9),:=,=X'4020202021204B2020'
+                         LET   R1,->,5(,R1)
+                      ELSE
+                         LET   (0(R2),9),:=,=X'404020202020202120'
+                         LET   R1,->,8(,R1)
+                         DE    6,=E'100'
+                      IF$
+                      SD    6,=X'4F00000008000000'
+                      AW    6,=X'4E00000100000000'
+                      STD   6,TEMP8
+                      XI    TEMP8+4,X'80'
+                      L     R0,TEMP8+4
+                      CVD   R0,TEMP8
+                      $IF
+                         EDMK  0(9,R2),TEMP8+4
+                         TRUECC <
+                      THEN
+                         LET R1,-,1
+                         LET 0(R1):C,:=,C'-'
+                      IF$
+                   IF$
+                PROC$ ,
+                                       @ * DECLARE ALL SMF RECORD TYPES
+                                       @ * USED BY THIS PROGRAM
+$SMF_COMMON    EQUR R10
+$SMF_SECTIONS  EQUR R12
+               SPACE 3
+SMF_RECORD     DSECT
+SMFXXLEN       DS     Y              RECORD LENGTH
+SMFXXSEG       DS     H'0'           SEGMENT DESCRIPTOR
+SMFXXFLG       DS     X              SYSTEM INDICATOR
+SMFXXFLGVS1    EQUN   B'00000001'    VS1
+SMFXXFLGVS2    EQUN   B'00000010'    VS2
+SMFXXFLGXA     EQUN   B'00000100'    MVS/XA
+SMFXXRTY       DS     X              RECORD TYPE
+SMFXXTME       DS     XL4            TIME RECORD IS WRITTEN IN SEC/100
+SMFXXDTE       DS     XL4            DATE RECORD IS WRITTEN IN 00YYDDDF
+SMFXXSID       DS     CL4            SYSTEM ID
+SMFXX_COMMON_END DS 0X               END OF COMMON SECTION
+               SPACE
+JES2_OUTPUT    EQUN 6
+SMF6JBN        DS     CL8            JOBNAME FROM JCTJMRN
+SMF6RST        DS     XL4            READER START TIME FROM JCTRDRON
+SMF6RSD        DS     XL4            READER START DATE FROM JCTRDTON
+SMF6UIF        DS     CL8            USER IDENTIFICATION FROM JCTUSEID
+SMF6OWC        DS     C              SYSOUT CLASS FROM JOECURCL
+SMF6WST        DS     XL4            PRINT/PUNCH START TIME
+SMF6WSD        DS     XL4            PRINT/PUNCH START DATE
+SMF6NLR        DS     XL4            NUMBER OF LOGICAL RECORDS
+SMF6IOE        DS     X              I/O STATUS INDICATORS
+SMF6NDS        DS     X              NUMBER OF DATASETS PROCESSED
+SMF6FMN        DS     CL4            FORM NUMBER FROM DCTFORMS
+SMF6PAD1       DS     X              SECTION INDICATOR
+SMF6_3800_PRESENT     EQUN  B'10000000'
+SMF6_ROUT_PRESENT     EQUN  B'01000000'
+SMF6SBS        DS     XL2            SUBSYSTEM IDENTIFICATION
+SMF6LN1        DS     XL2            LENGTH OF REST OF RECORD
+SMF6DCI        DS     XL2            DATA SET CONTROL INDICATORS
+SMF6JNM        DS     CL4            JES2 ASSIGNED JOB NUM (JCTJOBID+4)
+SMF6OUT        DS     CL8            JES2 LOGICAL OUTPUT DEVICE=DCTDEVN
+SMF6FCB        DS     CL4            FCB IMAGE IDENTIFICATION DCTFCB
+SMF6UCS        DS     CL4            UCS IMAGE IDENTIFICATION DCTUCS
+SMF6PGE        DS     XL4            APPROX. PAGE COUNT
+*
+* THE FOLLOWING FIELD IS DEFINED AS FOLLOWS: X'NN00' WHERE NN > 0
+* INDICATES LOCAL ROUTING; X'NNRR' WHERE NN>0 AND RR>0 INDICATES
+* REMOTE ROUTING, X'00RR' INDICATES SPECIAL LOCAL ROUTING.
+* IF MORE THAN 255 REMOTES ARE SPECIFIED FOR THE SYSTEM; THIS FIELD
+* IS SET TO ZERO.
+*
+SMF6RTE        DS     XL2            OUTPUT ROUTE CODE
+SMF6END1       EQU    *
+               SPACE
+SMF6_3800_SECTION DSECT
+SMF6LN2        DS     H              LENGTH OF 3800 SECTION
+*  WE DO NOT NEED MORE
+               SPACE
+SMF6_JES2_ROUTING_SECTION DSECT
+SMF6LN3        DS     H              LENGTH OF ROUTING SECTION
+*
+* THE FOLLOWING FIELD IS DEFINED AS FOLLOWS: X'NNNN0000' WHERE NNNN>0
+* INDICATES LOCAL ROUTING; X'NNNNRRRR' WHERE NNNN>0 AND RRRR>0
+* INDICATED REMOTE ROUTING, X'0000RRRR' INDICATES SPECIAL LOCAL
+* ROUTING.
+*
+SMF6ROUT       DS     XL4            OUTPUT ROUTE CODE
+               SPACE
+SMF_RECORD     DSECT
+               ORG    SMFXX_COMMON_END
+COMMON_ADDRESS_SPACE EQUN 30
+SMF30WID       DS     CL4            SUBSYSTEM IDENTIFIER
+               DS     XL2            RESERVED
+SMF30SOF       DS     XL4            OFFSET TO SUBSYSTEM SECTION
+SMF30SLN       DS     XL2            LENGTH OF SUBSYSTEM SECTION
+SMF30SON       DS     XL2            NUMBER OF SUBSYSTEM SECTIONS
+SMF30IOF       DS     XL4            OFFSET TO IDENTIFICATION SECTION
+SMF30ILN       DS     XL2            LENGTH OF IDENTIFICATION SECTION
+SMF30ION       DS     XL2            NUMBER OF IDENTIFICATION SECTIONS
+SMF30UOF       DS     XL4            OFFSET TO UNIT RECORD
+SMF30ULN       DS     XL2            LENGTH OF UNIT RECORD
+SMF30UON       DS     XL2            NUMBER TO UNIT RECORDS
+SMF30TOF       DS     XL4            OFFSET TO COMPLETION SECTION
+SMF30TLN       DS     XL2            LENGTH OF COMPLETION SECTION
+SMF30TON       DS     XL2            NUMBER TO COMPLETION SECTIONS
+SMF30COF       DS     XL4            OFFSET TO PROCESSOR SECTION
+SMF30CLN       DS     XL2            LENGTH OF PROCESSOR SECTION
+SMF30CON       DS     XL2            NUMBER TO PROCESSOR SECTIONS
+SMF30AOF       DS     XL4            OFFSET TO ACCOUNTING SECTION
+SMF30ALN       DS     XL2            LENGTH OF ACCOUNTING SECTION
+SMF30AON       DS     XL2            NUMBER TO ACCOUNTING SECTIONS
+SMF30ROF       DS     XL4            OFFSET TO STORAGE SECTION
+SMF30RLN       DS     XL2            LENGTH OF STORAGE SECTION
+SMF30RON       DS     XL2            NUMBER TO STORAGE SECTIONS
+SMF30POF       DS     XL4            OFFSET TO PERFORMANCE SECTION
+SMF30PLN       DS     XL2            LENGTH OF PERFORMANCE SECTION
+SMF30PON       DS     XL2            NUMBER TO PERFORMANCE SECTIONS
+SMF30OOF       DS     XL4            OFFSET TO OPERATOR SECTION
+SMF30OLN       DS     XL2            LENGTH OF OPERATOR SECTION
+SMF30OON       DS     XL2            NUMBER TO OPERATOR SECTIONS
+SMF30EOF       DS     XL4            OFFSET TO EXCP SECTION
+SMF30ELN       DS     XL2            LENGTH OF EXCP SECTION
+SMF30EON       DS     XL2            NUMBER TO EXCP SECTIONS
+SMF30EOR       DS     XL2            NUMBER TO EXCP S IN SUBSEQ. RCRDS
+               SPACE
+SMF30_SUBSYSTEM_SECTION DSECT
+SMF30TYP       DS     HL2            SUB TYPE IDENTIFICATION
+SMF30_JOBSTART EQUN   1              JOB START
+SMF30_INTERVAL EQUN   2              INTERVAL
+SMF30_STEPTERM EQUN   3              STEP TERMINATION = INTERVAL
+SMF30_STEPTOTL EQUN   4              STEP TOTAL
+SMF30_JOBTERM EQUN    5              JOB TERMINATION
+SMF30_SYSSPACE EQUN   6              SYSTEM ADDRESS SPACE INITIALIZATN
+               DS     XL2            RESERVED
+SMF30RVN       DS     CL2            RECORD VERSION NUMBER
+SMF30PNM       DS     CL8            SUBSYSTEM OR PRODUCT NAME
+               SPACE
+SMF30_IDENTIFICATION_SECTION DSECT
+SMF30JBN       DS     CL8            JOB OR SESSION NAME
+SMF30PGM       DS     CL8            PROGRAM NAME
+SMF30STM       DS     CL8            STEP NAME
+SMF30UIF       DS     CL8            USER IDENTIFICATION FROM JMRUSEID
+SMF30JNM       DS     CL8            JES2 JOB IDENTIFIER
+SMF30STN       DS     XL2            STEP NUMBER
+SMF30CLS       DS     CL1            JOB CLASS
+               DS     CL1            RESERVED
+SMF30PGN       DS     XL2            JOB PERFORMANCE GROUP NUMBER
+SMF30JPT       DS     XL2            JES INPUT PRIORITY
+SMF30AST       DS     XL4            DEVICE ALLOCATION START TIME
+SMF30PPS       DS     XL4            PROBLEM PROGRAM START TIME
+SMF30SIT       DS     XL4            JOB SELECTION TIME
+SMF30STD       DS     XL4            JOB SELECTIONDATE
+SMF30RST       DS     XL4            READER INPUT START TIME
+SMF30RSD       DS     XL4            READER INPUT START DATE
+SMF30RET       DS     XL4            READER INPUT END TIME
+SMF30RED       DS     XL4            READER INPUT END DATE
+SMF30USR       DS     CL20           PROGRAMMERS NAME
+SMF30GRP       DS     CL8            RACF GROUP ID
+SMF30RUD       DS     CL8            RACF USER ID
+SMF30TID       DS     CL8            RACF TERMINAL ID
+* WE DO NOT NEED MORE OF THIS SECTION
+               SPACE
+SMF30_COMPLETION_SECTION DSECT
+SMF30SCC       DS     H              STEP COMPLETION CODE
+SMF30STI       DS     XL2            STEP TERMINATION INDICATIOR
+SMF30CSI       EQU    B'00100000'    CANCELLED BY IEFUJI
+SMF30CJI       EQU    B'00010000'    CANCELLED BY IEFUSI
+SMF30CAC       EQU    B'00001000'    CANCELLED BY IEFACTRT
+SMF30RES       EQU    B'00000100'    STEP IS TO BE RESTARTED
+SMF30ABD       EQU    B'00000010'    STEP HAS ABENDED
+SMF30FLU       EQU    B'00000001'    STEP HAS BEEN FLUSHED
+SMF30ISK       EQU    B'10000000'    INVALID CUMULATIVE COUNT
+SMF30ARC       DS     XL4            ABEND REASON CODE
+               SPACE
+SMF30_IO_ACTIVITY_SECTION DSECT
+SMF30INP       DS     XL4            NUMBER OF CARD IMAGES IN DD *
+SMF30TEP       DS     XL4            TOTAL BLOCKS TRANSFERRED
+SMF30TPT       DS     XL4            NUMBER OF TPUTS FOR A TSO USER
+SMF30TGT       DS     XL4            NUMBER OF TGETS FOR A TSO USER
+SMF30RDR       DS     XL1            READER DEVICE CLASS
+SMF30RDT       DS     XL1            READER DEVICE TYPE
+SMF30TCN       DS     XL4            TOTAL DEVICE CONNECT TIME
+SMF30MFL       DS     XL4            FLAG WORD
+SMF30MF1       EQU    B'10000000'    DEV CON TIME MAY BE INCORRECT
+* WE DO NOT NEED MORE OF THIS SECTION
+               SPACE
+SMF30_PROCESSOR_ACCOUNTING_SECTION DSECT
+SMF30PTY       DS     XL2            ADDRESS SPACE DISPATCHING PRIORITY
+               DS     XL2            RESERVED
+SMF30CPT       DS     XL4            STEP TIME UNDER TCB IN SEC/100
+SMF30CPS       DS     XL4            STEP TIME UNDER SRB IN SEC/100
+SMF30ICU       DS     XL4            INITIATOR TIME TCB IN SEC/100
+SMF30CSB       DS     XL4            INITIATOR TIME SRB IN SEC/100
+SMF30JVU       DS     XL4            STEP VECTOR USAGE TIME IN SEC/100
+SMF30IVU       DS     XL4            INIT VECTOR USAGE TIME IN SEC/100
+SMF30JVA       DS     XL4            STEP VECTOR AFFINITY IN SEC/100
+SMF30IVA       DS     XL4            INIT VECTOR AFFINITY IN SEC/100
+SMF30IST       DS     XL4            INITERVAL START TIME FOR TYPE 3
+SMF30IDT       DS     XL4            INITERVAL START TIME FOR TYPE 30
+               SPACE
+SMF30_EXCP_SECTION DSECT
+SMF30DEV       DS     X              DEVICE CLASS
+SMF30UTP       DS     X              UNIT TYPE
+SMF30CUA       DS     XL2            CHANNEL AND UNIT ADDRESS
+SMF30DDN       DS     CL8            DD NAME
+SMF30BLK       DS     XL4            COUNT OF BLOCKS
+SMF30BSZ       DS     XL2            LARGEST BLOCK SIZE
+               SPACE
+SMF_RECORD     DSECT
+               ORG    SMFXX_COMMON_END
+SPACE          EQUN   248
+SMFF8JBN       DC     CL8' '         DATA QUALIFIER OR BLANK
+SMFF8GRP       DC     CL8' '         ACCOUNT GROUP IF FOUND
+SMFF8TRK       DC     FL4'0'         TRACKS ALLOCATED
+SMFF8DVT       DC     CL8' '         DEVICE TYPE
+SMFF8IND       DC     CL1' '         DATA INDICATOR
+             CODE ,
+             #USE $SMF_COMMON,SMF_RECORD,0($PARM):F
+             WTP 'ENTERED'
+ TITLE 'RACF USER DATA INTERFACE UTILITIES'
+***
+**** DECLARATION OF DATA AREAS, MACROS AND SUBROUTINES TO
+**** SIMPLIFY THE RACF USERDATA INTERFACE CALLS.
+***
+                      DATA  ,
+RACFUD_PARAMETER_LIST    DS  0F
+A_RACFUD_FUNCTION        DS  A
+A_RACFUD_CLASS           DS  A
+A_RACFUD_ENTRY           DS  A(ACCOUNT_USER) | A(ACCOUNT_GROUP)
+A_RACFUD_ENTRY_LENGTH DS     A(RACFUD_ENTRY_LENGTH)
+A_RACFUD_KEY             DS  A
+A_RACFUD_ALTER_VALUE     DS  A(RACFUD_ALTER_VALUE)
+A_RACFUD_ALTER_LENGTH DS     A(RACFUD_ALTER_LENGTH)
+A_RACFUD_LIST_VALUE      DS  A(RACFUD_LIST_VALUE)
+A_RACFUD_LIST_LENGTH     DS  0A,X'80',AL3(RACFUD_LIST_LENGTH)
+ SPACE
+RACFUD_ENTRY             DS  CL8' '
+RACFUD_ENTRY_LENGTH      DS  F
+RACFUD_ALTER_VALUE       DS  0CL255' '
+RACFUD_ALTER_TOD         DS  CL8
+RACFUD_ALTER_DATA        DS  CL247
+RACFUD_ALTER_LENGTH      DS  F'0'
+RACFUD_LIST_VALUE        DS  0CL255' '
+RACFUD_LIST_TOD          DS  CL8
+RACFUD_LIST_DATA         DS  CL247
+RACFUD_LIST_LENGTH       DS  F
+ACCOUNT_USER             DS  CL8' '
+ACCOUNT_GROUP            DS  CL8' '
+ SPACE
+             CODE ,
+             MACRO
+&NAME        RETTEST  ,
+&NAME        L     R6,=A(RETTEST)
+             BALR  R14,R6
+             MEND
+ SPACE
+RETTEST      LOCTR
+             PUSH  USING
+             USING RETTEST,R6
+             STM   R14,R12,12(R13)
+                $IF     R15,=,0,THEN
+                   WTP 'RACFUD: RACFUD SUCCESSFUL'
+                ELSEIF  R15,=,4,THEN
+                   WTP  'RACFUD: COMPSWAP UNSUCCESSFUL'
+                ELSEIF  R15,=,8,THEN
+                   LET  R15,:=,A_RACFUD_KEY
+                   LET  R2,:=,A_RACFUD_CLASS
+                   LET  R14,:=,A_RACFUD_ENTRY
+         NOTIFY 'RACFUD: KEY %1...... FOR %2...... %3...... NOT FOUND',X
+               0(R15),0(R2),0(R14)
+                ELSEIF  R15,=,12,THEN
+                   LET  R15,:=,A_RACFUD_FUNCTION
+                  NOTIFY 'RACFUD: INVALID FUNCTION %1...... SPECIFIED',X
+               0(R15)
+                ELSEIF  R15,=,16,THEN
+                   NOTIFY 'RACFUD: CALLER HAS INSUFFICIENT AUTHORITY'
+                ELSEIF  R15,=,20,THEN
+                ELSEIF  R15,=,24,THEN
+                   LET  R15,:=,A_RACFUD_CLASS
+                NOTIFY 'RACFUD: INVALID CLASS %1...... SPECIFIED',     X
+               0(R15)
+                ELSEIF  R15,=,28,THEN
+                   NOTIFY 'RACFUD: INVALID PARAMETERS SPECIFIED'
+                ELSEIF  R15,=,32,THEN
+                   NOTIFY 'RACFUD: CALLER IS NOT RACF DEFINED'
+                ELSEIF  R15,=,40,THEN
+                   NOTIFY 'RACFUD: ESTAE COULD NOT BE DONE'
+                ELSEIF R15,>,0,THEN
+                   NOTIFY 'RACFUD: UNEXPECTED ERROR'
+                IF$
+             LM    R14,R12,12(R13)
+             BR    R14
+             POP   USING
+             CODEX ,
+***
+**** THE MACRO COMPSWAP CAN ONLY BE USED AFTER A SUCCESSFUL LISTDATA
+**** CALL. IT USES THE SAME PARAMETER LIST BUILD BY LISTDATA MACRO.
+***
+             MACRO
+&NAME        COMPSWAP ,
+&NAME        ICALL COMPSWAP
+             MEND
+ SPACE
+COMPSWAP     $PROC TYPE=(B,I),RETURN=R7
+             LET   A_RACFUD_FUNCTION,->,=CL8'COMPSWAP'
+             XCALL RACFUD,:RACFUD_PARAMETER_LIST
+             RETTEST
+             PROC$
+  SPACE 2
+***
+**** THE MACRO COMPDATA CAN BE USED TO COPY RACFUD DATA AFTER A
+**** LISTDATA OR COMPSWAP CALL.
+***
+             MACRO
+&NAME        COPYDATA ,
+&NAME        L     R6,=A(COPYDATA)
+             BALR  R7,R6
+             MEND
+  SPACE 2
+***
+**** COPYDATA COPIES DATA FROM THE RACFUD_LIST_DATA FIELD
+**** INTO THE RACFUD_ALTER_DATA FIELD. IT ALSO CHECKS AND SETS THE
+**** TIME STAMP FIELDS.
+**** IT SETS A RETURN CODE (R15 = 4) IF THE NEW TIME STAMP IS IN
+**** A NEW MONTH. (THE CALLERS OF COPYDATA REACT IN RESETTING THE
+**** USERDATA FIELD).
+**** WHEN THERE IS AN SMF RECORD WITH A TIME STAMP FOR AN OLDER
+**** MONTH, IT IS IGNORED.
+***
+  SPACE
+COPYDATA     LOCTR
+             PUSH  USING
+             USING COPYDATA,R6
+                LET   A_EDDATE_CODE,->,=F'14'
+                LET   A_EDDATE_INPUT_DATE,->,RACFUD_LIST_TOD
+                LET   A_EDDATE_OUTPUT_DATE,->,LAST_UPDATE_DIN
+                OI    A_EDDATE_OUTPUT_DATE,X'80'
+                XCALL EDDATE,:EDDATE_PARAMETER_LIST
+                $IF   R15,¬=,0,THEN
+                   LET  R14,:=,A_RACFUD_CLASS
+                   LET  R15,:=,A_RACFUD_ENTRY
+                   LET  R2,:=,A_RACFUD_KEY
+                   LET  R3,:=,A_RACFUD_ENTRY
+                   HEXEDIT RACFUD_LIST_TOD:F,HEX16,8
+                   HEXEDIT RACFUD_LIST_TOD+4:F,HEX16+8,8
+                   NOTIFY 'RACF USER DATA FIELD %1...... FOR %2...... %X
+               3...... HAS INVALID TIME STAMP %4.............. ',      X
+               0(R15),0(R14),0(R2),HEX16
+                   LEAVE IEFUACC
+                IF$
+                WTP   'INITIALIZING OUTPUT FOR RACFUD'
+                LET   R15,:=,0
+                $IF   (RACFUD_LIST_TOD,8),>,CURRENT_DATE_TOD
+                THEN
+                   $IF  (LAST_UPDATE_DIN,5),¬=,CURRENT_DATE_DIN,THEN
+                      LET  R14,:=,A_RACFUD_CLASS
+                      LET  R15,:=,A_RACFUD_ENTRY
+                      NOTIFY 'LATE SMF RECORD FOR %1...... %2...... RECX
+               EIVED, IGNORED',0(R14),0(R15)
+                      LEAVE IEFUACC
+                   IF$
+                ELSE
+                   $IF  (LAST_UPDATE_DIN,5),¬=,CURRENT_DATE_DIN
+                   THEN
+                      LET  R15,:=,4
+                   IF$
+                   MVC   RACFUD_ALTER_DATA,RACFUD_LIST_DATA
+                   MVC   RACFUD_ALTER_TOD,CURRENT_DATE_TOD
+                IF$
+                MVC   RACFUD_ALTER_LENGTH,RACFUD_LIST_LENGTH
+             BR R7
+             POP USING
+             CODEX
+  SPACE 2
+***
+**** THE MACRO LISTDATA TRIES TO GET A USER ENTRY VIA RACFUD
+**** CALL. IT USES THE SAME PARAMETER LIST BUILD BY LISTDATA MACRO.
+***
+             MACRO
+&NAME        LISTDATA &KEY,&ENTRY
+             LCLC  &CLASS
+             AIF   ('&KEY' EQ '').MEND
+&CLASS       SETC  'USER'
+             AIF   ('&KEY'(1,1) EQ 'U').SETCL
+&CLASS       SETC  'GROUP'
+             AIF   ('&KEY'(1,1) NE 'G').MEND
+.SETCL       ANOP
+&NAME        LA    R14,=CL8'&CLASS'
+.*
+             AIF   ('&KEY' NE 'G' AND '&KEY' NE 'U').NOTYP30
+             LA    R15,TYP30_KEY_&CLASS
+             AGO   .ENDKEY
+.NOTYP30     LA    R15,=CL8'&KEY'
+.*
+.ENDKEY      AIF   ('&ENTRY' NE '').ENTRY
+             LA    R0,ACCOUNT_&CLASS
+             AGO   .CALL
+.ENTRY       LET   R0,:=,&ENTRY
+.*
+.CALL        L     R6,=A(LISTDATA)
+             BALR  R7,R6
+.MEND        ANOP
+             MEND
+  SPACE 2
+***
+**** LISTDATA READ ONE USERDATA ENTRY FROM THE RACF DATASET.
+***
+  SPACE
+LISTDATA     LOCTR
+             PUSH  USING
+             USING LISTDATA,R6
+               LET   A_RACFUD_CLASS,:=,R14
+               LET   A_RACFUD_KEY,:=,R15
+               LET   A_RACFUD_ENTRY,:=,R0
+               LET   A_RACFUD_FUNCTION,->,=CL8'LISTDATA'
+               LET   R1,:=,A_RACFUD_ENTRY
+               LET   R1,->,7(,R1)
+               $FOR  (R0,:=,8),TIMES,LOOP
+                  IF  (0(R1),1),¬=,' ',LEAVE
+                  LET R1,-,1
+               FOR$
+               LET   RACFUD_ENTRY_LENGTH,:=,R0
+               LET   A_RACFUD_ENTRY_LENGTH,->,RACFUD_ENTRY_LENGTH
+               LET   A_RACFUD_ALTER_VALUE,->,RACFUD_ALTER_VALUE
+               LET   RACFUD_ALTER_LENGTH,:=,0
+               LET   A_RACFUD_ALTER_LENGTH,->,RACFUD_ALTER_LENGTH
+               LET   A_RACFUD_LIST_VALUE,->,RACFUD_LIST_VALUE
+               LET   RACFUD_LIST_LENGTH,:=,0
+               LET   A_RACFUD_LIST_LENGTH,->,RACFUD_LIST_LENGTH
+               OI    A_RACFUD_LIST_LENGTH,X'80'
+               XCALL RACFUD,:RACFUD_PARAMETER_LIST
+               RETTEST
+             POP USING
+             BR    R7
+             CODEX
+  SPACE 2
+***
+**** IN THE FOLLOWING WE DEFINE DSECT FOR USER DATA FIELDS USED
+**** BY THIS PROGRAM.
+***
+  SPACE 2
+  SPACE 2
+UACCNAME        DSECT             ACCOUNT GROUP NAME
+UACCNAME_LUP    DS                CL8
+UACCNAME_NAME   DS                CL8
+UACCNAME_#      EQUN    *-UACCNAME
+                USING   UACCNAME,RACFUD_ALTER_VALUE
+  SPACE 2
+***
+**** THE FOLLOWING TWO DSECTS MUST HAVE IDENTICAL FORMAT.
+***
+  SPACE
+UBATCH          DSECT             BATCH USAGE
+UBATCH_LUP      DS                CL8
+UBATCH_CPUTIME  DS                F
+UBATCH_EXCPS    DS                F
+UBATCH_JOBS     DS                F
+UBATCH_#        EQUN    *-UBATCH
+                USING   UBATCH,RACFUD_ALTER_VALUE
+  SPACE 2
+UTSO            DSECT             TSO USAGE
+UTSO_LUP        DS                CL8
+UTSO_CPUTIME    DS                F
+UTSO_EXCPS      DS                F
+UTSO_JOBS       DS                F
+UTSO_#          EQUN    *-UTSO
+                USING   UTSO,RACFUD_ALTER_VALUE
+  SPACE 2
+USPACE          DSECT             SPACE USAGE
+USPACE_LUP      DS                CL8
+USPACE_KBYTES   DS                F
+USPACE_#        EQUN    *-USPACE
+                USING   USPACE,RACFUD_ALTER_VALUE
+  SPACE 2
+UOUTPT          DSECT             OUTPUT USAGE
+UOUTPT_LUP      DS                CL8
+UOUTPT_PAGES    DS                F
+UOUTPT_EXCPS    DS                F
+UOUTPT_#        EQUN    *-UOUTPT
+                USING   UOUTPT,RACFUD_ALTER_VALUE
+  SPACE 2
+GACCNAME        DSECT             ACCOUNT GROUP NAME
+GACCNAME_LUP    DS                CL8
+GACCNAME_NAME   DS                CL8
+GACCNAME_#      EQUN    *-GACCNAME
+                USING   GACCNAME,RACFUD_ALTER_VALUE
+  SPACE 2
+GSPACE          DSECT             SPACE USAGE
+GSPACE_LUP      DS                CL8
+GSPACE_KBYTES   DS                F
+GSPACE_#        EQUN    *-GSPACE
+                  USING   GSPACE,RACFUD_ALTER_VALUE
+  SPACE 2
+***
+**** THE FOLLOWING TWO DSECTS MUST HAVE IDENTICAL FORMAT.
+***
+  SPACE
+GBATCHSU          DSECT             USER BATCH USAGE SUM
+GBATCHSU_LUP      DS                CL8
+GBATCHSU_CPUTIME  DS                F
+GBATCHSU_EXCPS    DS                F
+GBATCHSU_JOBS     DS                F
+GBATCHSU_#        EQUN    *-GBATCHSU
+                  USING   GBATCHSU,RACFUD_ALTER_VALUE
+  SPACE 2
+GTSOSU            DSECT             USER TSO USAGE SUM
+GTSOSU_LUP        DS                CL8
+GTSOSU_CPUTIME    DS                F
+GTSOSU_EXCPS      DS                F
+GTSOSU_JOBS       DS                F
+GTSOSU_#          EQUN    *-GTSOSU
+                  USING   GTSOSU,RACFUD_ALTER_VALUE
+  SPACE 2
+GSPACESU          DSECT             USER SPACE SUM
+GSPACESU_LUP      DS                CL8
+GSPACESU_KBYTES   DS                F
+GSPACESU_MEASURES DS                F
+GSPACESU_#        EQUN    *-GSPACESU
+                  USING   GSPACESU,RACFUD_ALTER_VALUE
+  SPACE 2
+GOUTPTSU          DSECT             USER OUTPUT USAGE SUM
+GOUTPTSU_LUP      DS                CL8
+GOUTPTSU_PAGES    DS                F
+GOUTPTSU_EXCPS    DS                F
+GOUTPTSU_#        EQUN    *-GOUTPTSU
+                  USING   GOUTPTSU,RACFUD_ALTER_VALUE
+             CODE ,
+ TITLE 'PROCESS SMF RECORDS'
+             $IF
+                                       @ * JES2 OUTPUT WRITER RECORD
+                $EX$ SMFXXRTY,=,JES2_OUTPUT
+             THEN
+                WTP 'PROCESS SMF RECORD 6'
+                COPY SPOOLOUT
+             ELSEIF
+                                       @ * COMMON ADDRESS SPACE WORK
+                                       @ * DATA RECORD
+                $EX$ SMFXXRTY,=,COMMON_ADDRESS_SPACE
+             ANDTHEN
+                                       @ * JOB END SUBTYPE
+                LET $SMF_SECTIONS,:=,$SMF_COMMON,+,SMF30SOF
+                #USE $SMF_SECTIONS,SMF30_SUBSYSTEM_SECTION
+                $EX$  SMF30TYP,=,SMF30_JOBTERM
+             ORELSE
+                                       @ * STEP END SUBTYPE
+                $EX$  SMF30TYP,=,SMF30_STEPTOTL
+                #DROP $SMF_SECTIONS
+             THEN
+                WTP 'PROCESS SMF RECORD 30'
+                COPY ACCNAM30          @ * FIND ACCOUNT NAMES FOR THIS
+                                       @ * SMF TYPE;
+                                       @ * DETERMINE SUBSYSTEM AND
+                                       @ * USERDATA KEYWORDS ;
+                DATA ,
+TYP30_KEY_USER DS     CL8
+TYP30_KEY_GROUP DS    CL8
+                CODE
+                $IF SMFXXFLG,:,X'80',THEN
+                   $IF    (SMF30WID,L'SMF30WID),=,'JES2'
+                   ORELSE (SMF30WID,L'SMF30WID),=,'JES4'
+                   THEN
+                      LET   (TYP30_KEY_USER,8),:=,=CL8'UBATCH'
+                      LET   (TYP30_KEY_GROUP,8),:=,=CL8'GBATCHSU'
+                   ELSEIF (SMF30WID,L'SMF30WID),=,'TSO '
+                   THEN
+                      LET   (TYP30_KEY_USER,8),:=,=CL8'UTSO'
+                      LET   (TYP30_KEY_GROUP,8),:=,=CL8'GTSOSU'
+                   ELSE
+                      LEAVE IEFUACC
+                   IF$
+                ELSE
+                   IF SMF30SON,=,0,LEAVE,IEFUACC
+                   IF SMF30SLN,<,14,LEAVE,IEFUACC
+                   LET $SMF_SECTIONS,:=,$SMF_COMMON,+,SMF30SOF
+                   #USE  $SMF_SECTIONS,SMF30_SUBSYSTEM_SECTION
+                   $IF      (SMF30PNM,8),=,=CL8'JES2'
+                   ORELSE   (SMF30PNM,8),=,=CL8'JES4'
+                   THEN
+                      LET   (TYP30_KEY_USER,8),:=,=CL8'UBATCH'
+                      LET   (TYP30_KEY_GROUP,8),:=,=CL8'GBATCHSU'
+                   ELSEIF   (SMF30PNM,8),=,=CL8'TSO '
+                   THEN
+                      LET   (TYP30_KEY_USER,8),:=,=CL8'UTSO'
+                      LET   (TYP30_KEY_GROUP,8),:=,=CL8'GTSOSU'
+                   ELSE
+                      LEAVE IEFUACC
+                   IF$
+                   #DROP $SMF_SECTIONS
+                IF$
+                WTP 'SUBSYSTEM FOUND'
+                COPY DATACOST          @ * CALCULATE RESOURCE DATA AND
+                                       @ * INFORM USER ABOUT COSTS
+                $IF
+                                       @ * JOB END RECORD
+                LET $SMF_SECTIONS,:=,$SMF_COMMON,+,SMF30SOF
+                #USE $SMF_SECTIONS,SMF30_SUBSYSTEM_SECTION
+                $EX$  SMF30TYP,=,SMF30_JOBTERM
+                   #DROP $SMF_SECTIONS
+                THEN
+                   COPY JOBEND         @ * PROCESS THE RECORD
+                                       @ * COMMON ADDRESS SPACE WORK
+                                       @ * DATA RECORD
+                IF$
+             ELSEIF
+                                       @ * SPACE ACCOUNTING RECORDS
+                $EX$ SMFXXRTY,=,SPACE
+             THEN
+                WTP 'PROCESS SMF RECORD 248'
+                COPY SPACESMF
+             ELSE
+                                       @ * NOTIFY "UNEXPECTED RECORD
+                                       @ * TYPE"
+                NOTIFY 'UNEXPECTED RECORD TYPE'
+             IF$ ,
+             #DROP $PARM
+          PROC$ IEFUACC,RC=0
+          END IEFUACC
+./ ADD NAME=SPOOLOUT
+  TITLE 'INTERCEPT JES2 OUTPUT WRITER RECORDS'
+SPOOLOUT  $BLOCK
+$PAGES       EQUR   R9
+$EXCPS       EQUR   R8
+                                       @ * CALCULATE PAGES
+ SPACE
+***
+****   THE NUMBER OF PAGES FOR THE OUTPUT DATASET IS ESTIMATED
+****   BY THE FOLLOWING FORMULA:
+****
+****     MAX(SMF6PGE,(SMF6NLR-1)/NUMBER OF LINES PER PAGE+1)
+****
+****   FOR NON PSF OUTPUT.
+***
+ SPACE
+             $IF
+                $EX$ SMF6SBS,=,7                                +1.9
+             ORELSE ,                                           +1.9
+                ICM  $PAGES,B'1111',SMF6NLR
+                LET  $PAGES,+,ACCCON_AREA+48:F,-,1
+                SLR  $PAGES-1,$PAGES-1
+                D    $PAGES-1,ACCCON_AREA+48
+                $EX SMF6LN1,>=,SMF6PGE+L'SMF6PGE-SMF6LN1:N
+                   ANDTHEN  $PAGES,<,SMF6PGE
+                EX$
+             THEN
+                LET   $PAGES,:=,SMF6PGE
+             IF$
+                                       @ * CALCULATE NUMBER OF EXCPS
+                                       @ * FOR THIS OUTPUT
+             LET  R0,:=,0
+             ICM  R1,B'1111',SMF6NLR
+             LET  R1,+,ACCCON_AREA+44:F,-,1
+             D    R0,ACCCON_AREA+44
+             #USE $EXCPS,,R1
+             $IF
+                                       @ * PAGES FOR CURRENT OUTPUT
+                                       @ * RECORD ARE TO BE COUNTED
+                $EX  SMF6SBS,=,2
+                ANDTHEN
+                   LET R3,:=,ACCCON_AREA+52:F,*,12
+                   LET R4,:=,ACCCON_AREA+56(R3):F,*,8
+                   LET R3,+,R4
+                   LET R4,:=,ACCCON_AREA+60(R3):F
+                   LET R3,->,ACCCON_AREA+64(R3)
+                   $IF SMF6PAD1,:,SMF6_ROUT_PRESENT
+                   THEN
+                      LET  R1,->,SMF6END1
+                      $IF  SMF6PAD1,:,SMF6_3800_PRESENT,THEN
+                         LET  R1,+,SMF6LN2-SMF6_3800_SECTION(,R1)
+                      IF$
+                      #USE R1,SMF6_JES2_ROUTING_SECTION
+                      LET  R1,:=,SMF6ROUT+2:H
+                      $IF SMF6ROUT:H,=,0,THEN
+                         LET  R1,:=,0
+                      IF$
+                      #DROP R1
+                   ELSE
+                      LET R1,:=,SMF6RTE+1:C
+                      $IF  SMF6RTE:C,=,0,THEN
+                         LET  R1,:=,0
+                      IF$
+                   IF$
+                   $FOR R4,TIMES,LOOP
+                      IF   0(R3):F,=,R1,LEAVE                       1.2
+                      LA   R3,4(,R3)
+                   FOR$
+                   $EX$ R4,=,0
+                ORELSE ,                                            1.2
+                   LET R3,:=,ACCCON_AREA+52:F,*,12
+                   LET R4,:=,ACCCON_AREA+56(R3):F,*,8
+                   LET R3,+,R4
+                   LET R4,:=,ACCCON_AREA+60(R3):F,*,4
+                   LET R3,+,R4
+                   LET R4,:=,ACCCON_AREA+64(R3):F
+                   LET R3,->,ACCCON_AREA+68(R3)
+                   $FOR R4,TIMES,LOOP
+                      IF   (0(R3),8),=,SMF6OUT,LEAVE
+                      LA   R3,8(,R3)
+                   FOR$
+                   $EX$ R4,¬=,0                                     1.2
+                EX$
+             ORELSE
+                $EX  SMF6SBS,=,0
+                ANDTHEN
+                   LET R3,:=,ACCCON_AREA+52:F,*,12
+                   LET R4,:=,ACCCON_AREA+56(R3):F
+                   LET R3,->,ACCCON_AREA+60(R3)
+                   $FOR R4,TIMES,LOOP
+                      IF   (0(R3),8),=,SMF6OUT,LEAVE
+                      LA   R3,8(,R3)
+                   FOR$
+                   $EX$ R4,=,0
+                EX$
+             THEN
+                                       @ * SET PAGE COUNT TO ZERO
+                LET  $PAGES,:=,0
+             IF$ ,
+             COPY ACCNAM6              @ * FIND ACCOUNT USER AND GROUP
+                                       @ * FOR THIS SMF RECORD
+             $IF
+                                       @ * THERE IS AN ACCOUNT USER
+                $EX$ (ACCOUNT_USER,8),¬=,=CL8' '
+             THEN
+                                       @ * TRY GET OUTPUT COUNTERS FOR
+                                       @ * THIS USER ;
+                LISTDATA UOUTPT
+                $IF
+                                       @ * DATA COULD NOT BE OBTAINED
+                   $EX$ R15,¬=,0
+                   ORELSE RACFUD_LIST_LENGTH,¬=,UOUTPT_#
+                THEN
+                                       @ * NOTIFY USER "USER DATA FOR
+                                       @ * JOB MISSING"
+                   NOTIFY 'USER DATA FOR JOB MISSING'
+                ELSE
+                   $LOOP
+                                       @ * INCREMENT OUTPUT COUNTERS
+                                       @ * FOR THIS USER ;
+                      COPYDATA ,
+                      $IF R15,=,0,THEN
+                         LET UOUTPT_PAGES,+,$PAGES
+                         LET UOUTPT_EXCPS,+,$EXCPS
+                      ELSE
+                         LET UOUTPT_PAGES,:=,$PAGES
+                         LET UOUTPT_EXCPS,:=,$EXCPS
+                      IF$
+                                       @ * TRY WRITE THEM BACK
+                      COMPSWAP ,
+                   UNTIL
+                                       @ * DATA HAS NOT BEEN CHANGED
+                                       @ * MEANWHILE
+                      $EX$  R15,¬=,4
+                      ORELSE RACFUD_LIST_LENGTH,¬=,UOUTPT_#
+                   LOOP$ ,
+                IF$ ,
+             IF$ ,
+ SPACE
+             $IF
+                                       @ * THERE IS AN ACCOUNT GROUP
+                $EX$ (ACCOUNT_GROUP,8),¬=,=CL8' '
+             THEN
+                                       @ * TRY GET OUTPUT COUNTERS FOR
+                                       @ * THIS USER ;
+                LISTDATA GOUTPTSU
+                $IF
+                                       @ * DATA COULD NOT BE OBTAINED
+                   $EX$ R15,¬=,0
+                   ORELSE RACFUD_LIST_LENGTH,¬=,GOUTPTSU_#
+                THEN
+                                       @ * NOTIFY USER "USER DATA FOR
+                                       @ * JOB MISSING"
+                   NOTIFY 'USER DATA FOR JOB MISSING'
+                ELSE
+                   $LOOP
+                                       @ * INCREMENT OUTPUT COUNTERS
+                                       @ * FOR THIS USER ;
+                      COPYDATA ,
+                      $IF R15,=,0,THEN
+                         LET GOUTPTSU_PAGES,+,$PAGES
+                         LET GOUTPTSU_EXCPS,+,$EXCPS
+                      ELSE
+                         LET GOUTPTSU_PAGES,:=,$PAGES
+                         LET GOUTPTSU_EXCPS,:=,$EXCPS
+                      IF$
+                                       @ * TRY WRITE THEM BACK
+                      COMPSWAP ,
+                   UNTIL
+                                       @ * DATA HAS NOT BEEN CHANGED
+                                       @ * MEANWHILE
+                      $EX$  R15,¬=,4
+                      ORELSE RACFUD_LIST_LENGTH,¬=,GOUTPTSU_#
+                   LOOP$ ,
+                IF$ ,
+             IF$ ,
+          BLOCK$ SPOOLOUT
+          ENDCOPY SPOOLOUT
+./ ADD NAME=ACCNAM6
+  TITLE 'FIND ACCOUNT USER AND ACCOUNT GROUP FOR TYPE 6 RECORDS'
+ACCNAM6   $BLOCK
+             LET  (ACCOUNT_USER,8),:=,=CL8' '
+             LET  (ACCOUNT_GROUP,8),:=,=CL8' '
+             $IF
+                                       @ * JMRUSEID IS BLANK
+                $EX$ (SMF6UIF,8),=,=CL8' '
+             THEN
+                                       @ * NOTIFY USER "MISSING ACCOUNT
+                                       @ * IDENTIFIER"
+*               WARN   'MISSING ACCOUNT IDENTIFIER'
+             ELSEIF
+                                       @ * JMRUSEID IS A RACF-GROUP
+                                       @ * NAME
+                LISTDATA GACCNAME,:SMF6UIF
+                $EX     R15,=,0,ORELSE,R15,=,8,EX$
+             THEN
+                                       @ * TAKE JMRUSEID AS ACCOUNT
+                                       @ * GROUP;
+                LET  (ACCOUNT_GROUP,8),:=,SMF6UIF
+                                       @ * TAKE THE FIRST 6 CHARACTERS
+                                       @ * OF JOBNAME AS ACCOUNT USER
+                                       @ * NAME
+                LET  (ACCOUNT_USER,6),:=,SMF6JBN
+             ELSEIF
+                                       @ * JMRUSEID IS A RACF-USER NAME
+                LISTDATA UACCNAME,:SMF6UIF
+                $EX     R15,=,0,ORELSE,R15,=,8,EX$
+             ANDTHEN
+                                       @ * TRY FIND ACCOUNT GROUP OF
+                                       @ * THIS USER ENTRY;
+                $EX$ RACFUD_LIST_LENGTH,=,UACCNAME_#
+             THEN
+                                       @ * TAKE JMRUSEID AS ACCOUNT
+                                       @ * USER;
+                LET  (ACCOUNT_USER,8),:=,SMF6UIF
+                                       @ * TAKE USER'S ACCOUNT GROUP AS
+                                       @ * ACCOUNT GROUP
+                LET  (ACCOUNT_GROUP,8),:=,                             -
+               RACFUD_LIST_VALUE+UACCNAME_NAME-UACCNAME
+             ELSE
+                                       @ * NOTIFY USER "ACCOUNT GROUP
+                                       @ * STRUCTURE INVALID"
+                NOTIFY 'ACCOUNT GROUP STRUCTURE INVALID'
+             IF$ ,
+          BLOCK$ ACCNAM6
+          ENDCOPY ACCNAM6
+./ ADD NAME=ACCNAM30
+  TITLE 'FIND ACCOUNT USER AND ACCOUNT GROUP FOR TYPE 30 RECORDS'
+ACCNAM30  $BLOCK
+                                       @ * TAKE FIRST 6 CHARACTERS OF
+                                       @ * JOBNAME AS ACCOUNT USER
+                                       @ * NAME;
+             LET  (ACCOUNT_USER,8),:=,=CL8' '
+             $IF  SMF30ION,¬=,0,ANDTHEN,SMF30ILN,>=,32
+             THEN
+                LET   $SMF_SECTIONS,:=,$SMF_COMMON,+,SMF30IOF
+                #USE $SMF_SECTIONS,SMF30_IDENTIFICATION_SECTION
+                LET   (ACCOUNT_USER,6),:=,SMF30JBN
+                #DROP $SMF_SECTIONS
+             IF$
+             $IF
+                                       @ * THERE IS AN ACCOUNT GROUP
+                                       @ * NAME IN THE SMF RECORD
+                $EX$     SMF30ION,¬=,0
+                ANDTHEN  SMF30ILN,>=,32
+                ANDTHEN
+                LET   $SMF_SECTIONS,:=,$SMF_COMMON,+,SMF30IOF
+                #USE $SMF_SECTIONS,SMF30_IDENTIFICATION_SECTION
+                $EX$  (SMF30UIF,8),¬=,=CL8' '
+             THEN
+                                       @ * TAKE IT AS ACCOUNT GROUP
+                                       @ * NAME
+                LET   (ACCOUNT_GROUP,8),:=,SMF30UIF
+             ELSEIF
+                                       @ * THERE IS A RACF GROUP
+                $EX$  (SMF30GRP,8),¬=,=CL8' '
+             THEN
+                                       @ * TAKE IT AS DEFAULT ACCOUNT
+                                       @ * GROUP
+                LET   (ACCOUNT_GROUP,8),:=,SMF30GRP
+             ELSEIF
+                                       @ * THERE IS A DEFAULT ACCOUNT
+                                       @ * GROUP FOR THE ACCOUNT USER
+                LISTDATA UACCNAME
+                $EX$     R15,¬=,0
+                ANDTHEN  RACFUD_LIST_LENGTH,=,UACCNAME_#
+             THEN
+                                       @ * TAKE THE USER'S DEFAULT
+                                       @ * ACCOUNT GROUP
+                LET  (ACCOUNT_GROUP,8),:=,                             -
+               RACFUD_LIST_VALUE+UACCNAME_NAME-UACCNAME
+             ELSE
+                                       @ * NOTIFY USER "ACCOUNT GROUP
+                                       @ * COULD NOT BE FOUND"
+                NOTIFY 'ACCOUNT GROUP COULD NOT BE FOUND'
+                #DROP $SMF_SECTIONS
+             IF$ ,
+          BLOCK$ ACCNAM30
+          ENDCOPY ACCNAM30
+./ ADD NAME=DATACOST
+  TITLE 'CALCULATE RESOURCE DATA AND INFORM USER ABOUT COSTS'
+DATACOST  $BLOCK
+                                       @ * CALUCULATE CPUTIME AND EXCPS
+                                       @ * FOR THIS USER ;
+$CPUTIME     EQUR $PAGES
+             LET  $CPUTIME,:=,0
+             LET  $EXCPS,:=,0
+ SPACE
+             $IF SMF30CLN,>=,12,THEN
+                LET $SMF_SECTIONS,:=,$SMF_COMMON,+,SMF30COF
+               #USE $SMF_SECTIONS,SMF30_PROCESSOR_ACCOUNTING_SECTION
+                $FOR (R2,:=,SMF30CON),TIMES,LOOP
+                   LET $CPUTIME,+,SMF30CPT,+,SMF30CPS
+                   LET $SMF_SECTIONS,+,SMF30CLN
+                FOR$
+                #DROP $SMF_SECTIONS
+             IF$
+ SPACE
+             $IF SMF30ULN,>=,16,THEN
+                LET $SMF_SECTIONS,:=,$SMF_COMMON,+,SMF30UOF
+                #USE $SMF_SECTIONS,SMF30_IO_ACTIVITY_SECTION
+                $FOR (R2,:=,SMF30UON),TIMES,LOOP
+                   LET R1,:=,SMF30INP
+                   LET R0,:=,0
+                   D   R0,ACCCON_AREA+40
+                   LET $EXCPS,+,R1,+,SMF30TPT,+,SMF30TGT
+                   LET $SMF_SECTIONS,+,SMF30ULN
+                FOR$
+                #DROP $SMF_SECTIONS
+             IF$
+ SPACE
+             $IF SMF30ELN,>=,16,THEN
+                LET $SMF_SECTIONS,:=,$SMF_COMMON,+,SMF30EOF
+                #USE $SMF_SECTIONS,SMF30_EXCP_SECTION
+                $FOR (R2,:=,SMF30EON),TIMES,LOOP
+                   LET $EXCPS,+,SMF30BLK
+                   LET $SMF_SECTIONS,+,SMF30ELN
+                FOR$
+                #DROP $SMF_SECTIONS
+             IF$
+ SPACE
+***
+**** WE WILL GENERATE MESSAGES ONLY AT JOB END OF BATCH JOBS,
+**** AND AT STEP END OF STEPS THAT ARE NOT FLUSHED.
+***
+ SPACE
+             $IF
+             $EX
+                LET   $SMF_SECTIONS,:=,$SMF_COMMON,+,SMF30SOF
+                #USE  $SMF_SECTIONS,SMF30_SUBSYSTEM_SECTION
+                $EX$  SMF30TYP,=,SMF30_STEPTOTL
+                #DROP $SMF_SECTIONS
+             ANDTHEN SMF30TON,=,0
+             ORELSE
+                LET $SMF_SECTIONS,:=,$SMF_COMMON,+,SMF30TOF
+                #USE $SMF_SECTIONS,SMF30_COMPLETION_SECTION
+                $EX$ SMF30STI,¬:,SMF30FLU
+                #DROP $SMF_SECTIONS
+             EX$
+             ORELSE
+                LET   $SMF_SECTIONS,:=,$SMF_COMMON,+,SMF30SOF
+                #USE  $SMF_SECTIONS,SMF30_SUBSYSTEM_SECTION
+                $EX$  SMF30TYP,=,SMF30_JOBTERM
+                #DROP $SMF_SECTIONS
+             ANDTHEN
+                #USE $SMF_SECTIONS,SMF30_IDENTIFICATION_SECTION
+                LET $SMF_SECTIONS,:=,$SMF_COMMON,+,SMF30IOF
+                $EX$   SMF30CLS:C,¬=,C' '
+             THEN
+                #DROP $SMF_SECTIONS
+***
+**** FIRST WE DEFINE AND INITIALIZE DATA AREAS TO BE EDITED
+***
+             DATA ,
+JOBNAME         DS   CL8
+STEPNAME        DS   CL8
+JOBSTEP         DS   CL4
+  SPACE 2
+CPUTIME         DC   C'HH:MM:SS.TH'
+ABWEXCPS        DC   C' 00000000000'
+CPUCOST         DC   C' 00000.00'
+EXCPCOST        DC   C' 00000.00'
+TOTALCOST       DC   C' 00000.00'
+ SPACE
+***
+****  DEFINITION OF A MESSAGE FOR THE JCL MESSAGE DATA SET
+***
+ SPACE
+MESSAGE         DS   0CL(MESSAGE_LENGTH)
+MESSAGE_ID      DC   C'IEFUACC '
+MESJOBST        DC   C'JOB  /'
+MESJSNAM        DC   C'JSNAME  '
+                DC   C'/ CPUTOTAL '
+MESCPUTT        DC   C'...........'
+                DC   C' / VF '
+MESCPUTV        DC   C'...........'
+                DC   C' ='
+MESCPUTC        DC   C' ....'
+                DC   C'% /'
+                DC   C' EXCPS'
+MESEXCPS        DC   C' ...........'
+MESSAGE_LENGTH  EQUN *-MESSAGE_ID
+                CSECT
+                ENTRY  IEFYSMES
+                ENTRY  EXCPPAT
+IEFYSMES        DC   C'IEFUACC '
+                DC   C'JOB  /'
+                DC   C'JSNAME  '
+                DC   C'/ CPUTOTAL '
+                DC   C'...........'
+                DC   C' / VF '
+                DC   C'...........'
+                DC   C' ='
+                DC   X'4021204B20'
+                DC   C'% /'
+                DC   C' EXCPS'
+EXCPPAT         DC   X'402020202020202020202120'
+             CODE ,
+ SPACE
+                L     R1,=A(IEFYSMES)
+                LET   (MESSAGE,L'MESSAGE),:=,0(R1)
+ SPACE
+***
+****  EXTRACT JOB AND STEPNAMES AND WRITE HEAD AND BOTTOM LINE
+***
+ SPACE
+*              NOTIFY '%6...... %7......            %1......... = %2...-
+               ... DM %3......... = %4...... DM %5...... DM',          -
+               CPUTIME,CPUCOST+1,ABWEXCPS+1,EXCPCOST+1,TOTALCOST+1,    -
+               JOBNAME,STEPNAME,                                       -
+               ROUTCDE=,DESC=
+                $IF
+                   LET   $SMF_SECTIONS,:=,$SMF_COMMON,+,SMF30SOF
+                   #USE  $SMF_SECTIONS,SMF30_SUBSYSTEM_SECTION
+                   $EX$  SMF30TYP,=,SMF30_STEPTOTL
+                   #DROP $SMF_SECTIONS
+                THEN
+                   #USE  $SMF_SECTIONS,SMF30_IDENTIFICATION_SECTION
+                   LET   $SMF_SECTIONS,:=,$SMF_COMMON,+,SMF30IOF
+                   LET   (MESJOBST,4),:=,'STEP'
+                   LET   (MESJSNAM,L'MESJSNAM),:=,SMF30STM
+                   LET   (STEPNAME,L'STEPNAME),:=,SMF30STM
+                   LET   (JOBSTEP,L'JOBSTEP),:=,'STEP'
+                   $IF   SMF30STN,=,1,THEN
+               NOTIFY 'JOBNAME  STEPNAME               CPU-ZEIT    CPU--
+               KOSTEN  ABW. EXCPS   EXCP-KOSTEN       SUMME',          -
+               ROUTCDE=,DESC=
+                   IF$
+                   #DROP $SMF_SECTIONS
+                ELSE
+                   #USE  $SMF_SECTIONS,SMF30_IDENTIFICATION_SECTION
+                   LET   $SMF_SECTIONS,:=,$SMF_COMMON,+,SMF30IOF
+                   LET   (MESJOBST,4),:=,' JOB'
+                   LET   (MESJSNAM,L'MESJSNAM),:=,SMF30JBN
+                   LET   (STEPNAME,L'STEPNAME),:=,=CL8' '
+                   LET   (JOBSTEP,L'JOBSTEP),:=,' JOB'
+               NOTIFY '%1......                     -----------   ------
+               ------ -----------   ----------- -----------',          -
+               SMF30JBN,                                               -
+               ROUTCDE=,DESC=
+                IF$
+                LET   (JOBNAME,L'JOBNAME),:=,SMF30JBN
+                #DROP $SMF_SECTIONS
+ SPACE
+                                       @ * CALCULATE COSTS FOR THIS
+                                       @ * RECORD ;
+***
+**** TO SIMPLIFY THE COST CALCULATION SET A POINTER INTO ACCCON
+**** OUTPUT AREA.
+**** FOR BATCH JOB START A OFFSET 0
+**** FOR TSO SESSION START A OFFSET 4
+**** (ALL COST FACTORS ARE PAIRS FOR (BATCH,TSO))
+***
+ SPACE
+                #USE $SMF_SECTIONS,SMF30_IDENTIFICATION_SECTION
+                LET $SMF_SECTIONS,:=,$SMF_COMMON,+,SMF30IOF
+                LET  R2,->,ACCCON_AREA
+                $IF  SMF30CLS:C,=,C' ',THEN
+                   LET  R2,->,4(,R2)
+                IF$
+                #DROP $SMF_SECTIONS
+ SPACE
+***
+**** EDIT USED CPU TIME
+***
+ SPACE
+                LET   (CPUTIME,L'CPUTIME),:=,'**:**:**.**'
+                LET   TEMP8:F,:=,$CPUTIME
+                LET   A_EDDATE_CODE,->,=F'2300'
+                LET   A_EDDATE_INPUT_DATE,->,0
+                LET   A_EDDATE_INPUT_TIME,->,TEMP8
+                LET   A_EDDATE_OUTPUT_TIME,->,CPUTIME
+                LET   A_EDDATE_OUTPUT_DATE,->,0
+                OI    A_EDDATE_OUTPUT_TIME,X'80'
+                XCALL EDDATE,:EDDATE_PARAMETER_LIST
+                $IF   (CPUTIME,1),=,'0'
+                ANDTHEN
+                   LET  (CPUTIME,1),:=,=CL8' '
+                $EX$  (CPUTIME+1,1),=,'0'
+                ANDTHEN
+                   LET  (CPUTIME+1,2),:=,=CL8' '
+                $EX$  (CPUTIME+3,1),=,'0'
+                ANDTHEN
+                   LET  (CPUTIME+3,1),:=,=CL8' '
+                $EX$  (CPUTIME+4,1),=,'0'
+                ANDTHEN
+                   LET  (CPUTIME+4,2),:=,=CL8' '
+                $EX$  (CPUTIME+6,1),=,'0'
+                THEN
+                   LET  (CPUTIME+6,1),:=,=CL8' '
+                IF$
+ SPACE
+***
+**** CALCULATE EXCP DIFFERENCE AND EDIT IT
+***
+ SPACE
+                LET   R0,:=,$CPUTIME
+                SRDA  R0,32
+                M     R0,32(,R2)
+                D     R0,=F'100'
+                LR    R0,$EXCPS
+                SR    R0,R1
+                CVD   R0,TEMP8
+                L     R1,=A(EXCPPAT)
+                LET   (ABWEXCPS,L'ABWEXCPS),:=,0(R1)
+                LET   R1,->,ABWEXCPS+L'ABWEXCPS-1
+                $IF
+                   EDMK  ABWEXCPS,TEMP8+2
+                   TRUECC <
+                THEN
+                   LET R1,-,1
+                   LET 0(R1):C,:=,C'-'
+                IF$
+ SPACE
+***
+**** CONVERT CPUTIME AND EXCP DIFFERENCE TO FLOATING POINT NUMBERS
+**** MULTIPLY IT WITH COST FACTORS AND CALCULATE TOTAL COSTS
+***
+ SPACE
+                LET   (TEMP8,8),:=,=X'4E00000080000000'
+                X     R0,TEMP8+4
+                ST    R0,TEMP8+4
+                LD    0,TEMP8
+                SD    0,=X'4E00000080000000'
+                ME    0,8(,R2)
+ SPACE
+                LET   (TEMP8,4),:=,=X'4E000000'
+                LET   TEMP8+4:F,:=,$CPUTIME
+                LE    4,0(,R2)
+                MD    4,TEMP8
+                ME    4,=E'0.01'
+ SPACE
+                LER   2,0
+                AER   2,4
+***
+****  NOW WE WILL EDIT THE COSTS INTO THE COST FIELDS
+****  <FPR4> = COST FOR CPUTIME
+****  <FPR0> = COST FOR EXCP DIFFERENCE
+****  <FPR2> = TOTAL COSTS
+***
+ SPACE
+ SPACE
+                LET  R1,->,EXCPCOST
+                LER  6,0
+                ICALL EDITCOST
+                LET  R1,->,CPUCOST
+                LER  6,4
+                ICALL EDITCOST
+                LET  R1,->,TOTALCOST
+                LER  6,2
+                ICALL EDITCOST
+                                       @ * NOTIFY USER ABOUT COSTS ;
+ SPACE
+***
+****  NOW WE ARE READY TO ISSUE MESSAGES TO THE JOB LOG
+***
+ SPACE
+               NOTIFY '%6...... %7......            %1......... = %2...-
+               ... DM %3......... = %4...... DM %5...... DM',          -
+               CPUTIME,CPUCOST+1,ABWEXCPS+1,EXCPCOST+1,TOTALCOST+1,    -
+               JOBNAME,STEPNAME,                                       -
+               ROUTCDE=,DESC=
+ SPACE
+***
+****  COMPLETE MESSAGE FOR THE JCL MESSAGE DATA SET
+***
+ SPACE
+                LET   (MESCPUTT,L'MESCPUTT),:=,CPUTIME
+ SPACE
+                CVD   $EXCPS,TEMP8
+                ED    MESEXCPS(L'MESEXCPS),TEMP8+2
+***
+****  GET VECTOR FEATURE INFORMATION
+***
+             DATA ,
+$$CPUTIME    DS     F
+             CODEX ,
+             LET  $$CPUTIME,:=,$CPUTIME
+             LET  $CPUTIME,:=,0
+ SPACE
+             $IF SMF30CLN,>=,24,THEN
+                LET $SMF_SECTIONS,:=,$SMF_COMMON,+,SMF30COF
+               #USE $SMF_SECTIONS,SMF30_PROCESSOR_ACCOUNTING_SECTION
+                $FOR (R2,:=,SMF30CON),TIMES,LOOP
+                   LET $CPUTIME,+,SMF30JVU
+                   LET $SMF_SECTIONS,+,SMF30CLN
+                FOR$
+                #DROP $SMF_SECTIONS
+             IF$
+***
+**** EDIT USED VECTOR FEATURE TIME
+***
+ SPACE
+                LET   (CPUTIME,L'CPUTIME),:=,'**:**:**.**'
+                LET   TEMP8:F,:=,$CPUTIME
+                LET   A_EDDATE_CODE,->,=F'2300'
+                LET   A_EDDATE_INPUT_DATE,->,0
+                LET   A_EDDATE_INPUT_TIME,->,TEMP8
+                LET   A_EDDATE_OUTPUT_TIME,->,CPUTIME
+                LET   A_EDDATE_OUTPUT_DATE,->,0
+                OI    A_EDDATE_OUTPUT_TIME,X'80'
+                XCALL EDDATE,:EDDATE_PARAMETER_LIST
+                $IF   (CPUTIME,1),=,'0'
+                ANDTHEN
+                   LET  (CPUTIME,1),:=,=CL8' '
+                $EX$  (CPUTIME+1,1),=,'0'
+                ANDTHEN
+                   LET  (CPUTIME+1,2),:=,=CL8' '
+                $EX$  (CPUTIME+3,1),=,'0'
+                ANDTHEN
+                   LET  (CPUTIME+3,1),:=,=CL8' '
+                $EX$  (CPUTIME+4,1),=,'0'
+                ANDTHEN
+                   LET  (CPUTIME+4,2),:=,=CL8' '
+                $EX$  (CPUTIME+6,1),=,'0'
+                THEN
+                   LET  (CPUTIME+6,1),:=,=CL8' '
+                IF$
+ SPACE
+                LET   (MESCPUTV,L'MESCPUTV),:=,CPUTIME
+***
+****  CALCULATE PERCENTAGE OF VECTOR FEATURE
+***
+                $IF $$CPUTIME,=,$CPUTIME,THEN
+                   LET (MESCPUTC+1,4),:=,=C' 100'
+                ELSEIF $CPUTIME,=,0,THEN
+                   LET (MESCPUTC+1,4),:=,=C'   0'
+                ELSEIF $$CPUTIME,<,$CPUTIME,THEN
+                   LET (MESCPUTC+1,4),:=,=C' ***'
+                ELSE
+                   LET   R0,:=,0
+                   LET   R1,:=,$CPUTIME
+                   M     R0,=F'1000'
+                   D     R0,$$CPUTIME
+                   CVD   R1,TEMP8
+                   ED    MESCPUTC,TEMP8+6
+                IF$
+                LET  $CPUTIME,:=,$$CPUTIME
+ SPACE
+***
+****  PUT MESSAGE TO THE JCL MESSAGE DATA SET
+***
+ SPACE
+                #USE  R12,,MESSR12
+                LA    R1,MESSAGE
+                ST    R1,36(,R12)
+                MVC   42(2,R12),=Y(MESSAGE_LENGTH)
+  DATA ,
+DONTTRUSTIEFYS  DS    12F
+  CODE ,
+                STM   R0,R11,DONTTRUSTIEFYS
+                XCALL IEFYS
+                LM    R0,R11,DONTTRUSTIEFYS
+                #DROP R12
+             IF$
+          BLOCK$ DATACOST
+          ENDCOPY DATACOST
+./ ADD NAME=JOBEND
+  TITLE 'ACCUMULATE COMMON ADDRESS SPACE DATA AT JOB END'
+JOBEND    $BLOCK
+             WTP 'PROCESSING JOBEND RECORD'
+                                       @ * TRY GET DATA FOR THIS USER ;
+             LISTDATA U
+             $IF
+                                       @ * DATA COULD NOT BE OBTAINED
+                $EX$  R15,¬=,0
+                ORELSE  RACFUD_LIST_LENGTH,¬=,UBATCH_#
+             THEN
+                                       @ * NOTIFY USER "USER DATA FOR
+                                       @ * JOB MISSING"
+                NOTIFY 'USER DATA FOR JOB MISSING'
+             ELSE
+                $LOOP
+                                       @ * INCREMENT DATA FOR THIS USER
+                                       @ * ;
+                   COPYDATA ,
+                   $IF R15,=,0,THEN
+                      LET UBATCH_JOBS,+,1
+                      LET UBATCH_CPUTIME,+,$CPUTIME
+                      LET UBATCH_EXCPS,+,$EXCPS
+                   ELSE
+                      LET UBATCH_JOBS,:=,1
+                      LET UBATCH_CPUTIME,:=,$CPUTIME
+                      LET UBATCH_EXCPS,:=,$EXCPS
+                   IF$
+                                       @ * TRY WRITE IT BACK
+                   COMPSWAP ,
+                UNTIL
+                                       @ * DATA HAVE NOT BEEN CHANGED
+                                       @ * MEANWHILE
+                   $EX$ R15,¬=,4
+                   ORELSE RACFUD_LIST_LENGTH,¬=,UBATCH_#
+                LOOP$ ,
+             IF$ ,
+             $IF
+                                       @ * THERE IS A CURRENT GROUP
+                                       @ * ENTRY
+                $EX$ (ACCOUNT_GROUP,8),¬=,=CL8' '
+             THEN
+                $IF
+                                       @ * TRY GET DATA FOR CURRENT
+                                       @ * GROUP ;
+                    LISTDATA G
+                                       @ * DATA COULD NOT BE FOUND
+                    $EX$ R15,¬=,0
+                    ORELSE RACFUD_LIST_LENGTH,¬=,GBATCHSU_#
+                THEN
+                                       @ * NOTIFY USER "GROUP DATA
+                                       @ * MISSING"
+                ELSE
+                   $LOOP
+                                       @ * INCREMENT NUMBER OF JOBS FOR
+                                       @ * THIS GROUP ;
+                      COPYDATA ,
+                      $IF R15,=,0,THEN
+                         LET GBATCHSU_JOBS,+,1
+                         LET GBATCHSU_CPUTIME,+,$CPUTIME
+                         LET GBATCHSU_EXCPS,+,$EXCPS
+                      ELSE
+                         LET GBATCHSU_JOBS,:=,1
+                         LET GBATCHSU_CPUTIME,:=,$CPUTIME
+                         LET GBATCHSU_EXCPS,:=,$EXCPS
+                      IF$
+                                       @ * TRY WRITE IT BACK
+                      COMPSWAP ,
+                   UNTIL
+                                       @ * DATA HAVE NOT BEEN CHANGED
+                                       @ * MEANWHILE
+                      $EX$ R15,¬=,4
+                      ORELSE RACFUD_LIST_LENGTH,¬=,GBATCHSU_#
+                   LOOP$ ,
+                IF$ ,
+             IF$ ,
+          BLOCK$ JOBEND
+          ENDCOPY JOBEND
+./ ADD NAME=SPACESMF
+  TITLE 'INTERCEPT SPACE ACCOUNTING RECORDS'
+SPACESMF  $BLOCK
+             $IF
+                                       @ * THE RECORD IS A MEASURE
+                                       @ * RECORD
+                $EX$ (SMFF8JBN,8),=,=CL8' '
+             THEN
+                COPY INCRSYS1          @ * INCREMENT COUNTER FOR GROUP
+                                       @ * SYS1;
+                COPY SPACEALL          @ * SET MEASURES COUNT IN ALL
+                                       @ * GROUP ENTRIES ;
+             ELSEIF
+                                       @ * DEVICETYPE IS NOT IN
+                                       @ * DEVICETABLE LIST
+                LET  R3,->,ACCCON_AREA+56
+                $FOR (R4,:=,ACCCON_AREA+52:F),TIMES,LOOP
+                   IF   (0(R3),8),=,SMFF8DVT,LEAVE
+                   LA   R3,12(,R3)
+                FOR$
+                $EX$  R4,=,0
+             THEN
+                                       @ * NOTIFY USER "DEVICETYPE
+                                       @ * UNKNOWN"
+                NOTIFY 'DEVICETYPE UNKNOWN'
+             ELSE
+                                       @ * CALCULATE SPACE DATA
+$SPACE       EQU  0
+$SPACEGRP    EQU  4
+                DATA ,
+TEMP8           DS   D
+                CODE ,
+                LET  (TEMP8,4),:=,=X'4E000000'
+                LET  (TEMP8+4,4),:=,SMFF8TRK
+                LE   $SPACE,8(,R3)
+                MD   $SPACE,TEMP8
+                LER  $SPACEGRP,$SPACE
+                $IF
+                                       @ * SMF RECORD INDICATES
+                                       @ * "USER"-QUALIFIER
+                   $EX$ (SMFF8IND,1),=,'U'
+                THEN
+                   COPY SPACEUSR
+                ELSEIF
+                                       @ * SMF RECORD INDICATES
+                                       @ * "GROUP"-QUALIFIER
+                   $EX$ (SMFF8IND,1),=,'G'
+                THEN
+                   COPY SPACEGRP
+                IF$ ,
+             IF$ ,
+          BLOCK$ SPACESMF
+          ENDCOPY SPACESMF
+./ ADD NAME=INCRSYS1
+  TITLE 'INCREMENT COUNTER FOR GROUP SYS1'
+INCRSYS1  $BLOCK
+                                       @ * TRY GET SPACE DATA FOR GROUP
+                                       @ * SYS1 ;
+             LISTDATA GSPACESU,:=CL8'SYS1'
+             $IF
+                                       @ * DATA COULD NOT BE OBTAINED
+                $EX$ R15,¬=,0
+                ORELSE RACFUD_LIST_LENGTH,¬=,GSPACESU_#
+             THEN
+                                       @ * NOTIFY USER "UNABLE TO GE
+                                       @ * DATA FOR GROUP SYS1"
+                NOTIFY 'UNABLE TO DATA FOR GROUP SYS1'
+                LEAVE IEFUACC
+             ELSE
+                $LOOP
+                                       @ * INCREMENT SPACE DATA FOR
+                                       @ * THIS GROUP ;
+                   COPYDATA ,
+                   $IF R15,=,0,THEN
+                      LET  GSPACESU_MEASURES,+,1
+                   ELSE
+                      LET  GSPACESU_MEASURES,:=,1
+                   IF$
+                                       @ * TRY WRITE IT BACK
+                   COMPSWAP
+                UNTIL
+                                       @ * DATA HAS NOT BEEN CHANGED
+                                       @ * MEANWHILE
+                   $EX$ R15,¬=,4
+                   ORELSE RACFUD_LIST_LENGTH,¬=,GSPACESU_#
+                LOOP$ ,
+             IF$ ,
+             DATA ,
+$SYS1      DS    F
+             CODE ,
+             LET  $SYS1,:=,GSPACESU_MEASURES
+          BLOCK$ INCRSYS1
+          ENDCOPY INCRSYS1
+./ ADD NAME=SPACEALL
+  TITLE 'SET MEASURE COUNT IN ALL GROUP ENTRIES'
+SPACEALL  $BLOCK
+                                       @ * START IN FRONT OF THE FIRST
+                                       @ * GROUP;
+                LET   A_RACFUD_CLASS,->,=CL8'GROUP'
+                LET   A_RACFUD_ENTRY,->,RACFUD_ENTRY
+                LET   RACFUD_ENTRY_LENGTH,:=,0
+                LET   A_RACFUD_ENTRY_LENGTH,->,RACFUD_ENTRY_LENGTH
+                LET   A_RACFUD_KEY,->,=CL8'GSPACESU'
+                LET   RACFUD_ALTER_LENGTH,:=,0
+                LET   A_RACFUD_ALTER_VALUE,->,RACFUD_ALTER_VALUE
+                LET   A_RACFUD_ALTER_LENGTH,->,RACFUD_ALTER_LENGTH
+                LET   A_RACFUD_LIST_VALUE,->,RACFUD_LIST_VALUE
+                LET   RACFUD_LIST_LENGTH,:=,0
+                LET   A_RACFUD_LIST_LENGTH,->,RACFUD_LIST_LENGTH
+                OI    A_RACFUD_LIST_LENGTH,X'80'
+             $WHILE
+                                       @ * THERE IS ANOTHER GROUP ENTRY
+                LET   A_RACFUD_FUNCTION,->,=CL8'FINDNENT'
+                XCALL RACFUD,:RACFUD_PARAMETER_LIST
+                RETTEST
+                $EX$  R15,=,0
+                ORELSE R15,=,8
+             LOOP
+                $IF
+                                       @ * THERE WAS A GROUP SPACE
+                                       @ * FIELD
+                   $EX$  R15,=,0
+                   ANDTHEN RACFUD_LIST_LENGTH,=,GSPACESU_#
+                THEN
+                   $LOOP
+                                       @ * SET MEASURE COUNT FOR THIS
+                                       @ * GROUP ;
+                      COPYDATA
+                      LET  GSPACESU_MEASURES,:=,$SYS1
+                      $IF  $SYS1,=,1,THEN                          +1.3
+                         XC  GSPACESU_KBYTES,GSPACESU_KBYTES       +1.3
+                      IF$ ,                                        +1.3
+                                       @ * TRY WRITE IT BACK
+                      COMPSWAP
+                   UNTIL
+                                       @ * DATA HAS NOT BEEN CHANGED
+                                       @ * MEANWHILE
+                      $EX$  R15,¬=,4
+                      ORELSE RACFUD_LIST_LENGTH,¬=,GSPACESU_#
+                   LOOP$ ,
+                IF$ ,
+                $IF
+                                       @ * THERE WAS AN ERROR WHILE
+                                       @ * UPDATING THE GROUP ENTRY
+                   $EX$  R15,¬=,0
+                   ORELSE RACFUD_LIST_LENGTH,¬=,GSPACESU_#
+                THEN
+                                       @ * NOTIFY USER "MEASURE COUNT
+                                       @ * FOR GROUP NOT SET"
+                   LET  R14,:=,A_RACFUD_ENTRY
+                   NOTIFY 'MEASURE COUNT FOR GROUP %1...... NOT SET',  X
+               0(R14)
+                IF$ ,
+             WHILE$ ,
+             $IF
+                                       @ * NOT ALL ENTRIES COULD BE
+                                       @ * PROCESSED
+                $EX$  R15,¬=,4
+             THEN
+                                       @ * NOTIFY USER "NO MEASURE
+                                       @ * COUNT SET AFTER GROUP ...."
+                LET  R14,:=,A_RACFUD_ENTRY
+                NOTIFY 'NO MEASURE COUNT INCREMENTED AFTER GROUP %1....X
+               .. ',0(R14)
+             IF$ ,
+          BLOCK$ SPACEALL
+          ENDCOPY SPACEALL
+./ ADD NAME=SPACEUSR
+  TITLE 'PERFORM SPACE UPDATE FOR RACF USER NAME'
+SPACEUSR  $BLOCK
+                                       @ * ASSUME DATA QUALIFIER IS
+                                       @ * USER NAME ;
+                                       @ * TRY GET SPACE DATA FOR USER
+                                       @ * ;
+             LISTDATA USPACE,:SMFF8JBN
+             $IF
+                                       @ * DATA QUALIFIER IS NOT A USER
+                $EX$ R15,¬=,0
+                ANDTHEN R15,¬=,8
+             THEN
+                                       @ * NOTIFY USER "DATA QUALIFIER
+                                       @ * NOT USER AS INDICATED"
+                NOTIFY 'DATA QUALIFIER NOT USER AS INDICATED'
+             ELSEIF
+                                       @ * SPACE DATA CANNOT BE FOUND
+                $EX$ R15,=,8
+                ORELSE RACFUD_LIST_LENGTH,¬=,USPACE_#
+             THEN
+                                       @ * NOTIFY USER "MISSING SPACE
+                                       @ * DATA FOR USER"
+                NOTIFY 'MISSING SPACE DATA FOR USER'
+             ELSE
+                $LOOP
+                                       @ * INCREMENT SPACE DATA FOR
+                                       @ * THIS USER ;
+                   COPYDATA ,
+                   $IF R15,=,0,THEN
+                     AE  $SPACE,USPACE_KBYTES
+                   IF$
+                   STE $SPACE,USPACE_KBYTES
+                                       @ * TRY WRITE IT BACK
+                   COMPSWAP ,
+                UNTIL
+                                       @ * DATA HAS NOT BEEN CHANGED
+                                       @ * MEANWHILE
+                   $EX$ R15,¬=,4
+                   ORELSE RACFUD_LIST_LENGTH,¬=,GSPACE_#
+                LOOP$ ,
+                                       @ * TRY GET USER'S ACCOUNT GROUP
+                                       @ * NAME ;
+                LET  (ACCOUNT_GROUP,8),:=,SMFF8GRP
+                $IF  (ACCOUNT_GROUP,8),=,=CL8' '
+                ANDTHEN
+                   LISTDATA UACCNAME,:SMFF8JBN
+                $EX$ R15,=,0
+                ANDTHEN RACFUD_LIST_LENGTH,¬=,UACCNAME_#
+                THEN
+                   LET  (ACCOUNT_GROUP,8),:=,                          -
+               RACFUD_LIST_VALUE+UACCNAME_NAME-UACCNAME
+                IF$
+                $IF
+                                       @ * ACCOUNT GROUP NAME COULD NOT
+                                       @ * BE OBTAINED
+                   $EX$ (ACCOUNT_GROUP,8),=,=CL8' '
+                THEN
+                ELSEIF
+                                       @ * TRY GET SUM OF USERS SPACE
+                                       @ * DATA OF USER'S ACCOUNT GROUP
+                   LISTDATA GSPACESU
+                   $EX$ R15,¬=,0
+                   ORELSE RACFUD_LIST_LENGTH,¬=,GSPACESU_#
+                THEN
+                                       @ * NOTIFY USER "ACCOUNT GROUP
+                                       @ * DATA MISSING"
+                   NOTIFY 'ACCOUNT GROUP DATA MISSING'
+                ELSE
+                   $LOOP
+                                       @ * INCREMENT USERS SUM SPACE
+                                       @ * DATA FOR THIS GROUP ;
+                      COPYDATA ,
+                      AE  $SPACEGRP,GSPACESU_KBYTES
+                      STE $SPACEGRP,GSPACESU_KBYTES
+                                       @ * TRY WRITE IT BACK
+                      COMPSWAP ,
+                   UNTIL
+                                       @ * DATA HAS NOT BEEN CHANGED
+                                       @ * MEANWHILE
+                      $EX$ R15,¬=,4
+                      ORELSE RACFUD_LIST_LENGTH,¬=,GSPACESU_#
+                   LOOP$ ,
+                IF$ ,
+             IF$ ,
+          BLOCK$ SPACEUSR
+          ENDCOPY SPACEUSR
+./ ADD NAME=SPACEGRP
+  TITLE 'PERFORM SPACE UPDATE FOR RACF GROUP NAME'
+SPACEGRP  $BLOCK
+                                       @ * ASSUME DATA QUALIFIER IS A
+                                       @ * GROUP ;
+                                       @ * TRY GET SPACE DATA FOR GROUP
+                                       @ * ENTRY ;
+             LISTDATA GSPACE,:SMFF8JBN
+             $IF
+                                       @ * DATA QUALIFIER IS NOT A
+                                       @ * GROUP
+                $EX$ R15,¬=,0
+                ANDTHEN R15,¬=,8
+             THEN
+                                       @ * NOTIFY USER "DATA QUALIFIER
+                                       @ * NOT GROUP AS INDICATED"
+                NOTIFY 'DATA QUALIFIER NOT GROUP AS INDICATED'
+             ELSEIF
+                                       @ * THERE ARE NO SPACE DATA FOR
+                                       @ * THE GROUP
+                $EX$ R15,=,8
+                ORELSE RACFUD_LIST_LENGTH,¬=,GSPACE_#
+             THEN
+                                       @ * NOTIFY USER "MISSING SPACE
+                                       @ * DATA FOR GROUP"
+                NOTIFY 'MISSING SPACE DATA FOR GROUP'
+             ELSE
+                $LOOP
+                                       @ * INCREMENT SPACE DATA FOR
+                                       @ * THIS GROUP ;
+                   COPYDATA ,
+                      $IF R15,=,0,THEN
+                         AE  $SPACEGRP,GSPACE_KBYTES
+                      IF$
+                      STE $SPACEGRP,GSPACE_KBYTES
+                                       @ * TRY WRITE IT BACK
+                   COMPSWAP ,
+                UNTIL
+                                       @ * DATA HAS NOT BEEN CHANGED
+                                       @ * MEANWHILE
+                   $EX$ R15,¬=,4
+                   ORELSE RACFUD_LIST_LENGTH,¬=,GSPACE_#
+                LOOP$ ,
+             IF$ ,
+          BLOCK$ SPACEGRP
+          ENDCOPY SPACEGRP

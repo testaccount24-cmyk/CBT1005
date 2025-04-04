@@ -1,0 +1,93 @@
+         #TEST   POSTLUDE,SIGNAL                                        #20  001
+         AIF   (&NOTFND).$SIGNAL                                        #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   $CASE'                             #20  004
+PGM      LOCTR                                                          #20  006
+         SPACE 2
+***********************************************************************
+*    CASE1    $CASE                                                   *
+*             ON    RC,LT,0,DO                                        *
+*                ICALL PUBR1                                          *
+*             ON    RC,GT,0,DO                                        *
+*                SIGNAL CASE1A                                        *
+*             POSTLUDE CASE1A                                         *
+*                ICALL PUBR3                                          *
+*             CASE$                                                   *
+***********************************************************************
+         SPACE 3
+POSTL1   $CASE
+         ON    RC,LT,0,DO
+            ICALL PUBR1
+         ON    RC,GT,0,DO
+            SIGNAL CASE1A
+         POSTLUDE CASE1A
+            ICALL PUBR3
+         CASE$
+         SPACE 6
+***********************************************************************
+*    POSTL2   $IF R1,=,0,THEN                                         *
+*                SIGNAL IFR1                                          *
+*             ELSE                                                    *
+*                SIGNAL IFR2                                          *
+*             POSTLUDE IFR1,IFR2                                      *
+*                ICALL PUBR3                                          *
+*             IF$                                                     *
+***********************************************************************
+         SPACE 3
+POSTL2   $IF R1,=,0,THEN
+            SIGNAL IFR1
+         ELSE
+            SIGNAL IFR2
+         POSTLUDE IFR1,IFR2
+            ICALL PUBR3
+         IF$
+         SPACE 6
+***********************************************************************
+*    POSTL3   $WHILE R1,=,0,LOOP                                      *
+*                IF R1,=,5,SIGNAL,LOOPR1                              *
+*             POSTLUDE LOOPR1                                         *
+*                ICALL PUBR3                                          *
+*             WHILE$                                                  *
+***********************************************************************
+         SPACE 3
+POSTL3   $WHILE R1,=,0,LOOP
+            IF R1,=,5,SIGNAL,LOOPR1
+         POSTLUDE LOOPR1
+            ICALL PUBR3
+         WHILE$
+         SPACE 6
+***********************************************************************
+*    POSTL4   $LOOP                                                   *
+*             UNTIL R1,=,0                                            *
+*             POSTLUDE LOOPR4                                         *
+*             LOOP$                                                   *
+***********************************************************************
+         SPACE 3
+POSTL4   $LOOP
+         UNTIL R1,=,0
+         POSTLUDE LOOPR4
+         LOOP$
+         SPACE 6
+***********************************************************************
+*    POSTL5   $LOOP                                                   *
+*             UNTIL R1,=,0                                            *
+*             POSTLUDE LOOPR5                                         *
+*             LOOP$                                                   *
+***********************************************************************
+         SPACE 3
+POSTL5   $LOOP
+         WHILE R1,=,0
+         POSTLUDE LOOPR5
+         LOOP$
+         SPACE 6
+RC       DS    H
+PUBR1    $PROC TYPE=(L,I)
+            IF R1,=,0,SIGNAL,ABCDEF
+         POSTLUDE ABCDEF
+            LET R15,=,0
+         PROC$
+PUBR3    $PROC TYPE=(B,I),RETURN=R10
+         PROC$
+         SPACE 8
+         PRINT OFF                                                      #20  007
+.$SIGNAL ANOP                                                           #20  008

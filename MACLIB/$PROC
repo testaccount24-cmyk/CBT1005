@@ -1,0 +1,374 @@
+         MACRO
+&LABEL   $PROC &SAVE,&ID=,             REGS TO BE SAVED, EYE CATCH     -
+               &COPYR=YES,                                             -
+               &TYPE=,                 PROC AND ENTRY TYPE             -
+               &BASE=,                 INSTRUCTION BASE                -
+               &LOCAL=,                LOCAL DATA                      -
+               &SUBPOOL=0,             SUBPOOL NUMBER FOR LOCAL DATA   -
+               &OPT=,                  OPTIMIZATION                    -
+               &RETURN=,               RETURN REGISTER                 -
+               &REGS=YES,  | NO | DEF  RETURN REGISTER                 -
+               &PM=                    PROGRAM MASK
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*  "(PROC" PROCEDURE DATA DECLARATIONS AND CODE BODY "PROC)"
+.*
+         GBLA  &PRC,&EQUR,&TEST,&BLK,&PRCREG(04),&PRCREF(04)
+         GBLA  &REFCMAX
+         GBLB  &REFINE
+         GBLC  &PRCTYPE(04),&PRCCODE(04),&PRCDATA(04),&PRCCONS(04)
+         GBLC  &PRCENV(04),&PRCSUBR(04),&PRCXCPT(4)
+         GBLC  &PRCPREL(4),&PRCPOST(4)
+         GBLB  &PRCPREF(4),&PRCPSTF(4)
+         GBLB  &PRCPMRES(04)
+         GBLC  &PRCBASE(12),&PRCSAVE(04),&PRCID(04)
+         GBLC  &BLKTYPE(30),&BLKID(30),&BLKNAME(30)
+         LCLA  &A,&I,&K,&DIST
+         LCLB  &USE15,&EQUDONE
+         LCLC  &T,&E,&C,&REG,&ID1,&M,&D,&Y
+.*
+         GBLC  &SASTIME
+         COPY  SPTSINST
+&LABEL   SASLIST MACRO,'(PROC'
+         AIF   ('&OPT' EQ '').ENDOPT
+         AIF   ('&OPT' EQ 'NO').NOOPT
+         OPT ,
+         AGO   .ENDOPT
+.NOOPT   OPT 0
+.ENDOPT  ANOP
+&EQUDONE SETB  ('&PRCTYPE(1)' NE '')
+         AIF   (&PRC LE 0).NOENV
+&PRCENV(&PRC)  SETC '&SYSLOC'
+.NOENV   ANOP
+&PRC     SETA  &PRC+1                  PUSH PROC STACK
+&I       SETA  (&PRC*3)-2
+&PRCDATA(&PRC)  SETC ''                LOCAL DATA AREA NAME
+&PRCSAVE(&PRC)  SETC '&SAVE(2)'        UPPER BOUND SAVE/RESTORE
+.*
+&BLK     SETA  &BLK+1                  PUSH BLOCK STRUCTURE
+&BLKTYPE(&BLK) SETC 'PX'               'PROCEDURE'
+         SPTSNDX  ,
+&PRCID(&PRC)    SETC '&BLKID(&BLK)'
+&PRCCONS(&PRC)  SETC '@@C&BLKID(&BLK)'   GENERATE NAME
+&PRCSUBR(&PRC)  SETC '@@S&BLKID(&BLK)'   GENERATE NAME
+&PRCXCPT(&PRC)  SETC '@@P&BLKID(&BLK)'   GENERATE NAME
+&PRCPREL(&PRC)  SETC '@@I&BLKID(&BLK)'   GENERATE NAME
+&PRCPOST(&PRC)  SETC '@@T&BLKID(&BLK)'   GENERATE NAME
+&BLKNAME(&BLK)  SETC '&LABEL'
+.*
+         AIF   ('&LABEL' NE '').GO
+         MNOTE 08,'****** (PROC: PROC-NAME MISSING.'
+.GO      ANOP
+.**********************************************************************
+.*
+.*  GET TYPE SPECIFICATIONS
+.*
+&T       SETC  'S'                     PROC TYPE DEFAULT
+&E       SETC  'E'                     ENTRY TYPE DEFAULT
+.*  PROC TYPE
+         AIF   ('&TYPE(1)' EQ '').TYPE2
+&T       SETC  '&TYPE(1)'(1,1)
+.*  ENTRY CLASSIFICATION
+.TYPE2   AIF   ('&TYPE(2)' EQ '').ENTRY
+&E       SETC  '&TYPE(2)'(1,1)
+.**********************************************************************
+.*
+.*  DEFINE ENTRY POINT
+.*
+.ENTRY   ANOP
+.*
+.*  ENTRY TYPE = CSECT OR FIRST EXTERNAL
+.*
+         AIF   ('&E' NE 'C' AND ('&E' NE 'E' OR '&PRCCODE(1)' NE '')).E-
+               NTRYE
+.CSECT   ANOP
+&LABEL   CSECT ,
+&PRCCODE(&PRC) SETC '&LABEL'
+         AGO   .ENTRY9
+.*
+.*  ENTRY TYPE = EXTERNAL (NOT FIRST)
+.*
+.ENTRYE  AIF   ('&E' NE 'E').ENTRYI
+         ENTRY &LABEL
+.ENTRYB  ANOP
+&PS      SETC  '&PRCCODE(1)'
+         AIF   (&PRC LE 1).ENTRY11
+&PS      SETC  '&PRCSUBR(&PRC-1)'
+.ENTRY11 ANOP
+&PS      LOCTR
+&LABEL   DS    0H
+&PRCCODE(&PRC) SETC '&PS'
+         AGO   .ENTRY9
+.*
+.*  ENTRY TYPE = INTERNAL
+.*
+.ENTRYI  AIF   ('&E' EQ 'I' AND '&PRCCODE(1)' NE '').ENTRYB
+         STRERMAC $PROC,24,TYPE(2),&TYPE(2),CSECT
+         AGO   .CSECT
+.*
+.*  NOTE PROC TYPE NOW
+.*
+.ENTRY9  ANOP
+&PRCSUBR(&PRC) LOCTR
+&PRCXCPT(&PRC) LOCTR
+&PRCCODE(&PRC) LOCTR
+&PRCTYPE(&PRC) SETC '&T&E. '
+.**********************************************************************
+.*  DEFINE MAIN REGISTERS (IDLE IF ALREADY DONE)
+.*       IS PLACED HERE TO AVOID PRIVATE CODE SECTION
+.*
+         AIF   (&EQUDONE OR  '&REGS' EQ 'NO').NOGPR
+@0       EQUR  0
+@1       EQUR  1                       STD: -> PARMLIST
+@2       EQUR  2                       WORK
+@3       EQUR  3                       WORK
+@4       EQUR  4                       WORK
+@5       EQUR  5                       WORK
+@6       EQUR  6                       WORK
+@7       EQUR  7                       WORK
+@8       EQUR  8                       WORK
+@9       EQUR  9                       WORK
+@10      EQUR  10                      WORK
+@11      EQUR  11                      WORK
+@12      EQUR  12                      WORK
+@13      EQUR  13                      STD: -> SAVE/WORK AREA
+@14      EQUR  14                      STD: LINKAGE RETURN ADDR
+@15      EQUR  15                      STD: LINKAGE E.P. ADDR
+         AIF   ('&REGS' EQ 'DEF').NOGPR
+R0       EQUR  0
+R1       EQUR  1                       STD: -> PARMLIST
+R2       EQUR  2                       WORK
+R3       EQUR  3                       WORK
+R4       EQUR  4                       WORK
+R5       EQUR  5                       WORK
+R6       EQUR  6                       WORK
+R7       EQUR  7                       WORK
+R8       EQUR  8                       WORK
+R9       EQUR  9                       WORK
+R10      EQUR  10                      WORK
+R11      EQUR  11                      WORK
+R12      EQUR  12                      WORK
+R13      EQUR  13                      STD: -> SAVE/WORK AREA
+R14      EQUR  14                      STD: LINKAGE RETURN ADDR
+R15      EQUR  15                      STD: LINKAGE E.P. ADDR
+.NOGPR   ANOP
+.*
+.*  EYE CATCHER: PROC ID
+.*
+         AIF   ('&ID' EQ '' AND '&T' EQ 'B').SAVE NO ID
+         AIF   ('&BASE' EQ '').ID1
+         #USE  @15,*                   INITIAL BASE
+&USE15   SETB  1
+.ID1     B     P&BLKID(&BLK)SV         JUMP AROUND ID
+         DC    AL1(P&BLKID(&BLK)SV-*-1) ID LENGTH
+         AIF   ('&ID' EQ '' OR '&ID' EQ '*').IDLABEL
+         AIF   ('&ID'(1,1) EQ '''').IDQ
+         AIF   ('&ID'(K'&ID,1) EQ '''').IDC
+         DC    C'&ID'
+         AGO   .COPYR
+.IDC     DC    &ID
+         AGO   .COPYR
+.IDQ     DC    C&ID
+         AGO   .COPYR
+.IDLABEL AIF   ('&LABEL' EQ '').IDCS
+         DC    C'&LABEL'
+         AGO   .COPYR
+.IDCS    DC    C'&SYSECT'
+.COPYR   AIF   ('&COPYR' NE 'YES').NOCOPYR
+&M       SETC  '&SYSDATE'(1,2)
+&D       SETC  '&SYSDATE'(4,2)
+&Y       SETC  '&SYSDATE'(7,2)
+         DC    C' COPYRIGHT &INSTNME &Y-&M-&D'
+         AGO   .SAVE
+.NOCOPYR AIF   ('&COPYR' EQ '' OR '&COPYR' EQ 'NO').SAVE
+         STRERMAC $PROC,123,COPYR,&COPYR,NO
+.**********************************************************************
+.*
+.*  SAVE CALLER'S REGISTERS
+.*
+.SAVE    AIF   ('&T' NE 'B').SAVER
+.*
+.*  PROC TYPE = BASIC : NO SAVE
+.*
+         AIF   ('&ID' EQ '').SAVENID NO ID
+P&BLKID(&BLK)SV DS 0H
+.SAVENID AIF   ('&SAVE' EQ '').LOCAL
+         MNOTE 08,'****** (PROC: NO REGS CAN BE SAVED WITH BASIC PROC'
+         AGO   .LOCAL
+.*
+.*  PROC-TYPE OTHER THAN BASIC:  SAVE CALLER'S REGS
+.*
+.SAVER   ANOP
+&PRCSAVE(&PRC)  SETC '12'
+         AIF   ('&SAVE' EQ '').SAVEIT  NONE SPECIFIED: SAVE ALL
+&PRCSAVE(&PRC)  SETC '&SAVE(2)'
+         AIF   ('&SAVE(1)' EQ '14').SAVE2
+         EQUR  &SAVE(1)
+         AIF   (&EQUR EQ 15).SAVE2
+         STRERMAC $PROC,24,SAVE(1),&SAVE(1),@14
+.SAVE2   AIF   (T'&SAVE(2) NE 'N').SAVE2@
+.*  SAVE(2) REGISTER SPECIFIED AS SELF-DEF TERM
+         AIF   (&SAVE(2) GE 2 AND &SAVE(2) LT 13).SAVEIT
+         AGO   .YSAVE2
+.*  SAVE(2) REGISTER NOT SELF-DEF, MUST BE DEFINED BY "EQUR" MACRO
+.SAVE2@  EQUR  &SAVE(2)                GET REG NUMBER+1
+         AIF   (&EQUR LT 1).YSAVE2     NOT DEFINED
+         AIF   (&EQUR GT 2 AND &EQUR LE 13).SAVEIT
+.YSAVE2  STRERMAC PROC,24,SAVE(2),&SAVE(2),@12
+&PRCSAVE(&PRC)  SETC '@12'
+.*  FINALLY SAVE THOSE REGISTERS
+.SAVEIT  ANOP
+P&BLKID(&BLK)SV STM @14,&PRCSAVE(&PRC),12(@13)
+.**********************************************************************
+.*
+.*  LOCAL DATA
+.*
+.LOCAL   AIF   ('&T' NE 'B' AND '&T' NE 'L').LOCAL1
+.*
+.*  PROC-TYPE = BASIC/LOW LEVEL MUST NOT HAVE LOCAL DATA
+.*
+         AIF   (&PRC LE 1).LOCALBT
+&PRCDATA(&PRC) SETC '&PRCDATA(&PRC-1)'
+.LOCALBT AIF   ('&LOCAL' EQ '').BASE
+         MNOTE 08,'****** (PROC: LOCAL DATA INVALID WITH BASIC PROC.'
+         AGO   .BASE
+.*
+.*  PROC-TYPE OTHER THAN BASIC/LOW LEVEL ALWAYS HAS LOCAL DATA
+.*
+.LOCAL1  ANOP
+&PRCDATA(&PRC)  SETC '&LOCAL(1)'       NAME OF LOCAL DATA AREA
+         AIF   ('&LOCAL(1)' NE '' AND '&LOCAL(1)' NE '*').LOCAL2
+&PRCDATA(&PRC)  SETC 'D&BLKID(&BLK)'   GENERATE NAME
+         AIF   ('&LOCAL' EQ '(*,STATIC)').LOCAL1S
+&PRCDATA(&PRC) DSECT ,                 OPEN LOCAL DATA SECTION
+         AGO   .LOCALES
+.LOCAL1S ANOP
+&PRCDATA(&PRC) LOCTR ,                 OPEN LOCAL DATA SECTION
+.LOCALES DS    18F,CL8'&LABEL'         SAVE AREA, PROC NAME
+&PRCCODE(&PRC) LOCTR ,                 RESUME CODE SECTION
+.*
+.*  LOCAL=(NAME,STATIC):  STATIC INTERNAL LOCAL AREA
+.*
+.LOCAL2  AIF   ('&LOCAL(2)' NE 'STATIC').LOCAL33
+.*       IF MORE THAN ONE BASE REGISTER
+.*       LA @14,&PRCDATA(&PRC)
+.*       SOMETIMES FAILS , SO WE NEED SOMETHING LIKE:
+.*
+         BAL   @14,*+8
+         DC    AL4(&PRCDATA(&PRC))
+         L     @14,0(,@14)
+         AGO   .LOCAL3A
+.*
+.*  LOCAL=(NAME,GLOBAL):  GLOBAL ADDRESSABLE INTERNAL LOCAL AREA
+.*
+.LOCAL33 AIF   ('&LOCAL(2)' NE 'GLOBAL').LOCAL3
+         LA    @14,&PRCDATA(&PRC)
+         AGO   .LOCAL3A
+.*
+.*  LOCAL=(NAME,BASED,ADDR): CALLER/ENVIRONMENT PROVIDES AREA
+.*
+.LOCAL3  AIF   ('&LOCAL(2)' NE 'BASED').LOCAL5
+.*  DOES PROC-TYPE ALLOW THIS?
+.*        AIF   ...
+.*  SET-UP BASED (STATIC EXTERNAL) LOCAL AREA
+         LET0F @14,&LOCAL(3)           FETCH ADDRESS
+.LOCAL3A SR    @15,@15                 SA LENGTH = 0
+         LR    @0,@13                  -> HSA
+         L     @1,8(,@13)              PICK LSA OF HSA
+         STM   @15,@1,0(@14)           LENGTH AND CHAINING SET.
+         ST    @14,8(,@13)             COMPLETE CHAINING.
+         LM    @13,@1,8(@13)           -> NEW SA, RESTORE REGS
+.PRCTYP  ANOP
+&PRCTYPE(&PRC) SETC '&T&E.S'           ,,STATIC LOCAL
+         AGO   .LOCALUS
+.*
+.*  LOCAL=(NAME,SIZED,LENGTH):   AUTOMATIC LOCAL AREA (STACK REQUEST)
+.*
+.LOCAL5  AIF   ('&LOCAL(2)' NE 'SIZED').LOCAL6
+         LET0F @0,&LOCAL(3)            FETCH SIZE
+         AGO   .LOCAL6C
+.*
+.*  LOCAL=NAME:  AUTOMATIC LOCAL AREA (STACK REQUEST)
+.*
+.LOCAL6  AIF   ('&LOCAL(2)' EQ '').LOCAL6A
+        MNOTE 08,'****** (PROC: INVALID LOCAL TYPE, ASSUMED AUTOMATIC.'
+.LOCAL6A ANOP
+&C       SETC  '&PRCDATA(&PRC)'(1,7)
+         CNOP  0,4
+         L     @0,*+8
+         B     *+8
+         DC    AL1(&SUBPOOL),AL3((&C.#+3)/4*4) LENGTH IN FULLWORDS
+.LOCAL6C BAL   1,*+4                   GET DYNAMIC AREA
+         SVC   10
+         ST    @0,0(,@1)               LENGTH INTO WORD 0 OF THE AREA
+         AIF   (&SUBPOOL EQ 0).LOCALNS
+         MVI   0(@1),&SUBPOOL
+.LOCALNS L     @14,8(,@13)             PUSH LOW POINTER
+         STM   @13,@14,4(@1)           HI + LO POINTER TO NEW SAVE AREA
+         ST    @1,8(,@13)              NOW LOW POINTER TO HI SAVE AREA
+         LM    @13,@1,8(@13)           RESTORE REGISTERS
+&PRCTYPE(&PRC) SETC '&T&E.A'           ,,AUTOMATIC LOCAL
+*        NEW AREA IS ALSO CHAINED TO CURRENT SA
+.*
+.*   LOCAL AREA BASE
+.*
+.LOCALUS #USE  @13,&PRCDATA(&PRC),,*
+         MNOTE *,'             R13 -> &PRCDATA(&PRC) (PROC DATA BASE)'
+.**********************************************************************
+.*
+.*  INSTRUCTION BASE
+.*
+.BASE    AIF   (NOT &USE15).BASE9
+         #DROP @15
+.BASE9   AIF   ('&BASE' EQ '').BASEDR
+&K       SETA  2
+&PRCBASE(&I) SETC '&BASE(1)'
+         AIF   (T'&BASE NE 'N').BASEEQR
+         AIF   (&BASE(1) EQ 15).BASESKP
+         AGO   .BASESKP
+.BASEEQR EQUR  &BASE(1)
+         AIF   (&EQUR EQ 16).BASESKP
+.*       AIF   ('&BASE(1)' EQ '@15').BASESKP
+.BASESET LR    &BASE(1),@15
+.BASESKP #USE  &BASE(1),&LABEL
+.MNOTEX  MNOTE *,'             &BASE(1) -> &LABEL (PROC CODE BASE)'
+.NEXT    AIF   (N'&BASE LT &K).BASEDR
+         LA    &BASE(&K),X'800'(,&BASE(&K-1))
+         LA    &BASE(&K),X'800'(,&BASE(&K))
+&I       SETA  &I+1
+&PRCBASE(&I) SETC '&BASE(&K)'
+&DIST    SETA  (4096*(&K-1))
+         #USE  &BASE(&K),&LABEL+&DIST
+&K       SETA  &K+1
+         AIF   (&K LE 3).NEXT
+         AIF   (N'&BASE LT &K).BASEDR
+         MNOTE 12,'CHANGE YOUR PROGRAMME. 3 BASE REGISTERS ARE ENOUGH'
+.BASEDR  ANOP
+.* RETURN REGISTER CHECK
+&PRCREG(&PRC) SETA 14
+         AIF   ('&RETURN' EQ '').NORET
+         AIF   (T'&RETURN NE 'N').RETURN2
+         AIF   (&RETURN LT 1 OR &RETURN GT 15).RETERR
+&PRCREG(&PRC) SETA &RETURN
+         TESTRET &PRCREG(&PRC),&BLKNAME(&BLK)
+         AGO   .RETDEF
+.RETURN2 EQUR  &RETURN
+         AIF   (&EQUR LT 2 OR &EQUR GT 16).RETERR
+&PRCREG(&PRC) SETA &EQUR-1
+.NORET   TESTRET &PRCREG(&PRC),&BLKNAME(&BLK)
+         AGO   .RETDEF
+.RETERR  STRERMAC PROC,24,RETURN,&RETURN,@14
+.RETDEF  ANOP
+@RETURN@OF@&BLKNAME(&BLK) EQUR &PRCREG(&PRC)
+         DS    0AL1(@RETURN@OF@&BLKNAME(&BLK))
+&PRCREC(&PRC) SETA &REFCMAX
+&REFINE  SETB 0
+&PRCPMRES(&PRC) SETB ('&PM(2)' EQ 'RESTORE')
+         AIF   ('&PM(1)' EQ '').NOSPM
+         ICM   0,B'1000',=AL1(&PM(1))
+         SPM   0
+.NOSPM   ANOP
+.MEND    SASLIST MACEND
+         MEND

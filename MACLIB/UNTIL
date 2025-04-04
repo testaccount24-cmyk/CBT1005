@@ -1,0 +1,52 @@
+         MACRO ,                                       STRUCT MACRO SET
+&LABEL   UNTIL &A,&REL,&B,&ANDOR
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                                PAHL (GMD-RZ) 01APR75
+.*  "(LOOP" BLOCK "UNTIL" COND-EXPR "LOOP)"                     03OCT75
+.*       DETERMINE LOOP TERMINATION CONDITION (POST-CHECKED LOOP)
+.*
+         GBLA  &BLK,&BLKCC(30)
+         GBLC  &BLKTYPE(30),&BLKID(30),&BLKNAME(30)
+&LABEL   SASLIST MACRO,'UNTIL'
+.*  PLACEMENT VERIFICATION
+.***
+         AIF   ('&LABEL' EQ '').ISNIL
+&LABEL   DS    0S(&LABEL)
+.ISNIL   ANOP
+&BLK     SETA  &BLK+1
+.*  (EVALUATE COND.EXPR AND) NOTE CONDITION CODE
+&BLKNAME(&BLK) SETC '&LABEL'
+         SPTSNDX U
+.GO      AIF   ('&A&REL&B' NE '').IF0CE
+&BLKTYPE(&BLK) SETC 'U '               BEING IN CONDITION PART OF "IF"
+         AGO  .MEND
+.IF0CE   IF0CE &A,&REL,&B
+&BLKTYPE(&BLK) SETC 'UX'               INDICATE: IN "UNTIL" PART
+.*
+.*  SEE WHAT TO BE DONE AFTER COMPARISON
+.*
+         AIF   ('&ANDOR' EQ '').MEND
+         AIF   ('&ANDOR' NE 'LOOP').OR
+         LOOP ,                        TERMINATE CONDITION
+         AGO .MEND
+.*
+.*  "OR CONDITION,..."
+.*
+.OR      AIF   ('&ANDOR' NE '$OR$' AND '&ANDOR' NE 'OR' AND '&ANDOR'   -
+               NE 'ORELSE').AND
+         ORELSE &SYSLIST(5),&SYSLIST(6),&SYSLIST(7),&SYSLIST(8)
+         AGO  .MEND
+.*
+.*  "AND CONDITION,..."
+.*
+.AND     AIF   ('&ANDOR' NE '$AND$' AND '&ANDOR' NE 'AND' AND '&ANDOR' -
+               NE 'ANDTHEN').YLOOP
+         ANDTHEN &SYSLIST(5),&SYSLIST(6),&SYSLIST(7),&SYSLIST(8)
+         AGO  .MEND
+.**********************************************************************
+.YLOOP   MNOTE 08,'****** UNTIL: "&ANDOR" INVALID -- IGNORED '
+.MEND    SASLIST MACEND
+         MEND

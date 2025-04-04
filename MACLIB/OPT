@@ -1,0 +1,13 @@
+         MACRO
+         OPT   &S
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+         GBLB  &OPT
+         SASLIST MACRO,'OPT'
+&OPT     SETB  0
+         AIF   ('&S' EQ '0' OR ('&S' NE '' AND '&S' NE '1')).MEND
+&OPT     SETB  1
+.MEND    SASLIST MACEND
+         MEND

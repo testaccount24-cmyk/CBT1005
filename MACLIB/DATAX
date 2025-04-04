@@ -1,0 +1,39 @@
+         MACRO
+         DATAX
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*
+.*  OPEN/RESUME (LOCAL) DATA DECLARATION PART OF PROCEDURE
+.*        "PROC" ... "DATA" DATA-DCL "CODE" INSTRUCTIONS ...
+.*
+         GBLA  &PRC
+         GBLC  &PRCTYPE(04),&PRCCODE(04),&PRCDATA(04)
+         LCLC  &C
+         LCLA  &PRCTEMP
+.SASLIST SASLIST MACRO,'DATA'
+&PRCTEMP SETA  &PRC
+.LOOP    AIF   ('&PRCDATA(&PRCTEMP)'     NE '').GEN
+&PRCTEMP SETA  &PRCTEMP-1
+         AIF   (&PRCTEMP GE 1).LOOP
+&PRCTEMP SETA  &PRC
+&C       SETC  '&PRCTYPE(&PRCTEMP)'(1,1)
+         MNOTE 0,'******* DATA: TYPE=&C OF CURRENT PROC DOES NOT ALLOW -
+               LOCAL DATA.'
+         AGO   .GEN
+.GEN     ANOP
+         AIF   (&PRCTEMP EQ &PRC).NOWARN
+&C       SETC  '&PRCTYPE(&PRC)'(1,1)
+         MNOTE 0,'******* DATA: TYPE=&C OF CURRENT PROC DOES NOT ALLOW -
+               LOCAL DATA. DATA SECTION OF STRUCTURE LEVEL &PRCTEMP RES-
+               UMED, INSTEAD.'
+.NOWARN  ANOP
+.*
+.*  OPEN LOCAL AREA IF REQUIRED
+.*
+.*_      MNOTE '***************'
+.*_RESUME LOCAL DATA DECLARATIONS FOR CURRENT PROCEDURE
+&PRCDATA(&PRCTEMP)     LOCTR ,
+.MEND    SASLIST MACEND
+         MEND

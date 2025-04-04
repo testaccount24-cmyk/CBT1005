@@ -1,0 +1,63 @@
+         MACRO                  V:01JUL73-GEIST    REV:15MAY74-GEIST    15MAY741
+         #MACRO#H &LIST,&OF,&MACRO,&NAMES                               #---0002
+.* INPUTPARM: LIST OF MACRO NAMES AND OPTIONS (=$NOGEN | $TEST | $ALL)  #---0003
+.* OPERATION: STORE MACRO NAMES ONTO GLOBAL-C VECTOR T FOR MACRO #TEST  #---0004
+.*            $ALL   : STORE ON TOP OF VECTOR T  = ALL EXAMPLES WANTED  #---0005
+.*            $NOGEN : GENERATED 'PRINT NOGEN' STMT IMMEDIATELY         #---0006
+.*            $TEST  : SETON &MACTEST =SAY MACRO TEST RUN (MHELP)       #---0007
+.*                                                                      #---0008
+         GBLC  &T(64),&SYSPARL(1)                                       #---0009
+         GBLA  &TI,&TJ                                                  #---0010
+         GBLB  &NOTANY,&MACTEST                                         15MAY742
+         LCLA  &I,&K,&N                                                 #---0012
+         ACTR  256                                                      #---0013
+&N       SETA  N'&SYSLIST                                               #---0014
+.*                                                                      #---0015
+.LOOP1   AIF   (&K GE &N).SYSPARM                                       15MAY743
+&K       SETA  &K+1                                                     #---0017
+         AIF   ('&SYSLIST(&K)'(1,1) EQ '$').OPTION                      #---0018
+&I       SETA  &I+1                                                     #---0019
+&T(&I)   SETC  '&SYSLIST(&K)'                                           #---0020
+         AGO   .LOOP1                                                   #---0021
+.OPTION  AIF   ('&SYSLIST(&K)' EQ '$NOGEN').$NOGEN                      #---0022
+         AIF   ('&SYSLIST(&K)' EQ '$ALL').$ALL                          #---0023
+         AIF   ('&SYSLIST(&K)' EQ '$TEST').$TEST                        #---0024
+         MNOTE 1,'#MACRO#H: UNKNOWN OPTION'                             #---0025
+         AGO   .LOOP1                                                   #---0026
+.$TEST   ANOP                                                           #---0027
+&MACTEST SETB  1                       SETON TEST FLAG (MHELP WANTED)   #---0028
+         AGO   .LOOP1                  NEXT PARM                        #---0029
+.$NOGEN  PRINT  NOGEN                            'PRINT NOGEN'          #---0030
+         AGO   .LOOP1                  NEXT PARM                        #---0031
+.$ALL    ANOP                                                           #---0032
+&T(1)    SETC  '$ALL'                  SAY ALL EXAMPLES WANTED          #---0033
+&I       SETA  1                       ONLY 1. ELEMENT IN T MATTERS     #---0034
+         AGO   .LOOP1                  NEXT PARM MAY BE OPTION          #---0035
+.*                                                                      15MAY744
+.SYSPARM AIF   ('&SYSPARM' EQ '').TERM                                  15MAY745
+         #SYSPARM ,                    SCAN SYSPARM, LOAD TO SYSPARL    15MAY746
+&N       SETA  N'&SYSPARL                                               15MAY747
+&K       SETA  0                                                        15MAY748
+.LOOP2   AIF   (&K GE &N).TERM                                          15MAY749
+&K       SETA  &K+1                                                     15MAY740
+         AIF   ('&SYSPARL(&K)' EQ '$NOGEN').$NOGEN2                     15MAY745
+         AIF   ('&SYSPARL(&K)' EQ '$ALL').$ALL2                         15MAY746
+         AIF   ('&SYSPARL(&K)' EQ '$TEST').$TEST2                       15MAY747
+&I       SETA  &I+1                                                     15MAY742
+&T(&I)   SETC  '&SYSPARL(&K)'                                           15MAY743
+         AGO   .LOOP2                                                   15MAY744
+.$TEST2  ANOP                                                           15MAY740
+&MACTEST SETB  1                       SETON TEST FLAG (MHELP WANTED)   15MAY741
+         AGO   .LOOP2                  NEXT PARM                        15MAY742
+.$NOGEN2 PRINT  NOGEN                            'PRINT NOGEN'          15MAY743
+         AGO   .LOOP2                  NEXT PARM                        15MAY744
+.$ALL2   ANOP                                                           15MAY745
+&T(1)    SETC  '$ALL'                  SAY ALL EXAMPLES WANTED          15MAY746
+&I       SETA  1                       ONLY 1. ELEMENT IN T MATTERS     15MAY747
+         AGO   .LOOP2                  NEXT PARM MAY BE OPTION          15MAY748
+.*                                                                      15MAY749
+.TERM    ANOP                                                           #---0037
+&TI      SETA  &I                      &TI = # OF MACRO NAMES SPECIFIED #---0038
+&TJ      SETA  &TI+1                   &TJ = NEXT FREE ELEMENT IN T     #---0039
+&NOTANY  SETB  (&TI EQ 0)              RESULT = (ANY NAMES ON T ?)      15MAY740
+         MEND                                                           #---0041

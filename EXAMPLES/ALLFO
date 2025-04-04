@@ -1,0 +1,1008 @@
+         TITLE 'ALLFO  -  PROGRAM DESCRIPTION'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- -**
+*                                                                    **
+* COPYRIGHT: COPYRIGHT BY GESELLSCHAFT FUER MATHEMATIK UND            *
+*                                      DATENVERARBEITUNG MBH BONN,    *
+*                         - RECHENZENTREN -                           *
+*                         SCHLOSS BIRLINGHOVEN                        *
+*                         5205 ST. AUGUSTIN 1                         *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+*                                                                    **
+*        A L L F O                                                   **
+*                                                                    **
+*                                                                    **
+* <CLASS>: TSO COMMAND                                               **
+*                                                                    **
+*                                                                    **
+* <FUNCTION/OPERATION>:                                              **
+*                                                                    **
+*        ALLOCATE A FILENAME TO A SYSOUT-DATASET,                    **
+*        PROVIDING EXTENDED FACILITIES SUCH AS                       **
+*        FORMNUMBER, COPIES, ETC.                                    **
+*                                                                    **
+*        ALLFO USES THE TSO-SERVICE-ROUTINES                         **
+*        IKJSCAN, IKJPARSE, PUTLINE, PUTGET AND TPUT                 **
+*        (TPUT ONLY IN SPECIAL ERRORCASES)                           **
+*        FOR COMMUNICATION                                           **
+*                                                                    **
+*        ALLOCATION IS DONE BY SVC 99 (DYNALLOC)                     **
+*                                                                    **
+*        DYNALLOC ERROR-MESSAGES ARE DESCRIBED IN DETAIL             **
+*        IN: OS/VS2 MVS SYSTEM PROGRAMMING LIBRARY:                  **
+*            JOB MANAGEMENT (GC28-0627)                              **
+*                                                                    **
+*                                                                    **
+* <ENTRY POINTS>:                                                    **
+*                                                                    **
+*        ALLFO                                                       **
+*                                                                    **
+*                                                                    **
+* <INPUT>:                                                            *
+*                                                                     *
+*        R1 --> CPPL                                                  *
+*                                                                     *
+*                                                                     *
+* <OUTPUT>:                                                           *
+*                                                                     *
+*        PROMPT-MESSAGES DUE TO INVALID PARAMETERS                    *
+*                                                                     *
+*                                                                     *
+* <SYNTAX>:                                                          **
+*                                                                    **
+*        ALLFO <FILE(FILENAME)> | <DDNAME(FILENAME)>                 **
+*              <SYSOUT(CLASS)>                                       **
+*              <PROGRAM(PGM)>                                        **
+*              <FORMS(FORM)>                                         **
+*              <USING(DDNAME)>                                       **
+*              <HOLD> | <NOHOLD>                                     **
+*              <DEST(REMOTE)>                                        **
+*              <FREE(FREE | CLOSE)>                                  **
+*              <COPIES(COPYNO)>                                      **
+*                                                                    **
+*                                                                    **
+* <DEFAULTS>:                                                        **
+*                                                                    **
+*        FILE(SYSPRINT)                                              **
+*        SYSOUT(A)                                                   **
+*        NOHOLD                                                      **
+*        FREE(FREE)                                                  **
+*        COPIES(1)                                                   **
+*                                                                    **
+*                                                                    **
+* <NORMAL EXIT>:                                                      *
+*                                                                     *
+*        VIA BR 14   (MACRO PROC$)                                    *
+*                                                                     *
+*                                                                     *
+* <ERROR EXIT>:                                                       *
+*                                                                     *
+*        NONE                                                         *
+*                                                                     *
+*                                                                     *
+* <RETURN CODES>:                                                    **
+*                                                                    **
+*          0   ALLOCATION SUCCESSFUL                                 **
+*          4   ALLFO TERMINATED DUE TO DYNALLOC-ERROR                **
+*          8   ALLFO TERMINATED DUE TO IKJSCAN- OR IKJPARS-ERROR     **
+*         12   ALLFO TERMINATED DUE TO PUTLINE- OR PUTGET-ERROR      **
+*                                                                    **
+*                                                                    **
+* <EXTERNAL ROUTINES>:                                                *
+*                                                                     *
+*        PUTLINE / PUTGET SYSTEM-ROUTINES                             *
+*                                                                     *
+*                                                                     *
+* <TABLES/WORK AREAS>:                                                *
+*                                                                     *
+*        CVT     COMMUNICATION VECTOR TABLE                           *
+*        CPPL    COMMAND PROCESSOR PARAMETER LIST                     *
+*        IOPL    INPUT OUTPUT PARAMETER LIST                          *
+*        CSPL    COMMAND SCAN PARAMETER LIST                          *
+*        CSOA    COMMAND SCAN OUTPUT AREA                             *
+*                                                                     *
+*                                                                     *
+* <ATTRIBUTES>:                                                      **
+*                                                                    **
+*        REFRESHABLE                                                 **
+*        REENTRANT                                                   **
+*        REUSEABLE                                                   **
+*                                                                    **
+*                                                                    **
+* <RESTRICTIONS>:                                                    **
+*                                                                    **
+*        USER IS RESPONSIBLE FOR PROPER USE OF                       **
+*        FORM AND PROGRAM PARAMETERS                                 **
+*                                                                    **
+*                                                                    **
+* <AUTHORIZATION REQUIRED>:                                          **
+*                                                                    **
+*        NONE                                                        **
+*                                                                    **
+*                                                                    **
+* <RELATED PROGRAMS>:                                                **
+*                                                                    **
+*        FREE TSO-COMMAND                                            **
+*        ALLOC TSO-COMMAND                                           **
+*        ATTRIB TSO-COMMAND                                          **
+*                                                                    **
+*                                                                    **
+* <STORAGE>:                                                          *
+*                                                                     *
+*        PROGRAM:  X'17D0'                                            *
+*        DYNAMIC:  UNKNOWN                                            *
+*        BUFFER :  0                                                  *
+*                                                                     *
+*                                                                     *
+* <LOAD MODULE CREATION>:                                             *
+*                                                                     *
+*      SOURCE LANGUAGE      : H-ASSEMBLER                             *
+*      COMPILE LIBRARIES    : GMD.STRUCT.MACROS                       *
+*                           : SYS1.MACLIB                             *
+*                           : SYS1.AMODGEN                            *
+*      COMPILE PARAMETERS   : RENT                                    *
+*      LINK-EDIT LIBRARIES  : NONE                                    *
+*      LINK-EDIT PARAMETERS : REFR,RENT,REUS                          *
+*      LINK-EDIT INPUT      : OBJECT-MODULE ONLY                      *
+*      DESTINATION LIBRARIES: GMD.CMDLIB                              *
+*                                                                     *
+*      GENERATING DECK      : GMD.JCL(ALLFO)                          *
+*                                                                     *
+*                                                                     *
+* <STATUS>:                                                           *
+*          CHANGE LEVEL - 1.0               07JUN79                   *
+*          CHANGE LEVEL - 1.1               30JUN79  INGENBLEEK       *
+*                                           LIMIT-OPERAND DELETED     *
+*          CHANGE LEVEL - 1.2               30OCT79  INGENBLEEK       *
+*                                           MAX COPIES = 255          *
+*          CHANGE LEVEL - 1.3               12NOV81  INGENBLEEK       *
+*                                           NUMRIC SYSOUT CLASS       *
+*          CHANGE LEVEL - 1.4               22JAN85  SYLVESTER        *
+*                                           PROGRAM NAME TO SYSOUT    *
+*                                           USER IF NOT INTRDR        *
+* <NOTES>:                                                           **
+*                                                                    **
+*        IF ALLFO IS USED IN CLIST-PROCEDURES, VERIFY                **
+*        THAT EITHER CONTROL PROMPT OR CONTROL MSG IS                **
+*        IN EFFECT                                                   **
+*                                                                    **
+*                                                                    **
+* <AUTHOR>: B. INGENBLEEK     GMD-RZ.BN                              **
+*                                                                    **
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- -**
+         TITLE 'MACROS TO CALL PUTLINE'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        MACROS TO CALL PUTLINE                                       *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE 3
+         MACRO
+&LABEL   PUT1 &FIRSTLEV,&LFIRST
+&LABEL   LET FLNO,=,1                   SINGLE-LEVEL MSG.
+&LABEL   LET FLMSG,->,MSG1LEN           NO EDITING USED
+         LET MSG1LEN,=,&LFIRST+4
+         LET MSG1OFF,=,0
+         LET (MSG1TXT,&LFIRST),=,&FIRSTLEV
+         PUTLINE PARM=PUTLINE,OUTPUT=FLNO,MF=(E,IOPL)
+         MEND
+         SPACE 3
+         MACRO
+&LABEL   PUT2 &FIRSTLEV,&SECLEV,&LFIRST,&LSEC
+&LABEL   LET FLCHAIN,->,SLCHAIN         MULTI-LEVEL MSG.
+         LET FLNO,=,1                   NO EDITING USED
+         LET FLMSG,->,MSG1LEN
+         LET SLCHAIN,=,0
+         LET SLNO,=,1
+         LET SLMSG,->,MSG2LEN
+         LET MSG1LEN,=,&LFIRST+4
+         LET MSG1OFF,=,0
+         LET (MSG1TXT,&LFIRST),=,&FIRSTLEV
+         LET MSG2LEN,=,&LSEC+4
+         LET MSG2OFF,=,0
+         LET (MSG2TXT,&LSEC),=,&SECLEV
+         PUTLINE PARM=PUTLINE,OUTPUT=(FLCHAIN,,MULTLVL),MF=(E,IOPL)
+         MEND
+         EJECT
+         MACRO
+&LABEL   PUT3 &FIRSTLEV,&SECLEV,&SECLEV2,&LFIRST,&LSEC,&LSEC2
+&LABEL   LET FLCHAIN,->,SLCHAIN         MULTI-LEVEL MSG.
+         LET FLNO,=,1                   EDITING USED
+         LET FLMSG,->,MSG1LEN
+         LET SLCHAIN,=,0
+         LET SLNO,=,4
+         LET MSG1LEN,=,&LFIRST+4
+         LET MSG1OFF,=,0
+         LET (MSG1TXT,&LFIRST),=,&FIRSTLEV
+         LET SLMSG,->,MSG2LEN
+         LET SLMSG2,->,MSG22LEN
+         LET SLMSG3,->,MSG23LEN
+         LET SLMSG4,->,MSG24LEN
+         LET MSG2LEN,=,&LSEC+4
+         LET MSG22LEN,=,&LSEC2+4
+         LET MSG23LEN,=,8
+         LET MSG24LEN,=,8
+         LET MSG2OFF,=,0
+         LET MSG22OFF,=,17
+         LET MSG23OFF,=,32
+         LET MSG24OFF,=,50
+         LET (MSG2TXT,&LSEC),=,&SECLEV
+         LET (MSG22TXT,&LSEC2),=,&SECLEV2
+         PUTLINE PARM=PUTLINE,OUTPUT=(FLCHAIN,,MULTLVL),MF=(E,IOPL)
+         MEND
+         SPACE 3
+         MACRO
+&LABEL   HEX &TO,&FROM
+&LABEL   LET R2,=,0                     TRANSL. HEX --> EBCDIC
+         LET R3,=,&FROM:C
+         SLDL R2,28
+         SRL R3,28
+         LET &TO:C,=,R2
+         LET &TO+1:C,=,R3
+         LET R2,=,0
+         LET R3,=,&FROM+1:C
+         SLDL R2,28
+         SRL R3,28
+         LET &TO+2:C,=,R2
+         LET &TO+3:C,=,R3
+         TR &TO.(4),TRTAB
+         MEND
+         TITLE 'PROGRAM START'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        PROGRAM START                                                *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE 3
+ALLFO    $PROC BASE=(R8,R9),TYPE=(S,CSECT)
+         SPACE 3
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        DSECTS                                                       *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         CVT DSECT=YES,LIST=NO          COMM. VECTOR TABLE
+         IKJCPPL ,                      COMMAND PROCESSOR PARM. LIST
+         IKJPPL ,                       PARSE PARM. LIST
+         IKJIOPL ,                      IO PARM. LIST
+         IKJCSPL ,                      COMMAND SCAN PARM. LIST
+         IKJCSOA ,                      COMMAND SCAN OUTPUT AREA
+         TITLE 'COMMAND SYNTAX'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        COMMAND SYNTAX DESCRIPTION                                   *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE 3
+         CODE
+         SPACE
+         PRINT GEN,NOMSOURCE
+PCL      IKJPARM
+FILE$$   IKJKEYWD
+         IKJNAME 'FILE',SUBFLD=FILE$,ALIAS='DDNAME'
+SYSOUT$$ IKJKEYWD
+         IKJNAME 'SYSOUT',SUBFLD=SYSOUT$
+PROGM$$  IKJKEYWD
+         IKJNAME 'PROGRAM',SUBFLD=PROGM$
+FORMS$$  IKJKEYWD
+         IKJNAME 'FORMS',SUBFLD=FORMS$
+HOLD     IKJKEYWD DEFAULT='NOHOLD'
+         IKJNAME 'HOLD'
+         IKJNAME 'NOHOLD'
+DEST$$   IKJKEYWD
+         IKJNAME 'DEST',SUBFLD=DEST$
+USING$$  IKJKEYWD
+         IKJNAME 'USING',SUBFLD=USING$
+FREE$$   IKJKEYWD
+         IKJNAME 'FREE',SUBFLD=FREE$
+*IMIT$$  IKJKEYWD                       CL1.1 INGENBLEEK
+*        IKJNAME 'LIMIT',SUBFLD=LIMIT$  CL1.1 INGENBLEEK
+COPIES$$ IKJKEYWD
+         IKJNAME 'COPIES',SUBFLD=COPIES$
+FILE$    IKJSUBF
+FILE     IKJIDENT 'FILE NAME',MAXLNTH=8,FIRST=ALPHA,                   *
+               OTHER=ALPHANUM,PROMPT='FILE NAME'
+SYSOUT$  IKJSUBF
+*YSOUT   IKJIDENT 'SYSOUT CLASS',MAXLNTH=1,FIRST=ALPHA,    CL 1.3
+SYSOUT   IKJIDENT 'SYSOUT CLASS',MAXLNTH=1,FIRST=ALPHANUM, CL 1.3      *
+               DEFAULT='A'
+PROGM$   IKJSUBF
+PGM      IKJIDENT 'PROGRAM NAME',MAXLNTH=8,FIRST=ALPHA,                *
+               OTHER=ALPHANUM
+FORMS$   IKJSUBF
+FORM     IKJIDENT 'FORM',MAXLNTH=4,FIRST=ALPHANUM,                     *
+               OTHER=ALPHANUM
+DEST$    IKJSUBF
+DEST     IKJIDENT 'DESTINATION',MAXLNTH=8,FIRST=ALPHA,                 *
+               OTHER=ALPHANUM,PROMPT='DESTINATION'
+USING$   IKJSUBF
+USING    IKJIDENT 'ATTRIBUTE NAME',MAXLNTH=8,FIRST=ALPHA,              *
+               OTHER=ALPHANUM,PROMPT='ATTRIBUTE NAME'
+FREE$    IKJSUBF
+FREE     IKJKEYWD DEFAULT='FREE'
+         IKJNAME 'FREE'
+         IKJNAME 'CLOSE'
+LIMIT$   IKJSUBF
+LIMIT    IKJIDENT 'LIMIT',INTEG,PROMPT='LIMIT'
+COPIES$  IKJSUBF
+COPIES   IKJIDENT 'COPIES',INTEG,PROMPT='COPIES'
+         IKJENDP
+         SPACE
+         TITLE 'DATA AREA'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        DATA AREA                                                    *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE 3
+         DATA
+         DS 0F
+FLCHAIN  DS A                           FIRST LEVEL MSG. CHAINING
+FLNO     DS F                           FIRST LEVEL NO. OF SEGMENTS
+FLMSG    DS A                           FIRST LEVEL PTR. OF SEGMENT 1
+FLMSG2   DS A                           FIRST LEVEL PTR. OF SEGMENT 2
+         SPACE
+SLCHAIN  DS A                           SEC. LEVEL MSG. CHAINING
+SLNO     DS F                           SEC. LEVEL NO. OF SEGMENTS
+SLMSG    DS A                           SEC. LEVEL PTR. TO SEGMENT 1
+SLMSG2   DS A                           SEC. LEVEL PTR. TO SEGMENT 2
+SLMSG3   DS A                           SEC. LEVEL PTR. TO SEGMENT 3
+SLMSG4   DS A                           SEC. LEVEL PTR. TO SEGMENT 4
+         SPACE
+MSG1LEN  DS H                           LENGTH LEVEL 1 SEGMENT 1
+MSG1OFF  DS H                           OFFSET LEVEL 1 SEGMENT 1
+MSG1TXT  DS CL80                        TEXT LEVEL 1 SEGMENT 1
+         SPACE
+MSG12LEN DS H                           LENGTH LEVEL 1 SEGMENT 2
+MSG12OFF DS H                           OFFSET LEVEL 1 SEGMENT 2
+MSG12TXT DS CL80                        TEXT LEVEL 1 SEGMENT 2
+         SPACE
+MSG2LEN  DS H                           LENGTH LEVEL 2 SEGMENT 1
+MSG2OFF  DS H                           OFFSET LEVEL 2 SEGMENT 1
+MSG2TXT  DS CL80                        TEXT LEVEL 2 SEGMENT 1
+         SPACE
+MSG22LEN DS H                           LENGTH LEVEL 2 SEGMENT 2
+MSG22OFF DS H                           OFFSET LEVEL 2 SEGMENT 2
+MSG22TXT DS CL80                        TEXT LEVEL 2 SEGMENT 2
+         SPACE
+MSG23LEN DS H                           LENGTH LEVEL 2 SEGMENT 3
+MSG23OFF DS H                           OFFSET LEVEL 2 SEGMENT 3
+MSG23TXT DS CL80                        TEXT LEVEL 2 SEGMENT 3
+         SPACE
+MSG24LEN DS H                           LENGTH LEVEL 2 SEGMENT 4
+MSG24OFF DS H                           OFFSET LEVEL 2 SEGMENT 4
+MSG24TXT DS CL80                        TEXT LEVEL 2 SEGMENT 4
+         SPACE
+PACKED   DS D                           TEMPORARIES
+FULLW    DS F
+ZONED    DS CL3
+TPUTL    DS CL80                        TEXT FOR TPUT-MESSAGES
+         EJECT
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        SVC99 PARAMETER LIST                                         *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE 3
+S99RBPTR DS F                           --> S99RB
+         SPACE
+S99RB    DS C                           LENGTH
+S99VERB  DS C                           VERB CODE
+S99FLG1  DS H                           FLAGS 1
+S99ERR   DS H                           ERROR CODE
+S99INF   DS H                           INFO CODE
+S99TUPLP DS F                           --> S99TUPL
+         DS F                           RESERVED
+S99FLG2  DS F                           FLAGS 2
+         SPACE
+*99TUPL  DS 11F                         --> TEXTUNITS
+S99TUPL  DS 10F                         CL1.1 INGENBLEEK
+         SPACE
+         DS 0F
+UNITDD   DS H                           TEXTUNIT DDNAME
+         DS H
+DDLEN    DS H
+DDNAM    DS CL8
+         SPACE
+         DS 0F
+UNITPE   DS H                           TEXTUNIT PERMAN. ALLOCATION
+         DS H
+         SPACE
+         DS 0F
+UNITSY   DS H                           TEXTUNIT SYSOUT
+         DS H
+SYLEN    DS H
+SYNAM    DS C
+         SPACE
+         DS 0F
+UNITPG   DS H                           TEXTUNIT PROGRAM
+         DS H
+PGLEN    DS H
+PGNAM    DS CL8
+         SPACE
+         DS 0F
+UNITFO   DS H                           TEXTUNIT FORM-NUMBER
+         DS H
+FOLEN    DS H
+FONAM    DS CL8
+         SPACE
+         DS 0F
+*NITLI   DS H                           CL1.1 INGENBLEEK
+*        DS H                           CL1.1 INGENBLEEK
+*        DS H                           CL1.1 INGENBLEEK
+*INAM    DS CL3                         CL1.1 INGENBLEEK
+         SPACE
+         DS 0F
+UNITCL   DS H                           TEXTUNIT CLOSE
+         DS H
+         SPACE
+         DS 0F
+UNITCO   DS H                           TEXTUNIT COPIES
+         DS H
+         DS H
+CONAM    DS C
+         SPACE
+         DS 0F
+UNITUS   DS H                           TEXTUNIT USING
+         DS H
+USLEN    DS H
+USNAM    DS CL8
+         SPACE
+         DS 0F
+UNITDE   DS H                           TEXTUNIT DESTINATION
+         DS H
+DELEN    DS H
+DENAM    DS CL8
+         SPACE
+         DS 0F
+UNITHO   DS H                           TEXTUNIT HOLD
+         DS H
+         SPACE
+S99LEN   EQUN *-S99RBPTR
+         SPACE
+         DS 0F
+FREERBP  DS A                           --> FREERB
+FREERB   DS F                           LENGTH, VERB CODE, FLAGS 1
+FREEERR  DS H                           ERROR CODE
+FREEINF  DS H                           INFO CODE
+FREETUP  DS A                           --> FREETXP
+         DS F                           RESERVED
+         DS F                           FLAGS 2
+FREETXP  DS A                           --> FREETXT
+FREETXP2 DS A                           --> FREEUA
+FREETXT  DS F                           TEXT UNIT DDNAME
+FREELEN  DS H
+FREENAM  DS CL8
+FREEUA   DS F                           TEXT UNIT USE ALLOCATION
+         SPACE
+PUTLINE  PUTLINE MF=L                   PUTLINE LIST FORM
+PUTGET   PUTGET MF=L                    PUTGET LIST FORM
+         TITLE 'CONSTANTS AREA'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        CONSTANTS AREA                                               *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE 3
+         CONST
+         DS 0F
+S99RBI   DC X'14011000'                 INITIAL S99RB
+         DC F'0'
+         DC A(0)
+         DC F'0'
+         DC F'0'
+         SPACE
+         DS 0F
+UNITDDI  DC X'00010001'                 INITIAL DDNAME
+         DC H'8'
+         DC C'SYSPRINT'
+         SPACE
+         DS 0F
+UNITPEI  DC X'00520000'                 INITIAL PERMAN. ALLOCATION
+         SPACE
+         DS 0F
+UNITSYI  DC X'00180001'                 INITIAL SYSOUT
+         DC H'1'
+         DC C'A'
+         SPACE
+UNITSUI  DC X'0063'
+         DS 0F
+UNITPGI  DC X'00190001'                 INITIAL PROGRAM
+         DC H'0'
+         DC CL8' '
+         SPACE
+         DS 0F
+         DS 0F
+UNITFOI  DC X'001A0001'                 INITIAL FORMS-NUMBER
+         DC H'0'
+         DC CL8' '
+         SPACE
+         DS 0F
+*NITLII  DC X'001B0001'                 CL1.1 INGENBLEEK
+*        DC H'3'                        CL1.1 INGENBLEEK
+*        DC CL3' '                      CL1.1 INGENBLEEK
+         SPACE
+         DS 0F
+UNITCLI  DC X'001C0000'                 INITIAL CLOSE
+         SPACE
+         DS 0F
+UNITCOI  DC X'001D0001'                 INITIAL COPIES
+         DC H'1'
+         DC X'01'
+         SPACE
+         DS 0F
+UNITUSI  DC X'002D0001'                 INITIAL USING
+         DC H'0'
+         DC CL8' '
+         SPACE
+         DS 0F
+UNITDEI  DC X'00580001'                 INITIAL DESTINATION
+         DC H'0'
+         DC CL8' '
+         SPACE
+         DS 0F
+UNITHOI  DC X'00590000'                 INITIAL HOLD
+         SPACE
+         DS 0F
+FREERBI  DC X'14020000'                 INITIAL FREERB
+         DC X'00000000'
+FREEUAI  DC X'00070000'                 INITIAL USE ALLOCATION
+         SPACE 3
+PCLA     DC A(PCL)                      --> PCL
+         DS 0F
+X0410    DC X'0410'                     ERROR CODE OF ALLOCATED DDNAME
+         DS 0F
+X80      DC X'80'
+TRTAB    DC C'0123456789ABCDEF'         TRANSLATION TABLE
+ECB      DC F'0'                        EVENT CONTROL WORD
+MVC      MVC 0(1,R5),0(R2)              MVC-PROTOTYPE
+         SPACE
+PUTLINEI PUTLINE MF=L                   PUTLINE INITIALISATION
+PUTGETI  PUTGET MF=L                    PUTGET INITIALISATION
+         EJECT
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        MESSAGES                                                     *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE 3
+MSCAN001 DC C' ALLFO TERMINATED WITH RC = 8 +'
+MSCAN002 DC C' IKJSCAN - INVALID PARAMETERS'
+MPARS001 DC C' IKJPARS - PARAMETERS NOT COMPLETE AND NO PROMPTING'
+MPARS002 DC C' IKJPARS - PARSE INTERRUPTED'
+MPARS003 DC C' IKJPARS - PARAMETER BLOCK INVALID'
+MPARS004 DC C' IKJPARS - GETMAIN FAILED'
+MPARS005 DC C' IKJPARS - VALIDITY CHECKING ROUTINE CAUSED TERMINATION'
+MPARS006 DC C' IKJPARS - CONFLICTING PARAMETERS'
+MPARS007 DC C' IKJPARS - TERMINAL DISCONNECTED'
+*INFO001 DC C' LIMIT SET TO MINIMUM 1'      CL1.1 INGENBLEEK
+*INFO002 DC C' LIMIT SET TO MAXIMUM 1000'   CL1.1 INGENBLEEK
+MINFO003 DC C' COPIES SET TO MINIMUM 1'
+*INFO004 DC C' COPIES SET TO MAXIMUM 16'    CL1.2 INGENBLEEK
+MINFO004 DC C' COPIES SET TO MAXIMUM 255'   CL1.2 INGENBLEEK
+MDYNA001 DC C' ALLFO TERMINATED WITH RC = 4 +'
+MDYNA002 DC C' DYNALLOC - RC = / INFOCODE = X'''' / ERRORCODE = X'''''
+MDYNA003 DC C'4 '
+MDYNA004 DC C'8 '
+MDYNA005 DC C'12 '
+MDYNA006 DC C' FILE  NOT ALLOCATED, FILE IN USE'
+MDYNA007 DC C' ENTER ''FREE'' OR ''END'' -'
+MPUTL001 DC C'PUTLINE - RC = '
+LPUTL001 EQU *-MPUTL001+2
+MPTGT001 DC C'PUTGET - RC = '
+LPTGT001 EQU *-MPTGT001+2
+         TITLE 'INITIALISATION'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        INITIALISATION                                               *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE 3
+         CODE
+         SPACE
+         LET R2,=,CVTPTR                ADDRESS CVT USING R11
+         #USE R11,CVT,0(R2)
+         #USE R10,CPPL,R1               ADDRESS CPPL USING R10
+         CONST ,
+WARNING  DC    C'ALLFO will soon no longer be supported, please use ALLx
+               OCATE instead.'
+LWARN    EQU *-WARNING
+         CODE ,
+         LA   R1,WARNING
+         LA   R0,LWARN
+         TPUT (1),(0)
+         GETMAIN R,LV=16,SP=1           GET SPACE FOR IOPL AND
+         #USE R7,IOPL,R1                ADDRESS IT USING R7
+         SPACE
+         LET S99RBPTR,->,S99RB          INITIALIZE SVC 99 PARM. BLOCK
+         OC S99RBPTR(1),X80             FOR ALLOCATING
+         LET (S99RB,20),=,S99RBI
+         LET S99TUPLP,->,S99TUPL        TEXT-PTRS. --> TEXT-UNITS
+         LET S99TUPL,->,UNITDD
+         LET S99TUPL+4,->,UNITPE
+         LET S99TUPL+8,->,UNITSY
+         LET (UNITDD,14),=,UNITDDI      INITIALIZE TEXT-UNITS
+         LET (UNITPE,4),=,UNITPEI
+         LET (UNITSY,7),=,UNITSYI
+         LET (UNITPG,14),=,UNITPGI
+         LET (UNITFO,14),=,UNITFOI
+*        LET (UNITLI,9),=,UNITLII       CL1.1 INGENBLEEK
+         LET (UNITCL,8),=,UNITCLI
+         LET (UNITCO,7),=,UNITCOI
+         LET (UNITUS,14),=,UNITUSI
+         LET (UNITDE,14),=,UNITDEI
+         LET (UNITHO,8),=,UNITHOI
+         SPACE
+         LET FREERBP,->,FREERB          INITIALIZE SVC 99 PARM. BLOCK
+         OC FREERBP(1),X80              FOR FREEING
+         LET (FREERB,8),=,FREERBI
+         LET FREETUP,->,FREETXP         TEXT-PTRS. --> TEXT-UNITS
+         LET (FREERB+12,8),=,S99RBI+12
+         LET FREETXP,->,FREETXT
+         LET FREETXP2,->,FREEUA
+         OC FREETXP2(1),X80
+         LET (FREETXT,4),=,UNITDDI      INITIALIZE TEXT-UNITS
+         LET (FREEUA,4),=,FREEUAI
+         SPACE
+         LET IOPLUPT,=,CPPLUPT          INITIALIZE IOPL
+         LET IOPLECT,=,CPPLECT
+         LET IOPLECB,=,ECB
+         SPACE
+         LET (PUTLINE,12),=,PUTLINEI    INITIALIZE PUTLINE
+         LET (PUTGET,16),=,PUTGETI      INITIALIZE PUTGET
+         TITLE 'COMMAND PARSE'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        COMMAND PARSE                                                *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE 3
+ANS      EQUN PPL+28
+         GETMAIN R,LV=32,SP=1           GET SPACE FOR PPL AND
+         #USE R12,PPL,R1                ADDRESS IT USING R12
+         SPACE
+         LET PPLUPT:F,=,CPPLUPT         BUILD PPL
+         LET PPLECT:F,=,CPPLECT
+         LET PPLECB:F,=,ECB
+         LET PPLPCL,=,PCLA
+         LET PPLANS,->,ANS
+         LET PPLCBUF:F,=,CPPLCBUF
+         LET PPLUWA:F,=,0
+         SPACE
+         CALLTSSR EP=IKJPARS,MF=(E,PPL) CALL IKLPARSE SERVICE ROUTINE
+         SPACE
+         LET R12,=,ANS:F                ADDRESS ANSWER AREA OF
+         #DROP R12                      IKJPARSE USING R12
+         #USE R12,IKJPARMD
+         SPACE
+         IF R15,¬=,0,GOTO,EPARS001      CHECK RETURNCODE OF IKJPARSE
+         TITLE 'BUILD SVC99-PARAMETER LIST'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        BUILD SVC99-PARAMETER LIST                                   *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE 3
+         LET R6,->,S99TUPL+12           R6 --> 3. TEXT-UNIT-PTR.
+         SPACE
+         LET R2,=,FILE:F
+         $IF R2,¬=,0,THEN               IF FILE OR DDNAME SPECIFIED,
+            LET R3,=,FILE+4:H           THEN GET FILENAME-LENGTH
+            LET DDLEN,=,R3              STORE FILENAME-LENGTH
+            LET R3,-,1                  -1 FOR EX MVC
+            LET R5,->,DDNAM             R5 --> TEXT-UNIT
+            EX R3,MVC                   MVC 0(0,R5),0(R2)
+         IF$
+         SPACE
+         LET R2,=,SYSOUT:F
+         $IF R2,¬=,0,THEN               IF SYSOUT SPECIFIED, THEN
+            LET (SYNAM,1),=,0(R2)       STORE CLASSNAME IN TEXT-UNIT
+         IF$
+         SPACE
+         LET R2,=,FORM:F
+         $IF R2,¬=,0,THEN               IF FORM SPECIFIED, THEN
+            LET R3,=,FORM+4:H           GET LENGTH AND
+            LET FOLEN,=,R3              STORE IT
+            LET R3,-,1
+            LET R5,->,FONAM
+            EX R3,MVC                   MVC 0(0,R5),0(R2)
+            LET 0(R6),->,UNITFO         UPDATE TEXT-UNIT-PTR-LIST
+            LET R6,+,4                  ADVANCE PTR.
+         IF$
+         SPACE
+*        LET R2,=,LIMIT:F               CL1.1 INGENBLEEK
+*        $IF R2,¬=,0,THEN               CL1.1 INGENBLEEK
+*           LET R2,=,0(R2)              CL1.1 INGENBLEEK
+*           $IF R2,<,1,THEN             CL1.1 INGENBLEEK
+*              PUT1 MINFO001,L'MINFO001 CL1.1 INGENBLEEK
+*              IF R15,¬=,0,GOTO,EPUTL001 CL1.1 INGENBLEEK
+*              LET R2,=,1               CL1.1 INGENBLEEK
+*           IF$                         CL1.1 INGENBLEEK
+*           $IF R2,>,1000,THEN          CL1.1 INGENBLEEK
+*              PUT1 MINFO002,L'MINFO002 CL1.1 INGENBLEEK
+*              IF R15,¬=,0,GOTO,EPUTL001 CL1.1 INGENBLEEK
+*              LET R2,=,1000            CL1.1 INGENBLEEK
+*           IF$                         CL1.1 INGENBLEEK
+*        ELSE                           CL1.1 INGENBLEEK
+*           LET R2,=,2                  CL1.1 INGENBLEEK
+*        IF$                            CL1.1 INGENBLEEK
+*        LET R2,*,256,*,1000            CL1.1 INGENBLEEK
+*        LET FULLW,=,R2                 CL1.1 INGENBLEEK
+*        LET (LINAM,3),=,FULLW          CL1.1 INGENBLEEK
+*        LET 0(R6),->,UNITLI            CL1.1 INGENBLEEK
+*        LET R6,+,4                     CL1.1 INGENBLEEK
+         SPACE
+         LET R2,=,FREE:H
+         $IF R2,=,2,THEN                IF FREE(CLOSE) SPECIFIED, THEN
+            LET 0(R6),->,UNITCL         UPDATE TEXT-UNIT-PTR-LIST
+            LET R6,+,4                  ADVANCE PTR.
+         IF$
+         SPACE
+         LET R2,=,COPIES:F
+         $IF R2,¬=,0,THEN               IF COPIES SPECIFIED, THEN
+            LET R2,=,0(R2)              GET NO. OF COPIES
+            $IF R2,<,1,THEN             IF LESS THAN 1, THEN
+               PUT1 MINFO003,L'MINFO003 PUT MSG AND
+               IF R15,¬=,0,GOTO,EPUTL001
+               LET R2,=,1               SET COPIES TO MIN=1
+            IF$
+*           $IF R2,>,16,THEN            CL1.2 INGENBLEEK
+            $IF R2,>,255,THEN           IF NO. OF COPIES > 255, THEN
+               PUT1 MINFO004,L'MINFO004 PUT MAS AND
+               IF R15,¬=,0,GOTO,EPUTL001
+*              LET R2,=,16              CL1.2 INGENBLEEK
+               LET R2,=,255             SET COPIES TO MAX=255
+            IF$
+            LET CONAM:C,=,R2            STORE COPIES INTO TEXT-UNIT
+            LET 0(R6),->,UNITCO         UPDATE TEXT-UNIT-PTR-LIST
+            LET R6,+,4                  ADVANCE PTR.
+         IF$
+         SPACE
+         LET R2,=,USING:F
+         $IF R2,¬=,0,THEN               IF USING SPECIFIED, THEN
+            LET R3,=,USING+4:H          GET DDNAME-LENGTH
+            LET USLEN,=,R3              AND STORE IT
+            LET R3,-,1
+            LET R5,->,USNAM
+            EX R3,MVC                   MVC 0(0,R5),0(R2)
+            LET 0(R6),->,UNITUS         UPDATE TEXT-UNIT-PTR-LIST
+            LET R6,+,4                  ADVANCE PTR.
+         IF$
+         SPACE
+         LET R2,=,DEST:F
+         $IF R2,¬=,0,THEN               IF DESTINATION SPECIFIED, THEN
+            LET R3,=,DEST+4:H           GET LENGTH OF DEST
+            LET DELEN,=,R3              AND STORE IT
+            LET R3,-,1
+            LET R5,->,DENAM
+            EX R3,MVC                   MVC 0(0,R5),0(R2)
+            LET 0(R6),->,UNITDE         UPDATE TEXT-UNIT-PTR-LIST
+            LET R6,+,4                  ADVANCE PTR.
+         IF$
+         SPACE
+         LET R2,=,PGM:F
+         $IF R2,¬=,0,THEN               IF PROGRAM SPECIFIED, THEN
+            LET R3,=,PGM+4:H            GET PROGRAM-NAME-LENGTH AND
+            LET PGLEN,=,R3              STORE IT
+            LET R3,-,1
+            LET R5,->,PGNAM
+            EX R3,MVC                   MVC 0(0,R5),0(R2)
+            LET 0(R6),->,UNITPG         UPDATE TEXT-UNIT-PTR-LIST
+            LET R6,+,4                  ADVANCE PTR.
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+1.4
+*        IF WE HAVE A DESTINATION AND PROGRAM NAME ¬= INTRDR       +1.4
+*        THE PROGRAM NAME KEY WILL BE REPLACED BY A SYSOUT USER    +1.4
+*        KEY.                                                      +1.4
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+1.4
+            $IF (PGNAM,L'PGNAM),¬=,=CL8'INTRDR'                    +1.4
+            ANDTHEN (PGNAM,L'PGNAM),¬=,=CL8' '                     +1.4
+            ANDTHEN (DENAM,L'DENAM),¬=,=CL8' '                     +1.4
+            THEN ,                                                 +1.4
+               LET (UNITPG,2),:=,UNITSUI                           +1.4
+            IF$ ,                                                  +1.4
+         IF$
+         SPACE
+         LET R2,=,HOLD:H
+         $IF R2,=,1,THEN                IF HOLD SPECIFIED, THEN
+            LET 0(R6),->,UNITHO         UPDATE TEXT-UNIT-PTR-LIST
+            LET R6,+,4                  ADVANCE PTR.
+         IF$
+         SPACE
+         LET R6,-,4                     R6 --> LAST TEXT-UNIT-PTR
+         LET 0(R6):C,=,X'80'            MARK THIS PTR. AS THE LAST ONE
+         TITLE 'RELEASE IKJPARS-SPACE AND SVC99'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        RELEASE IKJPARS-SPACE AND SVC99                              *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE 3
+         LET R1,->,0(R12)               R1 --> DSECT IKJPARMD
+         IKJRLSA (R1)                   RELEASE IKJPARM-SPACE
+         SPACE 3
+         LET R1,->,S99RBPTR             R1 --> SVC99 PARAMETER LIST
+         SVC 99                         ISSUE DYNALLOC SVC
+         SPACE
+         IF R15,=,0,GOTO,RETURN         ON SUCCESS, RETURN
+         $IF R15,=,4,AND,S99ERR,=,X0410,THEN  IF FILE IN USE, THEN
+            GOTO EDYNA001               TRY FREEING
+         ELSE                           ON OTHER ERRORS
+            GOTO EDYNA002               GOTO ERROR-ROUTINE
+         IF$
+         TITLE 'ERROR-HANDLING'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        ERRORS OF IKJPARSE                                           *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE 3
+EPARS001 $CASE ,                        PUT MSG WITH RESPECT TO RC
+         SPACE
+            ON R15,=,4,DO
+               PUT2 MSCAN001,MPARS001,L'MSCAN001,L'MPARS001
+               IF R15,¬=,0,GOTO,EPUTL001
+         SPACE
+            ON R15,=,8,DO
+               PUT2 MSCAN001,MPARS002,L'MSCAN001,L'MPARS002
+               IF R15,¬=,0,GOTO,EPUTL001
+         SPACE
+            ON R15,=,12,DO
+               PUT2 MSCAN001,MPARS003,L'MSCAN001,L'MPARS003
+               IF R15,¬=,0,GOTO,EPUTL001
+         SPACE
+            ON R15,=,16,DO
+               PUT2 MSCAN001,MPARS004,L'MSCAN001,L'MPARS004
+               IF R15,¬=,0,GOTO,EPUTL001
+         SPACE
+            ON R15,=,20,DO
+               PUT2 MSCAN001,MPARS005,L'MSCAN001,L'MPARS005
+               IF R15,¬=,0,GOTO,EPUTL001
+         SPACE
+            ON R15,=,24,DO
+               PUT2 MSCAN001,MPARS006,L'MSCAN001,L'MPARS006
+               IF R15,¬=,0,GOTO,EPUTL001
+         SPACE
+            ON R15,=,28,DO
+               PUT2 MSCAN001,MPARS007,L'MSCAN001,L'MPARS007
+               IF R15,¬=,0,GOTO,EPUTL001
+         SPACE
+         CASE$
+         SPACE
+         LET R15,=,8                    SET RETURNCODE
+         GOTO RETURN
+         EJECT
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        ERRORS OF DYNALLOC                                           *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE 3
+EDYNA001 LET FLNO,=,2                   BUILD PUTGET PARAMETER-
+         LET FLMSG,->,MSG1LEN           BLOCK FOR SINGLE-LEVEL
+         LET FLMSG2,->,MSG12LEN         INFORMATION INCLUDING
+         LET MSG1LEN,=,L'MDYNA006+4     TEXT-EDITING:
+         LET MSG1OFF,=,0                'FILE XXX NOT ALLOCATED, ...'
+         LET (MSG1TXT,L'MDYNA006),=,MDYNA006
+         LET MSG12LEN:H,=,DDLEN,+,4
+         LET MSG12OFF,=,6
+         LET R3,=,DDLEN,-,1
+         LET R5,->,MSG12TXT
+         LET R2,->,DDNAM
+         EX R3,MVC
+         PUTLINE PARM=PUTLINE,OUTPUT=FLNO,MF=(E,IOPL)  WRITE MSG TO
+         IF R15,¬=,0,GOTO,EPUTL001      TERMINAL
+         SPACE
+         LET FLNO,=,1                   BUILD PUTGET PARAMETERBLOCK:
+         LET MSG1LEN,=,L'MDYNA007+4     'ENTER FREE OR END'
+         LET (MSG1TXT,L'MDYNA007),=,MDYNA007
+EDYNA003 PUTGET PARM=PUTGET,OUTPUT=FLNO,MF=(E,IOPL)
+         IF R15,¬=,0,GOTO,EPTGT001      WRITE MSG TO TERMINAL
+         SPACE
+         LET R2,=,PUTGET+12             R2 --> ANSWER-BUFFER
+         LET R3,=,0(R2):H               R3 = LENGTH(ANSWER)
+         SPACE
+SCANFLAG EQU CSOA+8
+         GETMAIN R,LV=24,SP=1           GET SPACE FOR COMMAND-
+         #USE R5,CSPL,R1                SCAN-PARAMETER-LIST
+         GETMAIN R,LV=12,SP=1           GET SPACE FOR COMMAND-
+         #USE R6,CSOA,R1                SCAN-OUTPUT-AREA
+         SPACE
+         LET CSPLUPT:F,=,CPPLUPT        INITIALIZE CSPL
+         LET CSPLECT:F,=,CPPLECT
+         LET CSPLECB:F,=,ECB
+         LET CSPLFLG,->,SCANFLAG
+         LET CSPLOA,->,CSOA             COMMAND-BUFFER IS ANSWER-BUFFER
+         LET CSPLCBUF:F,=,R2            OF PUTGET-MACRO
+         LET SCANFLAG:F,=,0             USE SCAN OF COMMAND
+         EJECT
+         CALLTSSR EP=IKJSCAN,MF=(E,CSPL)   ISSUE IKJSCAN
+         SPACE
+         $IF R15,¬=,0,THEN              WHEN NOT OK, THEN RELEASE SPACE
+            FREEMAIN R,LV=(R3),A=(R2),SP=1
+            FREEMAIN R,LV=24,A=(R12),SP=1
+            FREEMAIN R,LV=12,A=(R6),SP=1
+            GOTO ESCAN001               AND GOTO ERROR-ROUTINE
+         IF$
+         SPACE
+         $IF CSOAFLG:C,=,X'40',THEN     WHEN SYNTACTICALLY OK, THEN
+            LET R1,=,CSOACNM:F          TEST IF 'FREE' WAS SPECIFIED
+            LET R4,=,CSOALNM:H
+            $IF R4,<,5,AND,(0(R1),R4),=,=C'FREE',THEN     IF SO,
+               FREEMAIN R,LV=(R3),A=(R2),SP=1             RELEASE SPACE
+               FREEMAIN R,LV=24,A=(R12),SP=1
+               FREEMAIN R,LV=12,A=(R6),SP=1
+               GOTO FREEFILE            AND GOTO FREEING ROUTINE
+            IF$
+            $IF R4,<,4,AND,(0(R1),R4),=,=C'END',THEN      IF 'END' SPEC.
+               FREEMAIN R,LV=(R3),A=(R2),SP=1             RELEASE SPACE
+               FREEMAIN R,LV=24,A=(R12),SP=1
+               FREEMAIN R,LV=12,A=(R6),SP=1
+               GOTO RETURN              AND RETURN
+            IF$
+         IF$
+         FREEMAIN R,LV=(R3),A=(R2),SP=1 IN ALL OTHER CASES FREE SPACE
+         FREEMAIN R,LV=24,A=(R12),SP=1
+         FREEMAIN R,LV=12,A=(R6),SP=1
+         GOTO EDYNA003                  AND PROMPT AGAIN
+         SPACE
+         #DROP R5,R6
+         EJECT
+EDYNA002 HEX MSG23TXT,S99INF            IF SVC99 FAILED, THEN CONVERT
+         HEX MSG24TXT,S99ERR            ERROR- AND INFO-CODE
+         SPACE
+EDYNA005 $CASE                          AND DISPLAY THEM
+            ON R15,=,4,DO
+               PUT3 MDYNA001,MDYNA002,MDYNA003,                        *
+               L'MDYNA001,L'MDYNA002,L'MDYNA003
+               IF R15,¬=,0,GOTO,EPUTL001
+         SPACE
+            ON R15,=,8,DO
+               PUT3 MDYNA001,MDYNA002,MDYNA004,                        *
+               L'MDYNA001,L'MDYNA002,L'MDYNA004
+               IF R15,¬=,0,GOTO,EPUTL001
+         SPACE
+            ON R15,=,12,DO
+               PUT3 MDYNA001,MDYNA002,MDYNA005,                        *
+               L'MDYNA001,L'MDYNA002,L'MDYNA005
+               IF R15,¬=,0,GOTO,EPUTL001
+         CASE$
+         SPACE
+         LET R15,=,4                    SET RETURNCODE = 4
+         GOTO RETURN
+         EJECT
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        FREE FILE                                                    *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE 3
+FREEFILE LET FREELEN,=,DDLEN            BUILD SVC99 PARAMETERLIST
+         LET R3,=,DDLEN,-,1             TO FREE THE USED FILE
+         LET R2,->,DDNAM
+         LET R5,->,FREENAM
+         EX R3,MVC
+         LET R1,->,FREERBP
+         SVC 99                         ISSUE SVC 99
+         SPACE
+         $IF R15,¬=,0,THEN              WHEN FREEING FAILED, CONVERT
+            HEX MSG23TXT,FREEINF        ERROR- AND INFO-CODE
+            HEX MSG24TXT,FREEERR
+            GOTO EDYNA005               AND DISPLAY THEM
+         IF$
+         LET R1,->,S99RBPTR             IF FREEING SUCCEEDS, RETRY
+         SVC 99                         ALLOCATION
+         IF R15,¬=,0,GOTO,EDYNA002      IF FAIL, GOTO ERROR-ROUTINE
+         GOTO RETURN                    ELSE RETURN
+         EJECT
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        ERRORS OF IKJSCAN                                            *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE 3
+ESCAN001 PUT2 MSCAN001,MSCAN002,L'MSCAN001,L'MSCAN002
+         IF R15,¬=,0,GOTO,EPUTL001
+         LET R15,=,8
+         GOTO RETURN
+         EJECT
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        ERRORS OF PUTLINE                                            *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE 3
+EPUTL001 CVD R15,PACKED
+         UNPK ZONED,PACKED
+         LET ZONED+2:C,:,X'F0'
+         LET (TPUTL,L'MPUTL001),=,MPUTL001
+         LET (TPUTL+L'MPUTL001,2),=,ZONED+1
+         LET R2,->,TPUTL
+         TPUT (R2),LPUTL001
+         LET R15,=,12
+         GOTO RETURN
+         SPACE 3
+EPTGT001 CVD R15,PACKED
+         UNPK ZONED,PACKED
+         LET ZONED+2:C,:,X'F0'
+         LET (TPUTL,L'MPTGT001),=,MPTGT001
+         LET (TPUTL+L'MPTGT001,2),=,ZONED+1
+         LET R2,->,TPUTL
+         TPUT (R2),LPTGT001
+         LET R15,=,12
+         GOTO RETURN
+         TITLE 'TERMINATION'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*        TERMINATION                                                  *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         SPACE 3
+RETURN   FREEMAIN R,LV=16,A=(R7),SP=1   FREE ALLOCATED SPACE
+         PROC$ RC=R15                   AND RETURN
+         SPACE
+         END     ALLFO

@@ -1,0 +1,63 @@
+//&SYSIDA  JOB ,'SPTS    ALLOC',MSGCLASS=O,NOTIFY=&SYSID,
+//         PASSWORD=&SYSPSWD
+//*--------------------------------------------------------------
+//*
+//* ALLOCATE DATASETS FOR SPTS PROGRAMS
+//*
+//*--------------------------------------------------------------
+//ALLOC    EXEC PGM=IEFBR14
+//*
+//CNTL      DD DISP=(NEW,CATLG),UNIT=3380,VOL=SER=SY4000,
+//             SPACE=(TRK,(02,,010)),
+//             DCB=(SYS2.MODEL.CNTL),
+//             DSN=SYS2.SPTS.CNTL
+//*
+//LINKLIB   DD DISP=(NEW,CATLG),UNIT=3380,VOL=SER=SY4000,
+//             SPACE=(CYL,(01,,015)),
+//             DCB=(SYS2.MODEL.LINKLIB),
+//             DSN=SYS2.SPTS.LINKLIB
+//*
+//SOURCE    DD DISP=(NEW,CATLG),UNIT=3380,VOL=SER=SY4000,
+//             SPACE=(CYL,(1,,015)),
+//             DCB=(SYS2.MODEL.SOURCE),
+//             DSN=SYS2.SPTS.LINKLIB.SOURCE
+//*
+//INFO      DD DISP=(NEW,CATLG),UNIT=3380,VOL=SER=SY4000,
+//             SPACE=(TRK,(10,,010)),
+//             DCB=(SYS2.MODEL.INFO),
+//             DSN=SYS2.SPTS.INFO
+//*
+//PROCLIB   DD DISP=(NEW,CATLG),UNIT=3380,VOL=SER=SY4000,
+//             SPACE=(TRK,(3,,010)),
+//             DCB=(SYS2.MODEL.PROCLIB),
+//             DSN=SYS2.SPTS.PROCLIB
+//*
+//DPROCLIB  DD DISP=(NEW,CATLG),UNIT=3380,VOL=SER=SY4000,
+//             SPACE=(TRK,(3,,010)),
+//             DCB=(SYS2.MODEL.PROCLIB),
+//             DSN=SYS2.SPTS.DIST.PROCLIB
+//*
+//MACLIB    DD DISP=(NEW,CATLG),UNIT=3380,VOL=SER=SY2000,
+//             SPACE=(CYL,(1,,100)),
+//             DCB=(SYS2.MODEL.SOURCE),
+//             DSN=SYS2.SPTS.MACLIB
+//*
+//SAMPLIB   DD DISP=(NEW,CATLG),UNIT=3380,VOL=SER=SY2000,
+//             SPACE=(CYL,(1,,10)),
+//             DCB=(SYS2.MODEL.SAMPLIB),
+//             DSN=SYS2.SPTS.SAMPLIB
+//*
+//SAMPLE    DD DISP=(NEW,CATLG),UNIT=3380,VOL=SER=SY4000,
+//             SPACE=(TRA,(6,,10)),
+//             DCB=(SYS2.MODEL.SAMPLIB),
+//             DSN=SYS2.SPTS.SAMPLE
+//*
+//INFOTEXT  DD DISP=(NEW,CATLG),UNIT=3380,VOL=SER=SY2000,
+//             SPACE=(CYL,(1,,100)),
+//             DCB=(SYS2.MODEL.TEXT),
+//             DSN=SYS2.SPTS.INFO.TEXTER
+//*
+//OBJ       DD DISP=(NEW,CATLG),UNIT=3380,VOL=SER=SY4000,
+//             SPACE=(TRA,(3)),
+//             DCB=(LRECL=80,RECFM=FB,BLKSIZE=3200),
+//             DSN=SYS2.SPTS.SASLIST.OBJ

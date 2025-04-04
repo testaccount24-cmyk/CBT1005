@@ -1,0 +1,12 @@
+         AIF   (&NOTANY).#MACLST                                        #S   002
+         PRINT ON,GEN                                                   #S   003
+         PROC$                                                          #S   004
+         LTORG                                                          #S   005
+         SPACE                                                          #S   006
+DATA     DSECT                                                          #S   007
+DATA#    EQUN  *-DATA                                                   #S   008
+         SPACE 4                                                        #S   009
+.#MACLST ANOP                                                           #S   010
+         PRINT ON,GEN                                                   #S   011
+         #MACLIST                                                       #S   012
+         AGO   .END                                                     #S   013

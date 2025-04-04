@@ -1,0 +1,102 @@
+         MACRO
+         $AND$ &A,&REL,&B,&THEN
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                                     STRUCT MACRO SET
+.*  "(IF" CONDITION "AND" CONDITION "THEN" BLOCK <"ELSE" BLOCK> "IF)"
+.*  "(CASE" <"ON" COND "DO" BLOCK>* <"ELSE" BLOCK> "CASE)"  ALTN'TIVELY
+.*       TERMINATE PRECEDING CONDITION,
+.*       EVALUATE CONDITIONAL EXPRESSION,
+.*       BEGIN "THEN" PART OF "IF" CLAUSE.
+.*
+         GBLA  &BLK,&BLKCC(30),&BLKDCNT(30)
+         GBLC  &BLKTYPE(30),&BLKID(30)
+         GBLB  &DEFER
+         LCLC  &C,&DC
+.SASLIST SASLIST MACRO,'AND'
+.*  PLACEMENT VERIFICATION
+&C       SETC  '&BLKTYPE(&BLK)'
+         AIF   ('&C' NE 'IX' AND '&C' NE 'WX' AND '&C' NE 'CX' AND     -
+               '&C' NE 'UX' AND                                        -
+               '&C' NE 'LX' AND '&C' NE 'EX' AND '&C'  NE 'JX').YPLACE
+.*
+.*  TERMINATE PRECEDING CONDITION
+.*
+         AIF   ('&C'(1,1) NE 'C').BLKC
+&DC      SETC  '&BLKDCNT(&BLK)'
+.BLKC  IF0BC   15-&BLKCC(&BLK),@@F&BLKID(&BLK)&DC,(1+0)  JUMP TO "ELSE"
+         AIF   (NOT &DEFER).NODEFER
+@@T&BLKID(&BLK+1) DS  0H
+@@W&BLKID(&BLK+1) DS  0H
+@@F&BLKID(&BLK+1) EQU @@F&BLKID(&BLK)&DC
+@@V&BLKID(&BLK+1) EQU @@V&BLKID(&BLK)&DC
+@@X&BLKID(&BLK+1) EQU @@X&BLKID(&BLK)&DC
+@@Y&BLKID(&BLK+1) EQU @@X&BLKID(&BLK)&DC
+&DEFER   SETB  0
+.NODEFER ANOP
+.*
+.*  EVALUATE CONDITIONAL EXPRESSION
+.*
+.GO      AIF   ('&A&REL&B' NE '').IF0CE
+&BLKTYPE(&BLK) SETC '&C'(1,1)'A'       BEING IN CONDITION PART OF "IF"
+         AGO   .MEND
+.IF0CE   IF0CE &A,&REL,&B
+&BLKTYPE(&BLK) SETC '&C'(1,1)'X' IN "AND" CONDITION
+.*
+.*  SEE WHAT TO BE DONE AFTER COMPARISON
+.*
+         AIF   ('&THEN' EQ '').MEND
+         AIF   ('&BLKTYPE(&BLK)'(1,1) EQ 'C').TSTDO
+         AIF   ('&BLKTYPE(&BLK)'(1,1) EQ 'E').TSTEX
+         AIF   ('&BLKTYPE(&BLK)'(1,1) EQ 'W').TSTLOOP
+.*
+.*  "THEN"
+.*
+.TSTTHEN AIF   ('&THEN' NE 'THEN').YTHEN
+         THEN  ,
+         AGO  .PARMTST
+.**********************************************************************
+.YPLACE  BLK0TEST AND,&C
+         AGO  .MEND
+.YTHEN   MNOTE 08,'****** AND: ASSUMED "THEN" INSTEAD OF INVALID "&THEN-
+               ".'
+         THEN  ,
+         AGO   .PARMTST
+.*
+.*  "DO"
+.*
+.TSTDO   AIF   ('&THEN' NE 'DO').YDO
+         DO    ,
+         AGO  .PARMTST
+.**********************************************************************
+.YDO     MNOTE 08,'****** AND: ASSUMED "DO" INSTEAD OF INVALID "&THEN".-
+               '
+         DO    ,
+         AGO  .PARMTST
+.*
+.*  "EX$
+.*
+.TSTEX   AIF   ('&THEN' NE 'EX$' AND '&THEN' NE 'EX)').YEX
+         EX$   ,
+         AGO  .PARMTST
+.**********************************************************************
+.YEX     MNOTE 08,'****** AND: ASSUMED "EX$" INSTEAD OF INVALID "&THEN"-
+               .'
+         EX$   ,
+         AGO  .PARMTST
+.*
+.*  "LOOP"
+.*
+.TSTLOOP AIF   ('&THEN' NE 'LOOP').YLOOP
+         LOOP  ,
+         AGO  .PARMTST
+.**********************************************************************
+.YLOOP   MNOTE 08,'****** AND: ASSUMED "LOOP" INSTEAD OF INVALID "&THEN-
+               "'
+         LOOP  ,
+.PARMTST AIF   (N'&SYSLIST LE 4).MEND
+         MNOTE 08,'****** AND: ONLY FOUR PARAMETERS ALLOWED'
+.MEND  SASLIST MACEND
+         MEND

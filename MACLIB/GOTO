@@ -1,0 +1,32 @@
+         MACRO
+&L       GOTO  &LABEL,&NOOP=
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*
+.*  GO TO
+.*
+.*
+         GBLA  &BLK,&BLKCC(10),&EQUR
+         GBLC  &BLKTYPE(10)
+         LCLA  &CC                                                   IF
+         LCLC  &LAB
+&L       SASLIST MACRO,'GOTO'
+&CC      SETA  15                                                    IF
+.*
+         AIF   ('&BLKTYPE(&BLK)' NE 'JX').NOIF                       IF
+.*  CONDITIONAL GOTO:  "IF" CONDITION "GOTO"                         IF
+.*
+&CC      SETA  &BLKCC(&BLK)                                          IF
+&BLK     SETA  &BLK-1                  POP-UP BLOCK STRUCTURE        IF
+.NOIF    EQUR  &LABEL(1)               TEST FOR REGISTER
+         AIF   (&EQUR GT 0).BCR
+&L       BC    &CC,&LABEL
+         AGO  .MEND
+.BCR     ANOP
+&L       BCR   &CC,&LABEL(1)
+         AIF   ('&NOOP' EQ '' OR '&NOOP' NE 'YES').MEND
+         BR    0,0
+.MEND    SASLIST MACEND
+         MEND

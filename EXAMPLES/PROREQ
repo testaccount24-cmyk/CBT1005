@@ -1,0 +1,153 @@
+ TITLE 'PROREQ -- DESCRIPTION'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*                                                                     *
+* COPYRIGHT: COPYRIGHT BY GESELLSCHAFT FUER MATHEMATIK UND            *
+*                                      DATENVERARBEITUNG MBH,         *
+*                         INSTITUT FUER                               *
+*                         INFORMATIONSTECHNISCHE INFRASTRUKTUREN,     *
+*                         SCHLOSS BIRLINGHOVEN                        *
+*                         D-5205 ST. AUGUSTIN 1                       *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+*        P R O M O N / P R O R E Q                                    *
+*                                                                     *
+*                                                                     *
+* <CLASS>: SUBROUTINE                                                 *
+*                                                                     *
+*                                                                     *
+* <FUNCTION/OPERATION>:                                               *
+*                                                                     *
+*        THIS SUBROUTINE IS A COMPONENT OF THE PROCESS MONITOR        *
+*        SYSTEM (SEE PROMON). THE MAIN PROCESS AND SUBPROCESSES       *
+*        REQUEST PROREQ-SERVICES USING THIS ROUTINE. IF THE           *
+*        COMMUNICATION VARIABLE IN THE PARAMETER LIST IS NOT YET      *
+*        INITIALISED, PROREQ LOCATES THE COMMUNICATION AREA OF THE    *
+*        MONITOR, INITIALISES THE COMMUNICATION VARIBALE AND PASSES   *
+*        CONTROL TO THE MONITOR.                                      *
+*                                                                     *
+*        IF THE COMMUNICATION VARIABLE IS NOT YET INITIALIZED,        *
+*        PROREQ EXPECTS THAT THE CURRENT TASK WAS CREATED BY THE      *
+*        CREATE-FUNCTION OF PROMON.  THE MONITOR LOADED REGISTER 2    *
+*        WITH THE PROCESS IDENTIFICATION (PID) ADDRESS BEFORE IT      *
+*        STARTS THE NEW TASK. IF THE CALLED TASK USES STANDARD        *
+*        LINKAGE CONVENTIONS REGISTER 2 CAN BE LOCATED IN THE         *
+*        SAVEAREA OF THE OF THE CURRENT TASK. THIS SAVEAREA ADDR IS   *
+*        LOCATED IN THE FIRST PROGRAM REQUEST BLOCK (PRB) IN THE RB   *
+*        CHAIN OF THE CURRENT TCB.  REGISTER 2 IS THEN USED TO        *
+*        INITIALIZE THE COMMUNICATION VARIABLE.  PROREQ TAKES THE     *
+*        ADDRESS OF THE PROMON SERVICE ROUTINE FROM THE               *
+*        COMMUNICATION AREA AND PASSES CONTROL TO IT.                 *
+*                                                                     *
+* <INPUT>:                                                            *
+*                                                                     *
+*        THE ADDRESS OF THE PROREQ PARAMETER LIST IST EXPECTED        *
+*        IN REGISTER 1.                                               *
+*                                                                     *
+* <OUTPUT>:                                                           *
+*        NONE                                                         *
+*                                                                     *
+* <DD-STATEMENTS/DATA SETS>:                                          *
+*        NONE                                                         *
+*                                                                     *
+* <NORMAL EXIT>:                                                      *
+*        ON END PROREQ PASSES TO PROMON. PROMON DIRECTLY RETURNES     *
+*        CONTROL TO THE CALLER OF PROREQ ON EXIT.                     *
+*                                                                     *
+* <ERROR EXIT>:                                                       *
+*        NONE                                                         *
+*                                                                     *
+* <RETURN CODES>:                                                     *
+*                                                                     *
+*        NONE                                                         *
+*                                                                     *
+* <EXTERNAL ROUTINES>:                                                *
+*                                                                     *
+*        PROMON                                                       *
+*                                                                     *
+* <TABLES/WORK AREAS>:                                                *
+*                                                                     *
+*        NONE                                                         *
+*                                                                     *
+* <ATTRIBUTES>:                                                       *
+*                                                                     *
+*    REENTRANT, REFRESHABLE                                           *
+*                                                                     *
+* <RESTRICTIONS>:                                                     *
+*                                                                     *
+*        NONE                                                         *
+*                                                                     *
+* <AUTHORIZATION REQUIRED>:                                           *
+*                                                                     *
+*        NONE                                                         *
+*                                                                     *
+* <RELATED PROGRAMS>:                                                 *
+*        PROMON    THE PROCESS MONITOR                                *
+*                                                                     *
+* <STORAGE>:                                                          *
+*        NONE                                                         *
+*                                                                     *
+* <LOAD MODULE CREATION>:                                             *
+*      SOURCE LANGUAGE      : ASSEMBLER H                             *
+*      COMPILE LIBRARIES    : SYS1.MACLIB                             *
+*                             SYS1.AMODGEN                            *
+*                                                                     *
+*      COMPILE PARAMETERS   :                                         *
+*      LINK-EDIT LIBRARIES  :                                         *
+*      LINK-EDIT PARAMETERS : RENT,REFR                               *
+*      LINK-EDIT INPUT      :                                         *
+*      DESTINATION LIBRARIES: GMD.LINKLIB                             *
+*                                                                     *
+*      GENERATING DECK      : GMD.JCL(PROREQ)                         *
+*                                                                     *
+* <STATUS>:                                                           *
+*          CHANGE LEVEL - 0.0               SUMMER 1985               *
+*                         1.2               86-05-21                  *
+*                                                                     *
+* <AUTHOR>: VOLKER SAND, PETER SYLVESTER (GMD-Z1.BN)                  *
+*                                                                     *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+         TITLE 'PROREQ -- PROGRAMM'
+         PRINT NOGEN
+         IHAPSA DSECT=YES
+         IKJTCB DSECT=YES
+         IHARB  DSECT=YES
+INVALID_COMVAR       EQU   4
+PROREQ   CSECT
+         USING PROREQ,15             ADDRESS PROGRAMM
+         SAVE  (2,5),,PROREQ-COPYRIGHT-GMD-&SYSDATE-&SYSTIME-SAND-R1.0
+         L     2,0(1)                POINT TO COMVAR (PCB ADDR)
+         L     3,0(2)                POINT TO PCB
+         LTR   3,3                   POINTER INITIALIZED ?
+         BZ    NOTINIT               NO.
+                                                                 SPACE
+VALID    L     3,4(3)                POINT TO COMAREA
+         L     15,4(3)               POINT TO PROMON SERVICE ROUTINE
+         LM    2,5,28(13)            RESTORE REGISTERS
+         BR    15                    CALL PROREQ ROUTINE
+                                                                 SPACE
+NOTINIT  EQU   *
+         USING PSA,0                 ADDRESS PREFIX STORAGE AREA
+         SR    4,4                   CLEAR R4
+         ICM   4,B'0111',PSATOLD+1   POINT TO CURRENT TCB
+         DROP  0                     PSA IS NO MORE USED
+         SR    5,5                   CLEAR R5
+         ICM   5,B'0111',TCBRBP-TCB+1(4) POINT TO CURRENT RB
+NEXTRB   LR    3,5                   SAVE LAST RB ADDR
+         ICM   5,B'0111',RBLINKB-RBBASIC(5) SET TO NEXT RB IN CHAIN
+         CR    4,5                   FIRST RB IN CHAIN FOUND ?
+         BNE   NEXTRB                NO
+         L     3,RBGRS13-RBBASIC(3)  POINT TO PROGRAM SAVE AREA
+         L     3,28(3)               LOAD R2 FROM SAVE AREA (PCB ADDR)
+         CLC   0(4,3),PCBNAME        POINTER OK. ?
+         BNE   INVALID               NO.
+         ST    3,0(2)                INITIALIZE COMVAR
+         B     VALID
+                                                                 SPACE
+INVALID  LA    15,INVALID_COMVAR     INDICATE ERROR
+         LR    0,15
+         RETURN (2,5)
+                                                                 SPACE
+PCBNAME  DC    CL4'PCB'              CONTROL BLOCK NAME
+                                                                 SPACE
+         END

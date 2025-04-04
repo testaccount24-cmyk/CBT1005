@@ -1,0 +1,40 @@
+         MACRO
+&LABEL   ICALL &NAME,&ARG1,&ARG0,&ARG2,&RETURN=
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*       CALL INTERNAL PROCEDURE
+.*
+         GBLA  &EQUR
+         LCLA  &RET
+&LABEL   SASLIST MACRO,'ICALL'
+&LABEL   DS    0H
+         AIF   ('&ARG0' EQ '').LDARG1
+         LET   @0,=,&ARG0
+.LDARG1  AIF   ('&ARG1' EQ '').LDARG2
+         LET   @1,=,&ARG1
+.LDARG2  AIF   ('&ARG2' EQ '').ARGSOK
+         LET   @2,=,&ARG2
+.ARGSOK  AIF   ('&RETURN' EQ '').FINDREG
+         AIF   (T'&RETURN NE 'N').RETURN2
+.*
+.*       RETURN IS ABSOLUTE VALUE
+.*       TESTRET &RETURN,&NAME
+         BAL   &RETURN,&NAME
+         AGO   .MEND
+.*
+.*       NO RETURN REGISTER SPECIFIED, TRY TO FIND IT
+.*FINDREG TESTRET ,&NAME
+.*&RET     SETA  &EQUR-1
+.*         BAL   &RET,&NAME
+.FINDREG  BAL   @RETURN@OF@&NAME,&NAME
+          AGO   .MEND
+.*
+.*       RETURN IS OF REGISTER TYPE
+.RETURN2 EQUR  &RETURN
+&RET     SETA  &EQUR-1
+.*       TESTRET &RET,&&NAME
+         BAL   &RET,&NAME
+.MEND    SASLIST MACEND
+         MEND

@@ -1,0 +1,38 @@
+         MACRO
+         BLK0TEST &NAME,&TYPE,&LABEL
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                                     STRUCT MACRO SET
+.*  BLOCK STRUCTURE TEST/TRACE AND ERROR MESSAGES
+.*
+         GBLA  &BLK
+         GBLB  &BLKTEST
+         GBLC  &BLKTYPE(30),&BLKNAME(13),&BLKID(30)
+.*
+         AIF   ('&TYPE&LABEL' NE '').MISPLAC
+.*
+.*  SET TRACE ON/OFF
+.*
+&BLKTEST SETB  ((&BLKTEST OR '&NAME' EQ '''ON''') AND '&NAME' NE '''OFF-
+               ''')
+         AIF   ('&NAME' EQ '''ON''' OR '&NAME' EQ '''OFF''').MEND
+.*
+.*  NORMAL TRACE CALL
+.*
+         AIF   (NOT &BLKTEST).MEND
+         MNOTE *,'  LEVEL=&BLK,TYPE=''&BLKTYPE(&BLK)'',ID=''&BLKID(&BLKX
+               )'',NAME=''&BLKNAME(&BLK)'''
+         AGO   .MEND
+.*
+.*  CALLING CLAUSE/BLOCK TERMINATOR MISPLACED
+.*
+.MISPLAC MNOTE 12,'****** &NAME): STRUCTURE ERROR.  PRESENT BLOCK IS:'
+         MNOTE *,'  LEVEL=&BLK,TYPE=''&BLKTYPE(&BLK)'',ID=''&BLKID(&BLKX
+               )'',NAME=''&BLKNAME(&BLK)'''
+         MNOTE *,' EXPECTED NAME: &LABEL, EXPECTED TYPE : &TYPE'
+         AGO   .MEND
+.RECOVER ANOP
+&BLKTEST SETB  1                       AFTER ERROR, ALWAYS TRACE
+.MEND    MEND

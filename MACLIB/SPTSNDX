@@ -1,0 +1,14 @@
+        MACRO
+        SPTSNDX &TYPE
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+        GBLA   &SPTSNDX,&BLK
+        GBLC   &BLKID(100)
+&SPTSNDX SETA &SPTSNDX+1
+        AIF  (&SPTSNDX NE 1).NOTF
+&SPTSNDX SETA 1000
+.NOTF   ANOP
+&BLKID(&BLK) SETC '&SPTSNDX.&TYPE'
+        MEND

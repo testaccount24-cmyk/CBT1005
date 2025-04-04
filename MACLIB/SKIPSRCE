@@ -1,0 +1,11 @@
+           MACRO
+           SKIPSRCE &WHAT
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+           LCLC   &C
+.LOOP      ANOP
+&C         AREAD
+           AIF  ('&C'(1,K'&WHAT) NE '&WHAT').LOOP
+           MEND

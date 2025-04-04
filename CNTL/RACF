@@ -1,0 +1,17 @@
+//&SYSIDR JOB ,'SPTS    RACF',MSGLEVEL=(1,1),NOTIFY=&SYSID,
+//         TIME=(0,30),MSGCLASS=O,
+//         PASSWORD=&SYSPSWD
+//*---------------------------------------------------------------------
+//*
+//*    RACF PROTECTION OF SPTS DATASETS
+//*
+//*---------------------------------------------------------------------
+//RACF    EXEC BTSO
+SR CLASS(DATASET) MASK(SYS2.SPTS) -
+    CLIST('PE ',' ID(GRZ027 GRZ013 GRZ003) A(UPDATE)')
+EX EXEC.RACF.CLIST
+ALD 'SYS2.SPTS.MACLIB'            UACC(READ)
+ALD 'SYS2.SPTS.INFO'              UACC(READ)
+ALD 'SYS2.SPTS.SAMPLIB'           UACC(READ)
+ALD 'SYS2.SPTS.LINKLIB'           UACC(READ)
+ALD 'SYS2.SPTS.PROCLIB'           UACC(READ)

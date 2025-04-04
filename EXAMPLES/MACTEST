@@ -1,0 +1,17 @@
+         COPY  &SYSPARM
+         PRINT  OFF
+         GBLB  &NOTFND,&BFSGEN,&MACTEST,&NOTANY
+         GBLA  &BMCERSC
+         SPACE
+         #MACRO#H $TEST,&SYSPARM
+         SPACE
+         COPY  #PREFIX
+*        COPY  #10
+         COPY  #11
+*        COPY  #12
+*        COPY  #15
+*        COPY  #13
+*        COPY  #14
+*        COPY  #16
+         COPY  #SUFFIX
+.END     END

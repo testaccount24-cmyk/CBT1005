@@ -1,0 +1,125 @@
+-TITLE 'Print SPTS Infos'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*                                                                     *
+* COPYRIGHT: COPYRIGHT BY GESELLSCHAFT FUER MATHEMATIK UND            *
+*                                      DATENVERARBEITUNG MBH BONN,    *
+*                         - Z1 - Bereich bonn -                       *
+*                         Riemenschneiderstr. 11                      *
+*                         5300 Bonn 2                                 *
+*                                                                     *
+*            FURTHER COPIES OF THIS PROGRAM MAY BE OBTAINED           *
+*            BY WRITING TO THE ABOVE ADDRESS.                         *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+*        I N F O P R N T                                              *
+*                                                                     *
+*                                                                     *
+* <CLASS>: UTILITY                                                    *
+*                                                                     *
+*                                                                     *
+* <FUNCTION/OPERATION>:                                               *
+*        INFOPRINT druckt die SPTS-Info-Datei. Alle Saetze            *
+*        werden dabei uebersetzt um verschiedene                      *
+*        Repraesentationen von Sonderzeichen Verarbeiten              *
+*        zu koennen.                                                  *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+* <ENTRY POINTS>:                                                     *
+*        INFOPRNT                                                     *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+* <DD-STATEMENTS/DATA SETS>:                                          *
+*        INFOIN    - Eingabedatei (RECFM=VBA,LRECL=137)               *
+*        SYSPRINT  - Ausgabedatei                                     *
+*                                                                     *
+*                                                                     *
+* <NORMAL EXIT>:                                                      *
+*        BR 14                                                        *
+*                                                                     *
+*                                                                     *
+* <ERROR EXIT>:                                                       *
+*        NONE                                                         *
+*                                                                     *
+*                                                                     *
+* <RETURN CODES>:                                                     *
+*        000   ok                                                     *
+*        012   Eingabedatei liess sich nicht oeffnen                  *
+*                                                                     *
+*                                                                     *
+* <EXTERNAL ROUTINES>:                                                *
+*        NONE                                                         *
+*                                                                     *
+*                                                                     *
+* <TABLES/WORK AREAS>:                                                *
+*        DCB                                                          *
+*                                                                     *
+*                                                                     *
+* <ATTRIBUTES>:                                                       *
+*        -                                                            *
+*                                                                     *
+*                                                                     *
+* <RESTRICTIONS>:                                                     *
+*        -                                                            *
+*                                                                     *
+*                                                                     *
+* <AUTHORIZATION REQUIRED>:                                           *
+*        -                                                            *
+*                                                                     *
+* <RELATED PROGRAMS>:                                                 *
+*        iebptpch                                                     *
+*                                                                     *
+*                                                                     *
+* <STORAGE>:                                                          *
+*        PROGRAM:  ?                                                  *
+*        DYNAMIC:  0                                                  *
+*        BUFFER :  0                                                  *
+*                                                                     *
+*                                                                     *
+* <LOAD MODULE CREATION>:                                             *
+*      SOURCE LANGUAGE      : SPTS                                    *
+*      COMPILE LIBRARIES    : SYS1.MACLIB, SYS2.SPTS.MACLIB           *
+*      COMPILE PARAMETERS   : -                                       *
+*      LINK-EDIT LIBRARIES  : -                                       *
+*      LINK-EDIT PARAMETERS : -                                       *
+*      LINK-EDIT INPUT      : -                                       *
+*      DESTINATION LIBRARIES: -                                       *
+*                                                                     *
+*      GENERATING DECK      : SYS2.SPTS.SAMPLE                        *
+*                                                                     *
+*                                                                     *
+* <STATUS>:                                                           *
+*          CHANGE LEVEL - 0.0               27mar85                   *
+*                                                                     *
+*                                                                     *
+* <AUTHOR>: Ben Utzer                                                 *
+*                                                                     *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+-EJECT
+infoprnt: (PROGRAM
+             oeffne print datei ;
+             oeffne Info Datei ;
+             (IF Info Datei offen
+             THEN
+                REFINE :drucken ;
+                schliesse Druck Datei ;
+                schliesse Info Datei ;
+             ELSE
+                Fehlermeldung
+             IF)
+        PROGRAM)
+drucken: (REFINE
+       (LOOP
+          lies info datei
+       WHILE
+          not eof
+       LOOP
+          uebersetze mit tabelle ;
+          gib aus
+       LOOP)
+eofr:  (PROC
+       setze EOF Indikator
+       PROC)
+       REFINE)

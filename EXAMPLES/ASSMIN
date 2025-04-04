@@ -1,0 +1,305 @@
+./ ADD NAME=INFOPRNT
+         MACRO
+&LABEL   TRTAB &FILL
+.*             COPYRIGHT GMD-Z1 1970,1973,1985
+.*                                                      00JAN69-BLASIUS
+.* TRTAB GENERATES A TRANSLATE TABLE (LIST FORM ONLY).     19FEB73-PAHL
+.*
+.* MACRO INSTRUCTION FORMAT:    LABEL   TRTAB   <FILL>,<LIST>
+.* <FILL> MUST BE THE OPERAND FIELD OF A DC INSTRUCTION DEFINING THE
+.*        IMPLIED CONTENTS OF THE TABLE. EXAMPLES:  256C' '
+.*                                                  256AL1(*-LABEL)
+.* <LIST> IS A LIST OF MACRO INSTRUCTION OPERANDS EACH OF WHICH MUST
+.*        BE OF THE FORM  (<OLD>,<NEW>).  <OLD> MUST BE A SELF-DEFINING
+.*        TERM TELLING WHERE IN THE TABLE <NEW> IS TO BE GENERATED.
+.*        <NEW> MUST BE EITHER A VALID OPERAND FOR A DC-INSTRUCTION OR
+.*        A VALID SELF-DEFING TERM.
+.*
+.* EXAMPLES:
+.* X TRTAB 256X'00',(C'A',X'0A0B0C0D0E0F'),(C'1',X'010203040506070809')
+.* Y TRTAB 256AL1(*-Y),(C'0',AL1(0,1,2,3,4,5,6,7,8,9))
+.* Z TRTAB 256C' ',(C'A',9AL1(*-Z)),(C'J',9AL1(*-Z)),(C'S',8AL1(*-Z))
+.*
+.* TABLE X CONVERTS ALL HEXADECIMAL DIGITS TO THEIR BINARY EQUIVALENT
+.*    AND ALL OTHER CHARACTERS TO ZERO.
+.* TABLE Y CONVERTS ALL DECIMAL DIGITS TO THEIR BINARY EQUIVALENT AND
+.*    LEAVES ALL OTHER CHARACTERS UNCHANGED.
+.* TABLE Z LEAVES ALL LETTERS UNCHANGED AND CONVERTS ALL OTHER
+.*    CHARACTERS TO BLANKS.
+.*
+         LCLA  &C
+         LCLC  &L
+         AIF   ('&FILL' EQ '').Y1
+&L       SETC  '&LABEL'
+         AIF   ('&LABEL' NE '').GO
+&L       SETC  'BMC&SYSNDX'
+.GO      ANOP
+&L       DC    &FILL
+&C       SETA  1
+.A       AIF   (&C GE N'&SYSLIST).ORG
+&C       SETA  &C+1
+         AIF   (N'&SYSLIST(&C) NE 2 OR '&SYSLIST(&C,1)' EQ '' OR '&SYSL-
+               IST(&C,2)' EQ '').YARG
+         ORG   &L+&SYSLIST(&C,1)
+         AIF   ('&SYSLIST(&C,2)'(K'&SYSLIST(&C,2),1) EQ ''''     OR    -
+               '&SYSLIST(&C,2)'(K'&SYSLIST(&C,2),1) EQ ')').DC
+         DC    AL1(&SYSLIST(&C,2))
+         AGO   .A
+.DC      DC    &SYSLIST(&C,2)
+         AGO   .A
+.ORG     ORG   &L+256
+         MEXIT
+.YARG    BMCERMAC TRTAB,24,&C-TH,&SYSLIST(&C)
+         AGO   .A
+.Y1      BMCERMAC TRTAB,10,1ST(FILLER),,,&LABEL
+         MEND
+INFOPRNT  TITLE 'PRINT SPTS INFOS'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*                                                                     *
+* COPYRIGHT: COPYRIGHT BY GESELLSCHAFT FUER MATHEMATIK UND            *
+*                                      DATENVERARBEITUNG MBH BONN,    *
+*                         - Z1 - BEREICH BONN -                       *
+*                         RIEMENSCHNEIDERSTR. 11                      *
+*                         5300 BONN 2                                 *
+*                                                                     *
+*            FURTHER COPIES OF THIS PROGRAM MAY BE OBTAINED           *
+*            BY WRITING TO THE ABOVE ADDRESS.                         *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+*        I N F O P R N T                                              *
+*                                                                     *
+*                                                                     *
+* <CLASS>: UTILITY                                                    *
+*                                                                     *
+*                                                                     *
+* <FUNCTION/OPERATION>:                                               *
+*        INFOPRINT DRUCKT DIE SPTS-INFO-DATEI. ALLE SAETZE            *
+*        WERDEN DABEI UEBERSETZT UM VERSCHIEDENE                      *
+*        REPRAESENTATIONEN VON SONDERZEICHEN VERARBEITEN              *
+*        ZU KOENNEN.                                                  *
+*                                                                     *
+*        DAZU MUSS DIE UEBERSETZUNGSTABELLE                           *
+*           ********* TRTAB *********                                 *
+*        GEEIGNET MODIFIZIERT WERDEN.                                 *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+* <ENTRY POINTS>:                                                     *
+*        INFOPRNT                                                     *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+* <DD-STATEMENTS/DATA SETS>:                                          *
+*        INFOIN    - EINGABEDATEI (RECFM=VBA,LRECL=137)               *
+*        SYSPRINT  - AUSGABEDATEI                                     *
+*                                                                     *
+*                                                                     *
+* <NORMAL EXIT>:                                                      *
+*        BR 14                                                        *
+*                                                                     *
+*                                                                     *
+* <ERROR EXIT>:                                                       *
+*        NONE                                                         *
+*                                                                     *
+*                                                                     *
+* <RETURN CODES>:                                                     *
+*        000   OK                                                     *
+*        012   EINGABEDATEI LIESS SICH NICHT OEFFNEN                  *
+*                                                                     *
+*                                                                     *
+* <EXTERNAL ROUTINES>:                                                *
+*        NONE                                                         *
+*                                                                     *
+*                                                                     *
+* <TABLES/WORK AREAS>:                                                *
+*        DCB                                                          *
+*                                                                     *
+*                                                                     *
+* <ATTRIBUTES>:                                                       *
+*        -                                                            *
+*                                                                     *
+*                                                                     *
+* <RESTRICTIONS>:                                                     *
+*        -                                                            *
+*                                                                     *
+*                                                                     *
+* <AUTHORIZATION REQUIRED>:                                           *
+*        -                                                            *
+*                                                                     *
+* <RELATED PROGRAMS>:                                                 *
+*        IEBPTPCH                                                     *
+*                                                                     *
+*                                                                     *
+* <STORAGE>:                                                          *
+*        PROGRAM:  ?                                                  *
+*        DYNAMIC:  0                                                  *
+*        BUFFER :  0                                                  *
+*                                                                     *
+*                                                                     *
+* <LOAD MODULE CREATION>:                                             *
+*      SOURCE LANGUAGE      : SPTS                                    *
+*      COMPILE LIBRARIES    : SYS1.MACLIB, SYS2.SPTS.MACLIB           *
+*      COMPILE PARAMETERS   : -                                       *
+*      LINK-EDIT LIBRARIES  : -                                       *
+*      LINK-EDIT PARAMETERS : -                                       *
+*      LINK-EDIT INPUT      : -                                       *
+*      DESTINATION LIBRARIES: -                                       *
+*                                                                     *
+*      GENERATING DECK      : SYS2.SPTS.SAMPLE                        *
+*                                                                     *
+*                                                                     *
+* <STATUS>:                                                           *
+*          CHANGE LEVEL - 0.0               27MAR85                   *
+*                                                                     *
+*                                                                     *
+* <AUTHOR>: BEN UTZER                                                 *
+*                                                                     *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+ EJECT
+INFOPRNT  $PROC ID=INFOPRNT,BASE=R10,LOCAL=(*,STATIC)
+          SPACE 3
+          PRINT NOGEN
+          IHADCB DSORG=PS
+          DATA
+PRINTDCB  DCB   DDNAME=SYSPRINT,MACRF=PM,DSORG=PS,                     -
+               BLKSIZE=6233,LRECL=137,RECFM=VBA
+INFODCB   DCB   DDNAME=INFOIN,MACRF=GL,EODAD=EOFR,DSORG=PS
+EOFIND    DC    B'0'
+ERRMSG    DC    AL2(ERRMSG#),AL2(0),C'1 *** INFODATASET CANNOT BE OPENE-
+               D ***'
+RC        EQUR  R5
+ERRMSG#   EQUN  *-ERRMSG
+          EJECT 3
+TRTAB     TRTAB 256AL1(*-TRTAB),                                       -
+               (X'00',64C' '),                                         -
+               (X'E1',X'E1'),          SUBSCRIPT CIRCLE (DEGREE)       -
+               (X'B3',X'B3'),          SUPERSCRIPT 3                   -
+               (X'B9',X'B9'),          SUPERSCRIPT 9                   -
+               (X'B6',X'B6'),          SUPERSCRIPT 6                   -
+               (X'BF',X'BF'),          HORIZONTAL BAR                  -
+               (X'B1',X'B1'),          SUPERSCRIPT 1                   -
+               (X'B8',X'B8'),          SUPERSCRIPT 8                   -
+               (X'B0',X'B0'),          SUPERSCRIPT 0                   -
+               (X'9B',X'9B'),          RIGHT BRACES                    -
+               (X'DE',X'DE'),          LOGOCAL NOT (TILDE)             -
+               (X'9F',X'9F'),          BLACK SQUARE                    -
+               (X'51',X'51'),          REVERSE SLASH                   -
+               (X'EB',X'EB'),          BOLD COMMA                      -
+               (X'B5',X'B5'),          SUPERSCRIPT 5                   -
+               (X'ED',X'ED'),          OVERSTRIKE                      -
+               (X'B4',X'B4'),          SUPERSCRIPT 4                   -
+               (X'5A',X'5A'),          EXCLAMATION MARK                -
+               (X'8B',X'8B'),          LEFT BRACES                     -
+               (X'9C',X'9C'),          KISSEN                          -
+               (X'B2',X'B2'),          SUPERSCRIPT 2                   -
+               (X'CF',X'CF'),          DOUBLE BAR                      -
+               (X'BE',X'BE'),          NOT EQUAL                       -
+               (X'7F',X'B7'),          SUPERSCRIPT 9                   -
+               (X'FC',X'FC'),          SMALL AE                        -
+               (X'56',X'56'),          CIRCLE (BULLET)                 -
+               (X'CC',X'CC'),          IS A SUBSET OF                  -
+               (X'FA',X'FA'),          DELTA                           -
+               (X'DA',X'DA'),          EPSILON                         -
+               (X'8F',X'8F'),          CROSSING LINES                  -
+               (X'AC',X'AC'),          UPPER LEFT CORNER (GAMMA)       -
+               (X'BC',X'BC'),          UPPER RIGHT CORNER              -
+               (X'AB',X'AB'),          LOWER LEFT CORNER               -
+               (X'BB',X'BB'),          LOWER RIGHT CORNER              -
+               (X'DC',X'DC'),          WHITE SQUARE (KISTE)            -
+               (X'DF',X'DF'),          LAMBDA                          -
+               (X'E0',X'E0'),          SUBSCRIPT -                     -
+               (X'6A',X'6A'),          SUBSCRIPT N                     -
+               (X'90',X'90'),          SMALL OE                        -
+               (X'8A',X'8A'),          LOWER-CASE  PI                  -
+               (X'CE',X'CE'),          SUBSCRIPT +                     -
+               (X'A1',X'A1'),          SUPERSCRIPT CIRCLE (DEGREE)     -
+               (X'BA',X'BA'),          S-ZET                           -
+               (X'9E',X'9E'),          PLUS-MINUS                      -
+               (X'68',X'68'),          SMALL UE                        -
+               (X'EA',X'EA'),          NABLA                           -
+               (X'64',X'64'),          UNION OF SETS                   -
+               (X'52',X'52'),          RIGHT ARROW (X-AXIS)            -
+               (X'62',X'62'),          UP ARROW (Y-AXIS)               -
+               (X'8B',X'8B'),          LEFT BRACES                     -
+               (X'C0',X'C0'),          AE                              -
+               (X'AF',X'AF'),          BULLET                          -
+               (X'EE',X'EE'),          CONTAINS AS A SUBSET            -
+               (X'AE',X'AE'),          GREATER OR EQUAL                -
+               (X'4A',X'4A'),          CENT                            -
+               (X'FE',X'FE'),          IDENTITY                        -
+               (X'8D',X'8D'),          SUPERSCRIPT LEFT PARENTHESIS    -
+               (X'9D',X'9D'),          SUPERSCRIPT RIGHT PARENTHESIS   -
+               (X'CD',X'CD'),          SUBSCRIPT LEFT PARENTHESIS      -
+               (X'DD',X'DD'),          SUBSCRIPT RIGHT PARENTHESIS     -
+               (X'9C',X'9C'),          KISSEN                          -
+               (X'AD',X'AD'),          LEFT BRACKET                    -
+               (X'A0',X'A0'),          SUPERSCRIPT MINUS               -
+               (X'AA',X'AA'),          SUPERSCRIPT N                   -
+               (X'CB',X'CB'),          OE                              -
+               (X'CA',X'CA'),          UPPER-CASE  PI                  -
+               (X'8E',X'8E'),          SUPERSCRIPT PLUS                -
+               (X'54',X'54'),          PARAGRAPH                       -
+               (X'BD',X'BD'),          RIGHT BRACKET                   -
+               (X'DB',X'DB'),          UE                              -
+               (X'8C',X'8C'),          LESS OR EQUAL                   -
+               (X'55',X'55'),          INTERSECTION OF SETS            -
+               (X'53',X'53'),          LEFT ARROW (-X-AXIS)            -
+               (X'63',X'63'),          DOWN ARROW (-Y-AXIS)            -
+               (X'D0',X'D0'),          SIGMA                           -
+               (X'70',X'70'),          SUBSCRIPT 0                     -
+               (X'71',X'71'),          SUBSCRIPT 1                     -
+               (X'72',X'72'),          SUBSCRIPT 2                     -
+               (X'73',X'73'),          SUBSCRIPT 3                     -
+               (X'74',X'74'),          SUBSCRIPT 4                     -
+               (X'75',X'75'),          SUBSCRIPT 5                     -
+               (X'76',X'76'),          SUBSCRIPT 6                     -
+               (X'77',X'77'),          SUBSCRIPT 7                     -
+               (X'78',X'78'),          SUBSCRIPT 8                     -
+               (X'79',X'79')           SUBSCRIPT 9
+         EJECT
+          SPACE 3
+          PRINT GEN
+          CODE
+          EJECT
+          LET RC,:=,0
+             OPEN (PRINTDCB,OUTPUT)    @ * OEFFNE PRINT DATEI ;
+             OPEN INFODCB              @ * OEFFNE INFO DATEI ;
+             #USE R3,IHADCB,:INFODCB
+             $IF DCBOFLGS,:,DCBOFOPN
+                                       @ * INFO DATEI OFFEN
+             THEN
+                COPY DRUCKEN           @ * ;
+                CLOSE PRINTDCB         @ * SCHLIESSE DRUCK DATEI ;
+                CLOSE INFODCB          @ * SCHLIESSE INFO DATEI ;
+             ELSE
+                PUT PRINTDCB,ERRMSG    @ * FEHLERMELDUNG
+                LET RC,:=,12
+             IF$ ,
+             #DROP R3
+          PROC$ INFOPRNT,RC=RC
+          END INFOPRNT
+./ ADD NAME=DRUCKEN
+  TITLE 'DRUCKEN'
+DRUCKEN   $BLOCK
+             $LOOP
+                GET INFODCB            @ * LIES INFO DATEI
+             WHILE EOFIND,%,X'80'      @ * NOT EOF
+             LOOP
+                                       @ * UEBERSETZE MIT TABELLE ;
+                LET R4,:=,DCBLRECL,-,5+1:#
+                $IF R4,>=,0
+                THEN
+                   EX  R4,TRANSL
+                   CONST
+TRANSL             TR  5(0,R1),TRTAB
+                   CODE
+                IF$
+                LET R0,:=,R1
+                PUT PRINTDCB,(0)       @ * GIB AUS
+             LOOP$ ,
+EOFR         $PROC TYPE=BASIC
+                LET EOFIND,:,X'80'     @ * SETZE EOF INDIKATOR
+             PROC$ EOFR
+          BLOCK$ DRUCKEN
+          ENDCOPY DRUCKEN

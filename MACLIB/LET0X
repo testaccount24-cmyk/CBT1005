@@ -1,0 +1,134 @@
+         MACRO ,                                       COMPUT MACRO SET
+         LET0X &GPR,&OP,&C,&I,&R=@0
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                            PAHL (GMD-IST/RZ) 00MAR73
+.*  APPLY OPERATOR &OP USING OPERAND &C TO REGISTER &GPR        27MAR75
+.*       SUB-MACRO FOR  "LET"  ETC.. MAY NOT BE USED AS OUTER MACRO.
+.*
+.*  &GPR    : REGISTER-SYMBOL
+.*  &C      : IS A REGISTER-SYMBOL (CF. EQUR);
+.*            OR DENOTES A STORAGE FULLWORD/HALFWORD/BYTE (VALID NOTA-
+.*            TIONS CF. LET0Q);
+.*            OR DENOTES AN IMMEDIATE VALUE/ADDRESS (VALID NOTATIONS
+.*            CF. LET0Q).
+.*            THE CONTENT OF THE ADDRESSED GPR/STORAGE RESP. THE IMME-
+.*            DIATE VALUE/ADDRESS IS LOADED INTO &GPR.
+.*- &I      : OPTIONALLY SPECIFIES INDEX TO &LETA/M/L VECTORS IF THE
+.*            OPERAND HAS ALREADY BEEN ANALYSED BY LET0Q, TO SAVE AN-
+.*            OTHER LET0Q CALL BY THIS MACRO.
+.*
+         GBLA  &LETL(3)
+         GBLB  &LETLA
+         GBLC  &LETA(3),&LETM(3)
+         LCLA  &K,&L,&M
+         LCLB  &ISM
+         LCLC  &O,&CS
+.*
+&O       SETC  'A'
+         AIF   ('&OP' EQ '+').GO
+&O       SETC  'S'
+         AIF   ('&OP' EQ '-').GO
+&O       SETC  '&OP'
+.GO      ANOP
+&CS      SETC  '&C'
+         AIF   (T'&C EQ 'N').N         SELF-DEF.TERM OPTIMISED CODE
+         AIF   (K'&C LT 2 OR ('&C'(1,1) NE '+' AND '&C'(1,1) NE '-')   -
+               ).NONTYPE
+&CS      SETC  '&C'(2,K'&C-1)
+&ISM     SETB  ('&C'(1,1) EQ '-')
+         AIF   (T'&CS EQ 'N').N         SELF-DEF.TERM OPTIMISED CODE
+.NONTYPE AIF   (T'&C EQ '#' AND '&OP' EQ '*').MH MULTIPLY WITH EQUATE
+         AIF   ('&I' EQ '3').GOTTYPE   SPEED IT UP
+         LET0Q &C,3                    ANALYSE OPERAND
+.GOTTYPE AIF   (&LETL(3) EQ 0).EQU     OPERAND IS IMMEDIATE/ADDR
+.*
+.*  OPERAND IS STORAGE OR GPR
+.*
+         AIF   ('&O' EQ 'CA').QCA
+         AIF   ('&LETM(3)' EQ 'C').QC     BYTE OPERAND
+         AIF   ('&LETM(3)' NE 'H' OR '&OP' NE '*').Q
+&O       SETC  'M'
+.Q       &O&LETM(3) &GPR,&LETA(3)
+         AGO  .MEND
+.QC      AIF   ('&GPR' EQ '&R').QR1    NO WORK REG AVAILABLE
+         SR    &R,&R
+         IC    &R,&LETA(3)
+         &O.R  &GPR,&R
+         AGO  .MEND
+.QR1     MNOTE 0,'*** WARNING: @1 USED'
+         SR    @1,@1
+         IC    @1,&LETA(3)
+         &O.R  &GPR,@1
+         AGO  .MEND
+.QCA     ICM   &GPR,B'1000',&LETA(3)
+         C     &GPR,&LETA(3)
+         AGO  .MEND
+.*
+.*  OPERAND IS SELF-DEFINING TERM
+.*
+.N       AIF   ('&O'(1,1) EQ '*').NM
+         AIF   ('&O'(1,1) EQ '/').NM
+         AIF   ('&O'(1,1) EQ 'X').N32K
+         AIF   ('&O' EQ 'CA').CAN
+         AIF   ('&O'(1,1) EQ 'C' AND &CS EQ 0).LTR
+         AIF   ('&O'(1,1) EQ 'S' AND                                   -
+               &CS LE 2 AND NOT &ISM).BCTR
+         AIF   ('&O'(1,1) NE 'A' OR                                    -
+               (&CS GE 4096 AND NOT &ISM)).N2
+         AIF   (&LETLA AND '&GPR' NE '@0').NLA
+.N2      AIF   (&CS GE (32768+&ISM)).N32K
+         &O.H  &GPR,=Y(&C)
+         AGO  .MEND
+.N32K    &O    &GPR,=A(&C)
+         AGO  .MEND
+.NLA     LA    &GPR,&CS.(,&GPR)
+         AGO  .MEND
+.CAN     ICM   &GPR,B'1000',=A(&C)
+         C     &GPR,=A(&C)
+         AGO  .MEND
+.NM      AIF   (&CS EQ 1).MEND
+&K       SETA  &CS
+.NMLOOP  ANOP
+&M       SETA  &M+1
+         AIF   (&K EQ 2).POW
+&L       SETA  (&K/2)*2
+         AIF   (&K NE &L).NOPOW
+&K       SETA  &K/2
+         AGO   .NMLOOP
+.NOPOW   AIF   ('&O' NE '*').NOTYET
+         AIF   (&CS GE (32768+&ISM)).NOTYET
+.MH      MH    &GPR,=Y(&C)
+         AGO  .MEND
+.POW     AIF   ('&O' EQ '*').NMP
+         SRA   &GPR,&M
+         AGO  .NEGTEST
+.NMP     SLA   &GPR,&M
+.NEGTEST AIF   ('&C'(1,1) NE '-').MEND
+         LCR   &GPR,&GPR
+         AGO  .MEND
+.NOTYET  MNOTE 4,'OPERATION &O WITH ARGUMENT &C NOT YET IMPLEMENTED'
+         AGO  .MEND
+.*
+.*  OPERAND IS IMMEDIATE VALUE/ADDRESS (DEFINITION CF. LET0Q)
+.*
+.EQU     AIF   ('&GPR' EQ '&R').EQU1
+         LA    &R,&LETA(3)
+         &O.R  &GPR,&R
+         AGO   .MEND
+.EQU1    MNOTE 0,'*** WARNING: @1 USED'
+         LA    @1,&LETA(3)
+         &O.R  &GPR,@1
+         AGO  .MEND
+.*
+.*
+.*
+.LTR     LTR   &GPR,&GPR               COMPARE TO ZERO
+         AGO  .MEND
+.BCTR    AIF   (&K GE &C).MEND
+         BCTR  &GPR,0
+&K       SETA  &K+1
+         AGO   .BCTR
+.MEND    MEND

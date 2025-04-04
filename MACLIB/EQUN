@@ -1,0 +1,13 @@
+         MACRO
+&EQU     EQUN  &VALUE
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                                     LET/IF MACRO SET
+.*  EQUATE TO SELF-DEFINING TERM
+.*
+&EQU     SASLIST MACRO,'EQUN'
+&EQU     EQU   &VALUE,,C'#'
+.MEND    SASLIST MACEND
+         MEND

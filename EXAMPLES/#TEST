@@ -1,0 +1,33 @@
+         MACRO                  V:01JUL73-GEIST    REV:15MAY74-GEIST    15MAY74-
+         #TEST                                                          #---0002
+.* TEST, IF A NAME ON SYSLIST IS CONTAINED IN NAME VECTOR T OR          #---0003
+.*       IF 'ALL' IS IN T (=ALL EXAMPLES WANTED).                       #---0004
+.*      RESULT: GLOBAL &NOTFND = 0 | 1                                  #---0005
+.*              IF &NOTFND=1: STORE 1. ELEMENT OF SYSLIST ON T          #---0006
+.*              FOR MACRO #MACLIST, WHICH LISTS THESE NAMES             #---0007
+         GBLC  &T(64)          LIST OF MACRO NAMES | ALL                #---0008
+         GBLB  &NOTFND,&MACTEST                                         15MAY74-
+         GBLA  &TI,&TJ         TI=LAST_PARM    TJ=FIRST FREE ELEMENT    #---0010
+         LCLC  &MACRO                                                   #---0011
+         LCLA  &I,&J,&N                                                 #---0012
+         ACTR  1024                                                     #---0013
+         MHELP 128             SETOFF MHELP                             #---0014
+         AIF   ('&T(1)' EQ '$ALL').FOUND                                15MAY74-
+&N       SETA  N'&SYSLIST                                               15MAY74-
+.PARMS   AIF   (&J GE &N).NOTFND        FOR ALL ELEMENTS IN SYSLIST DO: #---0020
+&J       SETA   &J+1           INDEX IN SYSLIST                         #---0021
+&MACRO   SETC  '&SYSLIST(&J)'           FOR ALL ELEMENTS IN T DO:       #---0022
+&I       SETA   0              INDEX IN T                               #---0023
+.LKUP    AIF   (&I GE &TI).PARMS                                        #---0024
+&I       SETA  &I+1                                                     #---0025
+         AIF   ('&T(&I)' NE '&MACRO').LKUP                              #---0027
+.*                                                                      #---0028
+.FOUND   ANOP                                                           #---0029
+         MHELP 58*&MACTEST     MHELP ON IF TEST OPTION IS ON            #---0030
+&NOTFND  SETB  0               SAY FOUND                                #---0031
+         MEXIT                                                          #---0033
+.NOTFND  ANOP                                                           #---0034
+&NOTFND  SETB  1               SAY NOT FOUND                            #---0035
+&T(&TJ)  SETC  '&SYSLIST(1)'   NOTE 1. ELEM. OF SYSLIST IN T            #---0036
+&TJ      SETA   &TJ+1          INCR. FREE ELEM. INDEX OF T              #---0037
+.MEND    MEND                                                           #---0038

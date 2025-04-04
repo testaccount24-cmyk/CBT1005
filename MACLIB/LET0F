@@ -1,0 +1,83 @@
+         MACRO ,                                       COMPUT MACRO SET
+         LET0F &GPR,&B,&I
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                            PAHL (GMD-IST/RZ) 00MAR73
+.*  FETCH OPERAND VALUE INTO REGISTER                           27MAR75
+.*       SUB-MACRO FOR  "LET"  ETC.. MAY NOT BE USED AS OUTER MACRO.
+.*
+.*  &GPR    : REGISTER-SYMBOL
+.*  &B      : IS A REGISTER-SYMBOL (CF. EQUR);
+.*            OR DENOTES A STORAGE FULLWORD/HALFWORD/BYTE (VALID NOTA-
+.*            TIONS CF. LET0Q);
+.*            OR DENOTES AN IMMEDIATE VALUE/ADDRESS (VALID NOTATIONS
+.*            CF. LET0Q).
+.*            THE CONTENT OF THE ADDRESSED GPR/STORAGE RESP. THE IMME-
+.*            DIATE VALUE/ADDRESS IS LOADED INTO &GPR.
+.*- &I      : OPTIONALLY SPECIFIES INDEX TO &LETA/M/L VECTORS IF THE
+.*            OPERAND HAS ALREADY BEEN ANALYSED BY LET0Q, TO SAVE AN-
+.*            OTHER LET0Q CALL BY THIS MACRO.
+.*
+         GBLA  &LETL(3)
+         GBLB  &LETLA                  INDICATES HI-O BYTE OF &GPR = 0
+         GBLC  &LETA(3),&LETM(3)
+         LCLC  &TB
+         LCLA  &BB
+.*
+&TB      SETC  '&B'
+         AIF   (T'&B EQ 'N').N         SELF-DEF.TERM OPTIMISED CODE
+         AIF   (K'&B LT 2 OR ('&B'(1,1) NE '-'                         -
+               AND '&B'(1,1) NE '+')).NONTYP
+&TB      SETC  '&B'(2,K'&B-1)
+         AIF   (T'&TB EQ 'N').NSHORT    SELF-DEF.TERM OPTIMISED CODE
+.NONTYP  AIF   ('&I' EQ '2').GOTTYPE   SPEED IT UP.
+         LET0Q &B,2                    ANALYSE OPERAND
+.GOTTYPE AIF   ('&LETM(2)' EQ 'R').BREG OPERAND IS GPR
+         AIF   (&LETL(2) EQ 0).EQU     OPERAND IS IMMEDIATE/ADDR
+.*
+.*   FETCH OPERAND FROM STORAGE
+.*
+         AIF   ('&LETM(2)' EQ 'C').IC
+         L&LETM(2) &GPR,&LETA(2)
+         AGO  .MEND
+.IC      AIF   ('&GPR' NE '@0' AND '&LETA(2)'(K'&LETA(2),1) EQ ')').ICX
+         SR    &GPR,&GPR
+         IC    &GPR,&LETA(2)
+         AGO   .SETLA
+.*  THE FOLLOWING UNUSUAL BYTE-LOAD IS USED TO AVOID RARELY DEBUGGABLE
+.*  ERROR IF THE OPERAND ADDR IS INDEXED BY &GPR.
+.ICX     IC    &GPR,&LETA(2)
+         N     &GPR,=XL4'000000FF'        ISOLATE LAST BYTE
+         AGO   .SETLA
+.LA      LA    &GPR,&B
+.SETLA   ANOP
+&LETLA   SETB  1
+         AGO  .MEND
+.*
+.*  B OPERAND IS SELF-DEFINING TERM
+.*
+.NSHORT  AIF   (&TB EQ 0).NZERO
+         AIF   ('&B'(1,1) EQ '-').NEG
+.N       AIF   (&TB NE 0).N1
+.NZERO   SR    &GPR,&GPR
+         AGO   .SETLA
+.N1      AIF   (&TB LT 4096).LA
+         AIF   (&TB GE 32768).NF
+.NHALF   LH    &GPR,=Y(&B)
+         AGO   .SETLA
+.NEG     AIF   (&TB LE 32768).NHALF
+.NF      L     &GPR,=A(&B)
+         AGO   .MEND
+.*
+.*  OPERAND IS IMMEDIATE VALUE/ADDRESS (CF. LET0Q FOR DEFINITION)
+.*
+.EQU     LA    &GPR,&LETA(2)
+         AGO   .SETLA
+.*
+.*  OPERAND IS GPR
+.*
+.BREG    AIF   ('&B(1)' EQ '&GPR').MEND
+         LR    &GPR,&B(1)
+.MEND    MEND

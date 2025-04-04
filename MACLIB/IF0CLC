@@ -1,0 +1,22 @@
+         MACRO
+&NAME    IF0CLC &FROM,&TO,&LENGTH
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*
+.*
+         GBLC  &SASLIST(100)
+         GBLA  &SASINDEX
+.*
+.*
+&NAME    CLC   0(&LENGTH,*-*),&FROM
+         ORG   *-4
+         DC    S(&TO)
+         ORG   *+2
+         AGO   .MEND
+.NOSAS   ANOP
+ SASLIST MNOTE,'@E2&NAME CLC   &TO.(&LENGHT),&FROM'
+&NAME    DC    Y(X'D4FF'+&LENGTH),S(&TO),S(&FROM)
+.MEND    ANOP
+         MEND

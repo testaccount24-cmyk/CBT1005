@@ -1,0 +1,57 @@
+         MACRO ,                                       STRUCT MACRO SET
+         LOOP$ &LABEL
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                                PAHL (GMD-RZ) 01APR75
+.*  "(LOOP" BLOCK <"UNTIL" COND> "LOOP)"                        03OCT75
+.*       END OF LOOP.
+.*
+         GBLA  &BLK,&BLKCC(30)
+         GBLC  &BLKTYPE(30),&BLKID(30),&BLKNAME(30)
+         GBLB  &DEFER
+         GBLB  &BLKXCPT(30)
+         LCLC  &C
+&LABEL   SASLIST MACRO,'LOOP)'
+.*  PLACEMENT VERIFICATION
+&C       SETC  '&BLKTYPE(&BLK)'
+         AIF   ('&C'(1,1) NE 'U' AND '&C'(1,1) NE 'W').NOWU
+         LOOP ,                          TERMINATE WHILE/UNTIL BLOCK
+.NOWU    ANOP
+&C       SETC  '&BLKTYPE(&BLK)'
+         AIF   ('&C' NE 'LX').Y0
+         AIF   ('&LABEL' NE '' AND '&LABEL' NE '&BLKNAME(&BLK)').Y0
+.*  LOOP REPEATER INSTRUCTIONS
+         AIF   (NOT &BLKXCPT(&BLK)).NOXCPT
+         CODEX ,
+&BLKXCPT(&BLK) SETB 0
+         IF0BC 15,@@Z&BLKID(&BLK)
+         CODEX ,
+.NOXCPT ANOP
+         AIF   ('&BLKNAME(&BLK)' EQ '').NOXREF
+         DS    0S(&BLKNAME(&BLK))
+.NOXREF  ANOP
+@@Y&BLKID(&BLK) BC  15,@@A&BLKID(&BLK) JUMP BACK TO LOOP.
+.*  END OF LOOP
+&BLK     SETA  &BLK-1                  POP
+         AIF   (&BLK EQ 0).NOOUTER
+&T       SETC  '&BLKID(&BLK)-*'
+         AIF   ('&BLKTYPE(&BLK)' NE 'IT').WTEST
+.* $IF .. THEN .. $IF .. THEN .. ELSE .. IF$ .. ELSE .. IF$
+@@Z&BLKID(&BLK+1) EQU @@Z&BLKID(&BLK)-(@@Y&T)/(@@Y&T)*(@@Z&T)
+         AGO  .MEND
+.WTEST   AIF   ('&BLKTYPE(&BLK)' NE 'WD').LTEST
+@@Z&BLKID(&BLK+1) EQU @@A&BLKID(&BLK)-(@@Y&T)/(@@Y&T)*(@@A&T)
+         AGO  .MEND
+.LTEST   AIF   ('&BLKTYPE(&BLK)' NE 'L ').NOOUTER
+@@Z&BLKID(&BLK+1) EQU @@A&BLKID(&BLK)-(@@Y&T)/(@@Y&T)*(@@A&T)
+         AGO  .MEND
+.*
+.NOOUTER ANOP
+@@Z&BLKID(&BLK+1) DS   0H
+         AGO  .MEND
+.**********************************************************************
+.Y0      BLK0TEST LOOP$,L,&LABEL
+.MEND    SASLIST MACEND
+         MEND

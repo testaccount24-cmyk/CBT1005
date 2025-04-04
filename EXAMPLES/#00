@@ -1,0 +1,8 @@
+         #TEST   $                                                      #20  001
+         AIF   (&NOTFND).$                                              #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   $'                                 #20  004
+         SPACE                                                          #20  005
+PGM      CSECT                                                          #20  006
+         PRINT OFF                                                      #20  007
+.$       ANOP                                                           #20  008

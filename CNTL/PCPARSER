@@ -1,0 +1,12 @@
+//&SYSIDPC JOB ,'PCPARSER',NOTIFY=&SYSID,TIME=1,PASSWORD=&SYSPSWD
+//* ---------------------------------------------------------------
+//*
+//* FUNCTION:  COMPILES AND LINK EDITS
+//*            PROGRAM 'PCPARSER' INTO 'SYS2.SPTS.LINKLIB'
+//*            (THIS IS THE PSEUDO CODE PROCESSOR).
+//*
+//* AUTHOR:    P. SYLVESTER     GMD - Z1.BN       84-05-23
+//*
+//* ---------------------------------------------------------------
+//PCPGEN  EXEC CSTRUCLL,LMOD='SYS2.SPTS.LINKLIB(PCPARSER)'
+//STRU.SYSIN DD DISP=SHR,DSN=SYS2.SPTS.SOURCE(PCPARSER)

@@ -1,0 +1,102 @@
+         MACRO
+         ORELSE &A,&REL,&B,&THEN
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                                     STRUCT MACRO SET
+.* "(IF" CONDITION "ORELSE" CONDITION "THEN" BLOCK <"ELSE" BLOCK> "IF)"
+.* "(CASE" <"ON" COND "DO" BLOCK>* <"ELSE" BLOCK> "CASE)"  ALTN'TIVELY
+.*       TERMINATE PRECEDING CONDITION,
+.*       EVALUATE CONDITIONAL EXPRESSION,
+.*       BEGIN "THEN" PART OF "IF" CLAUSE.
+.*
+         GBLA  &BLK,&BLKCC(30),&BLKDCNT(30)
+         GBLC  &BLKTYPE(30),&BLKID(30)
+         GBLB  &DEFER
+         LCLC  &C,&DC
+.SASLIST SASLIST MACRO,'ORELSE'
+.*  PLACEMENT VERIFICATION
+&C       SETC  '&BLKTYPE(&BLK)'
+         AIF   ('&C' NE 'IX' AND '&C' NE 'WX' AND '&C' NE 'CX' AND     -
+               '&C' NE 'UX' AND                                        -
+               '&C' NE 'LX' AND '&C' NE 'EX' AND '&C' NE 'JX').YPLACE
+.*
+.*  TERMINATE PRECEDING CONDITION
+.*
+         AIF   ('&C'(1,1) NE 'C').BLKC
+&DC      SETC  '&BLKDCNT(&BLK)'
+.BLKC  IF0BC   &BLKCC(&BLK),@@T&BLKID(&BLK)&DC,(0+1)  JUMP TO "THEN"
+         AIF   (NOT &DEFER).NODEFER
+@@T&BLKID(&BLK+1) EQU @@T&BLKID(&BLK)&DC
+@@W&BLKID(&BLK+1) EQU @@W&BLKID(&BLK)&DC
+@@Y&BLKID(&BLK+1) EQU @@Y&BLKID(&BLK)&DC
+@@X&BLKID(&BLK+1) EQU @@Y&BLKID(&BLK)&DC
+@@V&BLKID(&BLK+1) DS  0H
+@@F&BLKID(&BLK+1) DS  0H
+&DEFER   SETB   0
+.NODEFER ANOP
+.*
+.*  EVALUATE CONDITIONAL EXPRESSION
+.*
+.GO      AIF   ('&A&REL&B' NE '').IF0CE
+&BLKTYPE(&BLK) SETC '&C'(1,1)'O'  IN "ORELSE" CONDITION
+         AGO  .MEND
+.IF0CE   IF0CE &A,&REL,&B
+&BLKTYPE(&BLK) SETC '&C'(1,1)'X'       BEING IN CONDITION PART OF "IF"
+.*
+.*  SEE WHAT TO BE DONE AFTER COMPARISON
+.*
+         AIF   ('&THEN' EQ '').MEND
+         AIF   ('&BLKTYPE(&BLK)'(1,1) EQ 'E').TSTEX
+         AIF   ('&BLKTYPE(&BLK)'(1,1) EQ 'C').TSTDO
+         AIF   ('&BLKTYPE(&BLK)'(1,1) EQ 'W').TSTLOOP
+.*
+.*  "THEN"
+.*
+.TSTTHEN AIF   ('&THEN' NE 'THEN').YTHEN
+         THEN  ,
+         AGO  .PARMTST
+.**********************************************************************
+.YPLACE  BLK0TEST ORELSE,&C
+         AGO  .MEND
+.YTHEN   MNOTE 08,'****** ORELSE: ASSUMED "THEN" INSTEAD OF INVALID "&T-
+               HEN".'
+         THEN  ,
+         AGO  .PARMTST
+.*
+.*  "DO"
+.*
+.TSTDO   AIF   ('&THEN' NE 'DO').YDO
+         DO    ,
+         AGO  .PARMTST
+.**********************************************************************
+.YDO     MNOTE 08,'****** ORELSE: ASSUMED "DO" INSTEAD OF INVALID "&THE-
+               N".'
+         DO    ,
+         AGO  .PARMTST
+.*
+.*  "EX$
+.*
+.TSTEX   AIF   ('&THEN' NE 'EX$' AND '&THEN' NE 'EX)').YEX
+         EX$   ,
+         AGO  .PARMTST
+.**********************************************************************
+.YEX     MNOTE 08,'****** ORELSE: ASSUMED "EX$" INSTEAD OF INVALID "&TH-
+               EN".'
+         EX$   ,
+         AGO  .PARMTST
+.*
+.*  "LOOP"
+.*
+.TSTLOOP AIF   ('&THEN' NE 'LOOP').YLOOP
+         LOOP  ,
+         AGO  .PARMTST
+.**********************************************************************
+.YLOOP   MNOTE 08,'****** ORELSE: ASSUMED "LOOP" INSTEAD OF INVALID "&T-
+               HEN".'
+         LOOP  ,
+.PARMTST AIF   (N'&SYSLIST LE 4 ).MEND
+         MNOTE 08,'****** ORELSE: ONLY FOUR  PARAMETERS ALLOWED'
+.MEND    SASLIST MACEND
+         MEND

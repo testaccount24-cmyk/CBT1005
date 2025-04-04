@@ -1,0 +1,15 @@
+         PRINT  OFF
+         GBLB  &NOTFND,&BFSGEN,&NOTANY
+         GBLA  &BMCERSC
+*
+         #MACROS#  PTHGO,PTHTAB
+         SPACE
+         COPY  #PREFIX
+         COPY  #10
+*        COPY  #11
+*        COPY  #12
+*        COPY  #13
+*        COPY  #14
+*        COPY  #15
+         COPY  #SUFFIX
+.END     END

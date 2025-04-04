@@ -1,0 +1,69 @@
+         MACRO                                         STRUCT MACRO SET
+&LABEL   $WHILE &A,&REL,&B,&LOOP
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                            PAHL (GMD-IST/RZ) 00JAN74
+.*  CONDITIONAL LOOP:                                           27MAR75
+.*  "(WHILE" CONDITION "LOOP" BLOCK "WHILE)"
+.*       BEGIN "WHILE" CLAUSE,
+.*       EVALUATE CONDITIONAL EXPRESSION,
+.*-      BEGIN LOOP PART OF "WHILE" CLAUSE.
+.*
+.*  &A,&REL,&B  COMPRISES THE CONDITIONAL EXPRESSION, LEAVING TRUE OR
+.*       FALSE.  WHAT IS A LEGAL CONDITION, IS DEFINED IN MACRO IF0CE.
+.*  (@0)  CONTENTS MAY BE DESTROYED BY EXPRESSION EVALUTION.
+.*
+         GBLA  &BLK
+         GBLC  &BLKTYPE(30),&BLKNAME(30),&BLKID(30)
+.*
+&LABEL   SASLIST MACRO,'(WHILE'
+&BLK     SETA  &BLK+1                  PUSH BLOCK STRUCTURE
+&BLKTYPE(&BLK) SETC 'LX'               BEING IN COND PART OF "WHILE"
+&BLKNAME(&BLK) SETC '&LABEL'
+         SPTSNDX L
+&BLK     SETA  &BLK+1                  PUSH BLOCK STRUCTURE
+&BLKTYPE(&BLK) SETC 'W '               BEING IN COND PART OF "WHILE"
+&BLKNAME(&BLK) SETC '&LABEL'
+         SPTSNDX W
+         AIF   ('&LABEL' EQ '').GO
+&LABEL   DS    0H
+.*
+.*  EVALUATE CONDITIONAL EXPRESSION
+.*
+.GO      ANOP
+@@A&BLKID(&BLK-1) DS  0H                   REPETITION POINT
+         AIF   ('&A&REL&B' NE '').IF0CE
+         AGO  .MEND
+.IF0CE   IF0CE &A,&REL,&B
+&BLKTYPE(&BLK) SETC 'WX'               BEING IN CONDITION PART OF "IF"
+.*
+.*  SEE WHAT TO BE DONE AFTER COMPARISON
+.*
+         AIF   ('&LOOP' EQ '').MEND
+.*
+.*  BEGIN LOOP BODY OF WHILE CLAUSE
+.*
+         AIF   ('&LOOP' NE 'LOOP').OR
+         LOOP  ,
+         AGO  .MEND
+.*
+.*  "OR CONDITION,..."
+.*
+.OR      AIF   ('&LOOP' NE '$OR$' AND '&LOOP' NE 'OR'                  -
+               AND '&LOOP' NE 'ORELSE').AND
+         ORELSE  &SYSLIST(5),&SYSLIST(6),&SYSLIST(7),&SYSLIST(8)
+         AGO  .MEND
+.*
+.*  "AND CONDITION,..."
+.*
+.AND     AIF   ('&LOOP' NE '$AND$' AND '&LOOP' NE 'AND'                -
+               AND '&LOOP' NE 'ANDTHEN').YLOOP
+         ANDTHEN &SYSLIST(5),&SYSLIST(6),&SYSLIST(7),&SYSLIST(8)
+         AGO  .MEND
+.**********************************************************************
+.YLOOP   MNOTE 08,'****** (WHILE: "&LOOP" INVALID -- ASSUMED "LOOP"'
+         LOOP  ,
+.MEND    SASLIST MACEND
+         MEND

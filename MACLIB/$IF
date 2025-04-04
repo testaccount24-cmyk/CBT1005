@@ -1,0 +1,65 @@
+         MACRO ,                                       STRUCT MACRO SET
+&LABEL   $IF   &A,&REL,&B,&THEN
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                            PAHL (GMD-IST/RZ) 00MAR73
+.*  "(IF" CONDITION "THEN" BLOCK <"ELSE" BLOCK> "IF)"           27MAR75
+.*       BEGIN "IF" CLAUSE,
+.*       EVALUATE CONDITIONAL EXPRESSION,
+.*       BEGIN "THEN" PART OF "IF" CLAUSE.
+.*
+.*  &A,&REL,&B  COMPRISES THE CONDITIONAL EXPRESSION, LEAVING TRUE OR
+.*       FALSE.  WHAT IS A LEGAL CONDITION, IS DEFINED IN MACRO IF0CE.
+.*
+         GBLA  &BLK
+         GBLC  &BLKTYPE(30),&BLKNAME(30),&BLKID(30)
+         LCLC  &C
+.*
+&LABEL   SASLIST MACRO,'(IF'
+&BLK     SETA  &BLK+1                  PUSH BLOCK STRUCTURE
+&BLKTYPE(&BLK) SETC 'I '               BEING IN CONDITION PART OF "IF"
+&BLKNAME(&BLK) SETC '&LABEL'
+         SPTSNDX IF
+         AIF   ('&LABEL' EQ '').GO
+&LABEL   DS    0H
+.*
+.*  EVALUATE CONDITIONAL EXPRESSION
+.*
+.GO      ANOP
+@@A&BLKID(&BLK) DS 0H
+         AIF   ('&A&REL&B' NE '').IF0CE
+         AGO  .MEND
+.IF0CE   IF0CE &A,&REL,&B
+&BLKTYPE(&BLK) SETC 'IX'               BEING IN CONDITION PART OF "IF"
+.*
+.*  SEE WHAT TO BE DONE AFTER COMPARISON
+.*
+         AIF   ('&THEN' EQ '').MEND
+.*
+.*  "THEN"
+.*
+         AIF   ('&THEN' NE 'THEN').OR
+         THEN  ,
+         AGO  .MEND
+.*
+.*  "OR CONDITION,..."
+.*
+.OR      AIF   ('&THEN' NE '$OR$' AND '&THEN' NE 'OR'                  -
+               AND '&THEN' NE 'ORELSE').AND
+         ORELSE &SYSLIST(5),&SYSLIST(6),&SYSLIST(7),&SYSLIST(8)
+         AGO  .MEND
+.*
+.*  "AND CONDITION,..."
+.*
+.AND     AIF   ('&THEN' NE '$AND$' AND '&THEN' NE 'AND'                -
+               AND '&THEN' NE 'ANDTHEN').YTHEN
+         ANDTHEN &SYSLIST(5),&SYSLIST(6),&SYSLIST(7),&SYSLIST(8)
+         AGO  .MEND
+.**********************************************************************
+.YTHEN   MNOTE 08,'****** (IF: ASSUMED "THEN" INSTEAD OF INVALID "&THEN-
+               ".'
+         THEN
+.MEND    SASLIST MACEND
+         MEND

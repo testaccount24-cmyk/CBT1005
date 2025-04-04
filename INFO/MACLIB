@@ -1,0 +1,4248 @@
+1
+-
+-
+-
+-
+0                                          Makros und andere Hilfsmittel
+0                                         zum strukturierten Programmieren
+0                                                   in Assembler
+0                                              - Benutzeranleitung -
+0                                                   Version 3.04
+                                                   Stand 2.4.1985
+
+-
+-
+-
+-
+-
+-
+-
+-
+-
+0                     W.M. McKeeman:
+                      It is as important to forbid non-sense
+                      as it is to permit good sense.
+0                     D. Gries:
+                      The importance of style in the language
+                      cannot be overestimated.
+0                     L. Reiners:
+                      Denken und Ausdruck sind aufs innigste verkettet.
+                      Wer seinen Stil verbessert, schult auch sein Denken.
+-
+
+0
+0
+0                                            Bereich Bonn
+                                             P. Sylvester
+0                                            GMD-Arbeitspapier Nr. 146
+0                                            April 1985
+0
+
+1
+-
+-
+              _____________________________________________________
+0             COPYRIGHT
+0             Selbstverlag GMD
+-
+-
+-
+              _____________________________________________________
+0             Alle Rechte vorbehalten.  Insbesondere ist die  ûber-
+              fÇhrung  in maschinenlesbare Form sowie das Speichern
+              in Informationssystemen,  auch auszugsweise,  nur mit
+              schriftlicher Einwilligung der GMD gestattet.
+-
+-
+-
+-
+-
+-
+0             Anschrift des Autors:
+              Peter Sylvester
+              Gesellschaft fÇr Mathematik und Datenverarbeitung mbH
+              Riemenschneiderstr. 11
+              D-5300 Bonn 2
+-             Gesellschaft fÇr Mathematik und Datenverarbeitung mbH
+0             _____________________________________________________
+0             Bereich Birlinghoven
+              Postfach 1240, Schlo[ Birlinghoven,
+              D-5205 St.Augustin 1,
+              Telefon (02241) 14-1, Telex 889469 gmd d
+0             Bereich Darmstadt
+              Rheinstra[e 75,
+              D-6100 Darmstadt,
+              Telefon (06151) 869-1, Telex 419286 gmd d
+0             _____________________________________________________
+1
+-
+                                   Inhaltsverzeichnis
++                                  __________________
+-             0.  Einleitung               3.  Programmstrukturen
+
+              0.1 Syntaxnotationen         3.1 Prozedurbl°cke
+
+              1.  Objekte                        $PROC-Makro
+                                                 PROC$-Makro
+              1.1 Elementare Datentypen          CONST-Makro
+                                                 DATA-Makro
+                    EQUN-Makro                   CODE-Makro
+                    EQUR-Makro
+                                           3.2 Prozeduraufrufe und
+              1.2 Operationen auf              Programmstrukturen
+                  Elementarobjekten
+                                                 ICALL-Makro
+                    LET-Makro                    XCALL-Makro
+
+              1.3 Registerverwaltung       3.3 Verfeinerungstechnik
+
+                    #USE-Makro                   COPY-Instruktion
+                    #DROP-Makro                  ENDCOPY-Makro
+                                                 IEBUPDTE-Preprozessor
+              2.  Elementare                     SASLIST-Postprozessor
+                  Kontrollflu[strukturen         SASLIST-Makro
+
+              2.1 Bedingungen              4.  Benutzung und Hilfsmittel
+
+                    TRUECC-Makro           4.1 Quellprogramm-
+                    $EX$-Makro                 Konventionen und
+                    $EX-Makro                  -Restriktionen
+                    EX$-Makro
+                    ANDTHEN-Makro          4.2 Prozeduren
+                    ORELSE-Makro
+                                           5.  Alphabetischer Index
+              2.2 Strukturen
+                                           6.  Literatur
+                    $IF-Makro
+                    THEN-Makro
+                    ELSE-Makro
+                    ELSEIF-Makro
+                    IF$-Makro
+                    $CASE-Makro
+                    ON-Makro
+                    DO-Makro
+                    CASE$-Makro
+                    $WHILE-Makro
+                    WHILE$-Makro
+                    $LOOP-Makro
+                    LOOP$-Makro
+                    $FOR-Makro
+                    FOR$-Makro
+                    WHILE-Makro
+                    UNTIL-Makro
+                    LOOP-Makro
+                    $BLOCK-Makro
+                    BLOCK$-Makro
+                    IF-Makro
+                    REPEAT-Makro
+                    LEAVE-Makro
+                    GOTO-Makro
+                    SIGNAL-Makro
+                    POSTLUDE-Makro
+
+1
+-             0. Einleitung
+              ------------------------------------------------------------
+-
+              Dieses  Handbuch  beschreibt  eine Sammlung von Makros,  die
+0             strukturiertes Programmieren in Assembler  unterstÇtzen  und
+0             einheitliche M°glichkeiten fÇr Zuweisungen unterschiedlicher
+0             Datentypen  zur  VerfÇgung  stellen.  Der Makrosatz wurde im
+0             Jahre 1973 im Institut fÇr Software Technologie der GMD  von
+0             Th.  Pahl und P. Beecken entwickelt und seitdem von der KAW-
+0             Projektgruppe wÜhrend einer gro[en Anwendung  erweitert.  Er
+0             wurde  sowohl  bei  der  Implementierung von neuen Betriebs-
+0             systemkomponenten des B.I.T.S.  - Bonn Interactive  Terminal
+0             System unter MFT - als auch bei der Anwendungsprogrammierung
+0             erfolgreich  eingesetzt.  Bei  der  Implementierung des MVS-
+0             Drivers von B.I.T.S.-SPF unter MVS Rel. 3.7 und bei der  Er-
+0             stellung  von COMEDY  (Computer Output on Microfiche Editing
+0             System)  wurde der Makrosatz vervollstÜndigt  und  im  Funk-
+0             tionsumfang abgerundet. Gleichzeitig wurde die UnterstÇtzung
+0             einer Verfeinerungstechnik eingebaut.
+-             Eine erste Version der Beschreibung der Makros wurde im Jahr
+0             1978 von E. Schwarz,  U. Viebeg und J. Geist-Stoffleth ange-
+0             fertigt Ý1¨.
+-             Die Basisversion des Programms SASLIST  (Kap 3.3)  wurde  in
+0             den  Jahren 1978 und 1979 von M. Heinrici und C. Zahlten als
+0             MTA-Ausbildungsarbeit angefertigt. Das Programm wurde danach
+0             mehrfach erweitert, modifiziert und korrigiert;  die derzeit
+0             vorliegende  Version  wird  mit  Sicherheit nicht die letzte
+0             sein.
+-             Der Einsatz der Makros bei Ausbildungspraktika und PrÇfungs-
+0             arbeiten fÇr Informatik-Assistenten  zeigte  viele  Probleme
+0             der Implementation und der Beschreibung.  Insbesondere gilt:
+0             Zum VerstÜndnis der beschriebenen Makros  sollte  der  Leser
+0             mit  den grundlegenden Begriffen der IBM /370 Maschinenspra-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                            Vorwort    1
+1
+-             0. Einleitung
+              ------------------------------------------------------------
+-
+              che und der Assemblersprache,  besonders  der  Makrosprache,
+0             wie sie z. B.  in Ý2¨,Ý3¨ und Ý4¨ dargestellt sind, vertraut
+0             sein.
+-             Der beschriebene Makrosatz kann in der vorliegenden Form nur
+0             vom IBM/370 Assembler H verarbeitet werden. Die in Kapitel 4
+0             beschriebenen Prozeduren benutzen eine  aus  Stanford  (USA)
+0             stammende,  von  G.  Mushial  erstellte modifizierte Version
+0             dieses H-Assemblers Ý6¨.
+-             Diese Beschreibung der Makros enthÜlt nicht alle derzeit im-
+0             plementierten Makroaufrufformen.  Die  Beschreibung  ist  so
+0             angelegt,  da[  bei  zukÇnftigen  Erweiterungen die hier be-
+0             schriebenen Funktionen unverÜndert bleiben.  Alle nicht  be-
+0             schriebenen  M°glichkeiten  sind daher nur auf eigene Gefahr
+0             benutzbar.
+-
+-             Kommentare und VorschlÜge,  die sich auf den  Inhalt  dieser
+0             Beschreibung  und  die  Makros beziehen,  sind jederzeit er-
+0             wÇnscht und sollen weitergereicht werden an:
+-
+              P. Sylvester, GMD-Z1.BN
+-
+-
+-
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                            Vorwort    2
+1
+-             0. Einleitung
+              ------------------------------------------------------------
+-
+-             Das Programmieren mit Makros, sofern diese ausgetestet sind,
+0             bietet eine Reihe von Vorteilen wie z.B. komfortables Kodie-
+0             ren, Reduzierung der Wahrscheinlichkeit fÇr Fehler, leichte-
+0             re Lesbarkeit. Programme werden somit leichter zu warten. Es
+0             bietet weiterhin die  M°glichkeit,  Programmierstandards  zu
+0             definieren  und  zu  implementieren  sowie  eine h°here Pro-
+0             grammierebene zu schaffen.
+-
+              Eine ursprÇngliche und triviale Anwendung,  die  sowohl  die
+0             Zeit  fÇr  die Kodierung vermindert als auch die Korrektheit
+0             f°rdert,  ist der Einsatz von Makros fÇr wiederholt  auftre-
+0             tende  Folgen  von  Anweisungen.  Ein  weiteres  gro[es  An-
+0             wendungsgebiet von Makros ist die Definition von  speziellen
+0             Funktionen wie z. B. Aufrufe von externen oder internen Pro-
+0             grammen  inklusive der ParameterÇbergabe,  Kontrollblockver-
+0             waltung und Zugriff zu Systemvariablen.  Diese Techniken be-
+0             freien den Programmierer davon, zu viele Details Çber Struk-
+0             turen  und  Daten kennen und diese in jeder einzelnen Anwei-
+0             sung anwenden zu mÇssen.
+-
+              Die  beschriebenen  Makros  bieten  dem  Programmierer  eine
+0             Sprachebene,  die  mit  modernen h°heren Programmiersprachen
+0             Konstrukte  fÇr  Kontrollflu[strukturierung  und  elementare
+0             Datenverwaltung gemeinsam hat.  Es stehen hiermit Makros zur
+0             VerfÇgung,  die dem  Assembler-Programmierer  die  Kontroll-
+0             strukturen 'sequence',  'selection', 'loop' bzw. 'iteration'
+0             und 'refinement' als Basisoperationen zur VerfÇgung stellen.
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                         Einleitung    3
+1
+-             0. Einleitung
+              ------------------------------------------------------------
+-
+              ® FÇr 'sequence' gibt es die Konstrukte $PROC, PROC$, $BLOCK
+0               und BLOCK$,
+0             ® fÇr 'selection' gibt es IF, $IF,  ORELSE,  ANDTHEN,  $EX$,
+0               $EX,  EX$,  THEN, ELSE, ELSEIF, IF$, $CASE, ON, DO, CASE$,
+0               POSTLUDE und SIGNAL,
+0             ® und fÇr 'loop' bzw.  'iteration' stehen die Makros $WHILE,
+0               LOOP,  WHILE$,  $LOOP, UNTIL, LOOP$, $FOR, FOR$ und REPEAT
+0               zur VerfÇgung.
+0             ® Daneben gibt es die Makros LEAVE und GOTO.
+0             ® 'refinement'-Strukturen werden durch COPY-Anweisungen  und
+0               das makro ENDCOPY realisiert.
+-
+              Durch Verwendung dieser Makros wird ein Programm in der Wei-
+0             se  strukturiert,  da[  Fallbehandlungen  und Schleifen klar
+0             sichtbar werden. Programmteile,  die eine Einheit oder Funk-
+0             tion bilden, werden gegenÇber dem Çbrigen Code abgegrenzt.
+-
+              Mit dem Makro LET hat der Benutzer ein Ausdrucksmittel,  mit
+0             dem er Zuweisung und andere Operationen verschiedener Daten-
+0             objektarten in einheitlicher  Weise  vornehmen  kann.  Dabei
+0             k°nnen  durch dieses Makro einfache AusdrÇcke aufgel°st wer-
+0             den.
+-
+              Es werden keine Makros fÇr Operationen auf zusammengesetzten
+0             Datenobjekten zur VerfÇgung gestellt.
+-
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                         Einleitung    4
+1
+-             0. Einleitung
+              ------------------------------------------------------------
+-
+              In ErgÜnzung dazu stehen Makros zur VerfÇgung,  die den Auf-
+0             ruf von externen und internen Prozeduren inklusive der Para-
+0             meterÇbergabe realisieren (XCALL,  ICALL), sowie Makros, die
+0             an beliebigen Programmstellen die Deklaration von  Datenfel-
+0             dern erm°glichen (DATA, CONST, CODE). DarÇberhinaus erlauben
+0             die  Makros  EQUR und EQUN eine Art Datenabstraktion  (Namen
+0             fÇr Konstanten)  fÇr Register und selbstdefinierende  Werte.
+0             Die  Makros  #USE und #DROP k°nnen zur Verwaltung von Basis-
+0             registern fÇr Programmteile und Datenbereiche verwendet wer-
+0             den.
+-
+              Wegen der Koexistenz von high-level  Konstrukten  realisiert
+0             durch  die  beschriebenen  Makros  und des low-level Sprach-
+0             umfangs der elementaren Assemblerprogrammierung eignen  sich
+0             diese Makros besonders fÇr die Implementierung von betriebs-
+0             systemnahen Programmen und Programmsystemen,  bei denen eine
+0             Implementierung mit h°heren Programmiersprachen zu  gr°[eren
+0             Schwierigigkeiten fÇhren wÇrde.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                         Einleitung    5
+1
+-             0.1 Syntaxnotationen
+              ------------------------------------------------------------
+-
+              Konventionen der Syntaxnotation
++             _______________________________
+-
+-             'Ý ¨'        - Diese  Klammern bezeichnen wÜhlbare Operanden
+0                            und Operandenlisten.
+-
+              '|'          - Das exklusive ODER trennt Alternativen.
+-
+              '-'          - Der Bindestrich leitet eine syntaktische  Be-
+0                            schreibung ein.
+-
+              '» º'        - Die  geschweiften Klammern schlie[en Alterna-
+0                            tiven oder Operandenlisten ein,  die  wieder-
+0                            holt werden k°nnen.
+-
+              '...'        - Die  den  Punkten  vorhergehende syntaktische
+0                            Einheit kann (mehrmals) wiederholt werden.
+-
+              W°rter,  bestehend aus gro[en Buchstaben,  bezeichnen  Werte
+0             oder  Teile  eines  Operanden,  die in dieser Form angegeben
+0             werden mÇssen.
+-
+              W°rter, die kleine Buchstaben enthalten,  bezeichnen syntak-
+0             tische Variablen,  die im aktuellen Makroaufruf durch zulÜs-
+0             sige Werte ersetzt werden mÇssen.
+-
+              Operanden werden durch Kommata getrennt. Kommata am Ende von
+0             Listen mit positionellen Parametern mÇssen weggelassen  wer-
+0             den.
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                           Notation    6
+1
+-             1. Objekte
+              ------------------------------------------------------------
+-
+              Der  Typ  von  Operanden  einer Maschineninstruktion wird im
+0             allgemeinen durch den Instruktionscode bestimmmt, d. h.  fÇr
+0             gleichartige  Operationen mit unterschiedlichen Operandenty-
+0             pen existieren verschieden Maschineninstruktionen.
+0             Beispiele:
+0                          Zuweisung   - L,LH,LR,IC,ST,STH,STC,...
+0                          Arithm. Op. - A,AH,AR,S,SH,SR,...
+0                          Vergleiche  - C,CH,CR,CLI,CLC,...
+-
+              Die Fehler, die durch Verwechslung solcher Maschineninstruk-
+0             tionen  entstehen,  treten  hÜufig  auf  und  sind  meistens
+0             schwerwiegend  und schwierig auffindbar.  Au[erdem kann eine
+0             {nderung des Typs eines Objekts (z. B.  ein Halbwort wird zu
+0             einem Vollwort) zu langwierigen, fehlertrÜchtigen {nderungen
+0             des gesamten Programms fÇhren.
+-
+              Generische  Operationen,  realisiert  durch Makros,  helfen,
+0             diese Schwierigkeiten und Fehlerquellen weitgehend  zu  ver-
+0             meiden. In den beschriebenen Makros werden generische Opera-
+0             tionen fÇr die o. a. Beispiele eingefÇhrt.
+-
+              Die  Operation  Zuweisung und die arithmetischen Operationen
+0             sind durch das Makro LET  realisiert.  Vergleichsoperationen
+0             sind  durch  das  Makro  $EX$  und  darauf aufbauende Makros
+0             ($IF, $WHILE, ...) realisiert.
+-
+              Beispiel:
+0                          LET     A,:=,B
+-
+              ist eine Zuweisung des Wertes des Objekts B an das Objekt A.
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                 Objektkonventionen    7
+1
+-             1. Objekte
+              ------------------------------------------------------------
+-
+              Zur Bestimmung  der  zu  benutzenden  Maschineninstruktionen
+0             werden  das Typ-Attribut und das LÜngen-Attribut des Assemb-
+0             lers fÇr Objekte benutzt.
+-
+              In den Makros werden folgende Objektarten unterschieden:
+-
+              1. Ganze Zahlen:
+0             Diese  k°nnen  als  Wertangabe  verwendet  werden.  Folgende
+0             Objekte werden als ganze Zahlen interpretiert:
+0             Ý + | - ¨ Objekt mit Typ-Attribut N.
+0             Beispiele:
+0                         LET   R1,:=,X'1000'
+0                         LET   WERT,:=,-9
+-
+              Die  Werte von Objekten mit Typ-Attribut N sind bereits wÜh-
+0             rend der Makrophase des Assemblers  verfÇgbar.  Die  Auswahl
+0             von Maschineninstruktionen fÇr Operationen mit diesen Objek-
+0             ten kann daher in Makros optimiert werden.
+0             Beispiel:
+0             LET   R1,-,1 wird Çbersetzt zu BCTR  R1,0.
+-
+              2. EQUN-Objekte:
+0             EQUN-Objekte  sind  eine  Verallgemeinerung  der Objekte mit
+0             Typ-Attribut N.
+0             Diese k°nnen als Wertangabe verwendet werden. Sie werden de-
+0             finiert durch Verwendung des Makros EQUN oder durch AnhÜngen
+0             von :N an einen Ausdruck.  Als Wert  ist  jeder  selbstdefi-
+0             nierende Ausdruck erlaubt.  Zuweisungen an EQUN-Objekte sind
+0             nicht erlaubt.
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                 Objektkonventionen    8
+1
+-             1. Objekte
+              ------------------------------------------------------------
+-
+              Bei Zuweisungen von EQUN-Objekten an einzelne  Zeichen  oder
+0             bei  Vergleichen  mit einzelnen Zeichen  (Definition s.  6.)
+0             wird angenommen,  da[ der Wert des selbstdefinierenden  Aus-
+0             drucks zwischen 0 und 255 liegt.
+0             Wird  ein EQUN-Objekt in Operationen nicht zusammen mit ein-
+0             zelnen Zeichen verwendet,  so ist zusÜtzlich als Wert  alles
+0             erlaubt,  was in dem Ausdruck =A(Wert) vom Assembler korrekt
+0             Çbersetzt werden kann.
+0             Beispiele:
+0                LENGTH   EQUN  *-ANFANG
+0                         LET   R1,:=,ENDE-ANFANG:N
+-
+              3. Adressen:
+0             Adressen k°nnen als Wertangaben verwendet werden. Sie werden
+0             durch :Wert angegeben.  Der Wert des Objekts wird dann durch
+0             die  Maschineninstruktion  LA  reg,Wert  besorgt.  Treten in
+0             Vergleichsoperationen Adressen auf,  so werden nur die  drei
+0             Adre[bytes verglichen.
+0             Bei   der   Zuweisung   einer   Adresse   an   ein  Vollwort
+0             (s. 4. und 5.)  oder Register werden alle vier Bytes verwen-
+0             det,  d. h. bei Zuweisungen (nicht bei Vergleichen) wird die
+0             Maschinenarchitekture IBM-XA unterstuetzt. Beispiele:
+-
+                  $IF   RPTR,=,:AREA
+0                 LET   RPTR,:=,:AREA
+-
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                 Objektkonventionen    9
+1
+-             1. Objekte
+              ------------------------------------------------------------
+-
+              4. Register:
+0             Unter  Verwendung  des  Makros  EQUR  k°nnen   Symbole   als
+0             Registersymbole  vereinbart   werden.   Die   Angabe   eines
+0             Registersymbols bedeutet,  da[ der  Inhalt  des  zugeh°rigen
+0             Registers fÇr die Operation verwendet werden soll.
+0             Der  erste  Aufruf  eines $PROC-Makros in einer Programmauf-
+0             schreibung definiert die Symbole R0,  R1,  ...  bis R15  als
+0             Registersymbole.
+0             Beispiele:
+0                        LET   R1,:=,0
+0                 RPTR   EQUR  R2
+0                        $IF   RPTR,<,:MAXAREA
+-
+              5. Halbworte und Vollworte im Hauptspeicher:
+0             Wird  ein Ausdruck,  der nicht unter die Objektarten 1. - 4.
+0             fÜllt,  in einem Makro als Operand verwendet,  so wird ange-
+0             nommen,  da[ es sich um ein Objekt im Hauptspeicher handelt.
+0             Das LÜngen-Attribut eines Ausdrucks oder Symbols  wird  ver-
+0             wendet,  um  festzustellen,  ob es sich um die Adresse eines
+0             Halbwortes oder Vollwortes handelt.  Hat das LÜngen-Attribut
+0             des Objekts den Wert 0 und das Typ-Attribut den Wert U  (un-
+0             defined),  so  wird angenommen,  da[ es sich um ein Vollwort
+0             handelt.  Ein Ausdruck kann explizit durch AnhÜngen  von  :H
+0             bzw. :F als Halbwort bzw. Vollwort spezifiziert werden.
+0             Die Makros verwenden den Inhalt des Halbwortes bzw. Vollwor-
+0             tes  in  den  auszufÇhrenden  Operationen.  Der Inhalt eines
+0             Halbwortes bzw.  Vollwortes wird als ganze Zahl mit  Vorzei-
+0             chen interpretiert.
+0             In  den beschriebenen Makros wird diese Objektart bezeichnet
+0             durch 'RX-Adresse'.
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                 Objektkonventionen   10
+1
+-             1. Objekte
+              ------------------------------------------------------------
+-
+              6. Zeichenketten im Hauptspeicher:
+0             Einzelne Zeichen  (Bytes)  im Hauptspeicher  werden  in  den
+0             Makros  spezifiziert  durch  die Angabe von S-Adresse:C oder
+0             durch ein Symbol,  dessen LÜngen-Attribut den  Wert  1  hat;
+0             Zeichenketten    werden    dargesteltt    durch   ein   Paar
+0             (S-Adresse,LÜnge).  Die  LÜnge  kann ein Registersymbol oder
+0             ein absoluter Ausdruck sein.  Der Inhalt des Registers  bzw.
+0             der Wert des Ausdrucks mu[ zwischen 1 und 256 liegen.
+0             Hinweis    zur    Implementierung:    Bei    Angabe    eines
+0             Registersymbols fÇr die  LÜnge  wird  mit  Hilfe  einer  EX-
+0             Maschineninstruktion  eine  MVC-Instruktion ausgefÇhrt.  Vor
+0             AusfÇhrung der EX-Instruktion wird der Inhalt des  Registers
+0             um  1  vermindert,  danach wird der Registerinhalt wieder um
+0             eins erh°ht; d. h. in dem Register mu[ die tatsÜchliche LÜn-
+0             ge der Zeichenkette enthalten sein.
+0             In Vergleichen oder Zuweisungen wird nur der  linke  Operand
+0             in dieser Form angegeben;  der andere Operand mu[ durch eine
+0             S-Adresse oder in der Form 'Zeichenkette' angegeben werden.
+0             Es gibt keine arithmetischen Operationen fÇr  Zeichenketten.
+0             Werden einzelne Zeichen in Operationen zusammen mit Objekten
+0             der Arten 4 oder 5 verwendet (auch arithmetische Operationen
+0             sind dann erlaubt),  so kann das einzelne Zeichen auch durch
+0             RX-Adresse bzw. RX-Adresse:C angegeben werden.  Das einzelne
+0             Zeichen wird als vorzeichenlose ganze Zahl interpretiert.
+-
+              Bei Zuweisungen finden Objektartanpassungen statt. Bereichs-
+0             Çberschreitungen werden nicht ÇberprÇft.
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                 Objektkonventionen   11
+1
+-             1. Objekte
+              ------------------------------------------------------------
+-
+              Bemerkungen:
++             ___________
+0             Um  Fehler  bei der Bestimmung der Objektart eines Operanden
+0             zu vermeiden,  mÇssen alle Datenfelder vor deren erster  Be-
+0             nutzung definiert werden (siehe Makros CONST, CODE, DATA).
+-
+              Abgesehen  von dieser durch den Assembler bestimmten techni-
+0             schen Notwendigkeit ist es vom stilistischen Standpunkt  aus
+0             gesehen sowieso besser,  die Objekte, mit denen man arbeiten
+0             will, vor der Benutzung zu deklarieren.
+-
+              Im allgemeinen wird von jedem Makro Register 0 als  Arbeits-
+0             register  verwendet,  wenn  Zwischenergebnisse oder Werte in
+0             einem Register gespeichert werden sollen. In seltenen FÜllen
+0             kann ein zweites Arbeitsregister  ben°tigt  werden.  HierfÇr
+0             wird  dann  das  Register 1 verwendet.  Das Makro informiert
+0             dann den Programmierer Çber die Benutzung dieses Registers.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                 Objektkonventionen   12
+1
+-             1.1 Elementare Datentypen
+              ------------------------------------------------------------
+-
+              EQUN         DEFINIERT EINEN SELBSTDEFINIERENDEN WERT
++             _____________________________________________________
+-
+              Das Makro EQUN wird  benutzt,  um  ein  Symbol  als  selbst-
+0             definierenden Wert zu deklarieren.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | Symbol   | EQUN   | Term                                 |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Term         - selbstdefinierender Ausdruck.
+0                            Wenn ein EQUN-Objekt nicht in Operationen mit
+0                            einzelnen Zeichen im Speicher verwendet wird,
+0                            so  sind als Wert fÇr Term alle AusdrÇcke er-
+0                            laubt,  fÇr die  der  Ausdruck  =A(Term)  vom
+0                            Assembler Çbersetzt werden kann.
+0                            Bei  Zuweisungen  an einzelne Zeichen und bei
+0                            Vergleichen  mit  einzelnen  Zeichen  (S. 11)
+0                            wird  angenommen,  da[  der Wert von Term ein
+0                            absoluter Ausdruck zwischen 0 und 255 ist.
+0                            Soll ein Ausdruck  in  einem  Makro  als  ein
+0                            EQUN-Objekt  behandelt  werden,  so  kann man
+0                            dies erreichen, indem man :N an den Operanden
+0                            anhÜngt.  (siehe auch  Kapitel  Çber  Objekt-
+0                            konventionen, Objektart 2).
+-
+-
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                               EQUN   13
+1
+-             1.1 Elementare Datentypen
+              ------------------------------------------------------------
+-
+              EQUR          DEFINIERT EIN REGISTER
++             ____________________________________
+-
+              Das  Makro EQUR wird benutzt,  um ein Symbol als Register zu
+0             definieren.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | Symbol   | EQUR   | Wert                                 |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Wert         - Nummer eines Mehrzweckregisters | Register
+-
+              Anmerkung:     Alle Register,  die als Operanden in den  Zu-
++             _________
+0                            weisungsmakros (LET) und den Strukturierungs-
+0                            makros IF, $IF, $CASE, ...) verwendet werden,
+0                            mÇssen  durch  das Makro EQUR definiert sein.
+0                            Ansonsten kann ein Symbol nicht als  Register
+0                            identifiziert werden.
+0                            Die  Definition mu[ vor der Benutzung gesche-
+0                            hen.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                               EQUR   14
+1
+-             1.2 Operationen auf Elementarobjekten
+              ------------------------------------------------------------
+-
+              LET          ZUWEISUNGSMAKRO
++             ____________________________
+-
+              Mit diesem Zuweisungsmakro kann man  einfache  arithmetische
+0             AusdrÇcke  berechnen  und auf eine Zieladresse zuweisen las-
+0             sen,  sowie Zuweisung von Bits,  Zeichenketten und  Adressen
+0             vornehmen lassen.
+-
+-             1. Die arithmetische Zuweisung:
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨ | LET    | Zieladresse,Operator                 |
+              |          |        | Ý,Vorzeichen¨,Operand                |
+              |          |        | Ý,dyadischer Operator,Operand¨...    |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-             Zieladresse  - Register | RX-AdresseÝ:Typ¨
+0                            Die Zieladresse bezeichnet den Operanden, auf
+0                            den zur AusfÇhrungszeit der Wert des arithme-
+0                            tischen Ausdrucks zugewiesen wird.
+0                            Bei  einer  Zuweisung  einer ganzen Zahl oder
+0                            eines EQUN-Objektes an ein einzelnes  Zeichen
+0                            im  Speicher darf nur S-AdresseÝ:C¨ angegeben
+0                            werden.  Der Wert der ganzen  Zahl  bzw.  des
+0                            EQUN-Objektes  mu[  dann  zwischen  0 und 255
+0                            liegen.
+-
+                             Typ  - F | H | C | N
+0                            F    spezifiziert ein Vollwort.
+0                            H    spezifiziert ein Halbwort.
+0                            C    spezifiziert ein  einzelnes  Zeichen  im
+0                                 Speicher.
+0                            N    spezifiziert ein EQUN-Objekt.
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                                LET   15
+1
+-             1.2 Operationen auf Elementarobjekten
+              ------------------------------------------------------------
+-
+              Operator     - + | - | = | := | * | /
+0                            Der Operator gibt die Art der Zuweisung an.
+0                            +    Addition  zweier Operanden und Zuweisung
+0                                 der Summe.
+0                            -    Subtraktion des rechts vom  Minuszeichen
+0                                 stehenden  Operanden  von  dem links vom
+0                                 Minuszeichen stehenden und Zuweisung der
+0                                 Differenz.
+0                            :=   Zuweisung des rechten Operanden
+0                            =    siehe :=
+0                            *    Multiplikation zweier Operanden und  Zu-
+0                                 weisung des Produktes.
+0                                 Als Multiplikator (rechter Operand) kann
+0                                 nur  ein  Halbwort im Speicher oder eine
+0                                 ganze Zahl stehen,  deren Wert  zwischen
+0                                 -32768 und 32767 liegen darf.
+0                            /    Division des rechts vom Divisionszeichen
+0                                 stehenden  Operanden durch den links vom
+0                                 Divisionszeichen stehenden Operanden und
+0                                 Zuweisung des Quotienten.
+0                                 Als Divisor kann  nur  eine  ganze  Zahl
+0                                 stehen,  deren  Absolutwert wiederum nur
+0                                 eine Zweierpotenz sein darf.
+-
+              Vorzeichen   - -
+0                            der negative  Wert  des  folgenden  Operanden
+0                            soll zugewiesen werden.
+0                            Dieser  Operator  ist  nur erlaubt,  wenn der
+0                            vorhergehende Operator ':=' oder '=' war.
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                                LET   16
+1
+-             1.2 Operationen auf Elementarobjekten
+              ------------------------------------------------------------
+-
+              Operand      - Register | RX-AdresseÝ:Typ¨ |  :RX-Adresse  |
+0                            EQUN-Objekt | ganze Zahl
+-
+-             dyadischer Operator
+0                          - + | - | * | /
+0                            +      Addition zweier Operanden
+0                            -      Subtraktion  des  rechts vom Minuszei-
+0                                   chen stehenden Operanden von dem links
+0                                   vom Minuszeichen stehenden.
+0                            *      Multiplikation zweier Operanden.
+0                                   (EinschrÜnkungen siehe Operator)
+0                            /      Division  links  vom  Divisionszeichen
+0                                   stehenden  Operanden  durch den rechts
+0                                   vom Divisionszeichen stehenden.
+0                                   (EinschrÜnkungen siehe Operator)
+-
+              Die Operationen werden von links nach rechts  innerhalb  der
+0             Operandenliste ausgefÇhrt. Ist die Zieladresse ein Register-
+0             symbol,  so wird das zugeh°rige Register als Arbeitsregister
+0             verwendet;  ansonsten wird Register 0 verwendet und die  Zu-
+0             weisung des Ergebnisses zuletzt ausgefÇhrt.
+-
+-
+-
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                                LET   17
+1
+-             1.2 Operationen auf Elementarobjekten
+              ------------------------------------------------------------
+-
+              2. Die Bitzuweisung:
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨ | LET    | Zieladresse,Bit-Operator,Bit-Maske   |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Zieladresse  - S-Adresse
+0                            Die Zieladresse bezeichnet den Operanden, auf
+0                            den  zur  AusfÇhrungszeit der Wert der boole-
+0                            schen VerknÇpfung zugewiesen wird. Alle ange-
+0                            gebenen Adressen werden  als  Byte  interpre-
+0                            tiert,  auch solche,  die eine Vollwort- oder
+0                            Halbwortadresse angeben.
+-
+              Bit-Operator - : | ¬:
+0                            Der  Bit-Operator  bezeichnet  die  Art   der
+0                            Booleschen VerknÇpfung zwischen dem durch die
+0                            Zieladresse spezifizierten  Byte  A  und  der
+0                            Bit-Maske B.
+0                            :      Oder-VerknÇpfung (A OR B).   Die  ent-
+0                                   sprechenden  Bits  aus  der  Bit-Maske
+0                                   werden in dem  durch  die  Zieladresse
+0                                   angegebenen Byte gesetzt:
+0                                   OI   A,B .
+0                            ¬:     Inhibition  (A AND ¬ B).  Die entspre-
+0                                   chenden  Bits aus der Bit-Maske werden
+0                                   in dem durch die Zieladresse angegebe-
+0                                   nen Byte gel°scht:
+0                                   NI   A,B'11111111'-(B) .
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                                LET   18
+1
+-             1.2 Operationen auf Elementarobjekten
+              ------------------------------------------------------------
+-
+              Bit-Maske    - selbstdefinierender Wert
+0                            Die Bit-Maske bezeichnet den Wert der  Maske.
+0                            Der   Wert   mu[  zwischen  B'00000000'   und
+0                            B'11111111' liegen.
+-
+-
+-
+-             3. Die Zeichenkettenzuweisung:
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨ | LET    | (Zieladresse,LÜnge),=,Zeichenkette   |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Zieladresse  - S-Adresse
+0                            spezifiziert ein Datenfeld,  auf das zur Aus-
+0                            fÇhrungszeit  die   angegebene   Zeichenkette
+0                            zugewiesen wird.
+-
+              LÜnge        - selbstdefinierender Wert | Registersymbol
+0                            spezifiziert die LÜnge,  in der die Zuweisung
+0                            vorgenommen wird.  Die LÜnge mu[ gr°[er als 0
+0                            und kleiner gleich 256 sein.
+-
+              Zeichenkette - Zeichenkette in Apostrophen | S-Adresse
+0                            spezifiziert  die  Zeichenkette  (bzw.  deren
+0                            Adresse), die Çbertragen werden soll.
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                                LET   19
+1
+-             1.2 Operationen auf Elementarobjekten
+              ------------------------------------------------------------
+-
+              4. Die Adresszuweisung:
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨ | LET    | Zieladresse,->,Operand               |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Zieladresse  - Register | RX-AdresseÝ:Typ¨
+0                            spezifiziert den Operanden,  auf den zur Aus-
+0                            fÇhrungszeit die angegebene Adresse  zugewie-
+0                            sen wird.
+-
+              Operand      - RX-Adresse
+0                            spezifiziert  die Adresse,  die auf die Ziel-
+0                            adresse zugewiesen wird.
+0             Anmerkung:
++             _________
+0             Diese Form der Adre[zuweisung ist Üquivalent zu der Form:
+0                LET   Zieladresse,:=,:Operand
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                                LET   20
+1
+-             1.3 Datenstrukturen
+              ------------------------------------------------------------
+-
+              #USE         RESERVIERUNG UND ZUWEISUNG EINES REGISTERS
++             _______________________________________________________
+-
+              Mit Hilfe des Makros #USE kann man  einem  Programmteil  ein
+0             Basisregister  zuordnen  und mit einem Basisadre[wert laden.
+0             Au[erdem k°nnen Register als reserviert markiert werden.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨ | #USE   | Register,ÝBlock¨,ÝAdresse¨Ý,Nomsg¨   |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Register     - Register | ?
+0                            Dieses Register wird reserviert.
+0                            ?    es wird eine Liste ausgegeben  Çber  die
+0                                 Register,  die  bis  zu dieser Stelle im
+0                                 Programm reserviert und nicht  freigege-
+0                                 ben worden sind.
+-
+              Block        - Symbol | *
+0                            bezeichnet  die  Anfangsadresse fÇr das Regi-
+0                            ster
+0                            *    in diesem Fall  ist  die  Anfangsadresse
+0                                 der momentane Wert des Adre[zÜhlers
+0                            Fehlt  die Angabe,  so wird das Register ein-
+0                            fach als reserviert markiert.
+-
+              Adresse      - Register | RX-AdresseÝ:F¨ | :RX-Adresse | *
+-
+                             der Inhalt von  'Adresse'  wird in das  ange-
+0                            gebene Register geladen.
+0                            (LET   Register,:=,Adresse bzw.
+0                            BALR   Register,0)
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                               #USE   21
+1
+-             1.3 Datenstrukturen
+              ------------------------------------------------------------
+-
+              Nomsg        - NOMSG
+0                            Mit dieser Angabe kann der Benutzer Meldungen
+0                            darÇber, da[ ein Register ein zweites Mal oh-
+0                            ne  vorhergehende  Freigabe  reserviert wird,
+0                            unterdrÇcken.
+0                            Fehlt diese Angabe, so wird bei einer mehrfa-
+0                            chen Reservierung eines Registers  eine  War-
+0                            nung ausgegeben.
+-
+              Anmerkung:
++             _________
+0             Es  wird  zuerst das Register geladen und danach eine USING-
+0             Anweisung ausgefÇhrt,  falls beide Instruktionen  ausgefÇhrt
+0             werden mÇssen:
+-
+                    BALR   Register,0
+                    USING  *,Register.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                               #USE   22
+1
+-             1.3 Datenstrukturen
+              ------------------------------------------------------------
+-
+              #DROP          FREIGABE EINES REGISTERS
++             _______________________________________
+-
+              Mit  dem  Makro #DROP kann man Register,  die als reserviert
+0             markiert worden sind, wieder freigeben.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨ | #DROP   | Registerliste                       |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Registerliste - RegÝ,Reg¨...Ý,?¨ | ?
+-
+              Reg           - spezifiziert ein Register,  das nicht lÜnger
+0                             als Register reserviert werden soll.
+-
+              ?             - es wird eine Liste ausgegeben Çber die Regi-
+0                             ster,  die  bis zu dieser Stelle im Programm
+0                             reserviert und noch nicht freigegeben worden
+0                             sind.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                              #DROP   23
+1
+-             2. Elementare Kontrollflu[strukturen
+              ------------------------------------------------------------
+-
+              Zur  Steuerung  des  Kontrollflusses  des  Programms  werden
+0             Makros benutzt,  die die klassischen Dijkstra-Strukturen zur
+0             Grundlage haben.
+-
+              Will man eine Folge von Anweisungen nur dann ausfÇhren, wenn
+0             eine gewisse Bedingung eintritt,  so lÜ[t sich das durch ein
+0             $IF-THEN-Konstrukt formulieren. Es besteht aus:
+-
+              ® der Anweisung $IF
+0             ® einer Bedingung (S.35ff.)
+0             ® der Anweisung THEN
+0             ® einer Folge von Anweisungen
+0             ® der Anweisung IF$
+-
+              Beispiel:    $IF
+                              COPY BEDING
+                           THEN
+                              COPY ANWEIS
+                           IF$
+-             Sollen  zwei  alternative  Folgen von Anweisungen ausgefÇhrt
+0             werden,  so lÜ[t sich dies durch ein $IF-THEN-ELSE-Konstrukt
+0             formulieren. Hierbei wird vor der IF$-Anweisung eingefÇgt:
+-
+              ® die Anweisung ELSE
+0             ® eine Folge von Anweisungen
+-
+              Beispiel:    $IF
+                              COPY WERTDA
+                           THEN
+                              COPY GIBAUS
+                           ELSE
+                              COPY FEHLER
+                           IF$
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                          ûberblick   24
+1
+-             2. Elementare Kontrollflu[strukturen
+              ------------------------------------------------------------
+-
+              In Abfrageketten,  d. h.  wenn in einem ELSE-Teil die Anwei-
+0             sungsfolge wieder ein  $IF-THEN-ELSE-Konstrukt  ist,  ergibt
+0             sich die umstÜndliche Konstruktion,  da[ man am Ende mehrere
+0             IF$-Anweisungen schreiben mu[.
+-
+              Beispiel:    $IF
+                              COPY FALL1
+                           THEN
+                              COPY GIB1AUS
+                           ELSE
+                              $IF
+                                 COPY FALL2
+                              THEN
+                                 COPY GIB2AUS
+                              ELSE
+                                 $IF
+                                    COPY FALL3
+                                 THEN
+                                    COPY GIB3AUS
+                                 ELSE
+                                    COPY FEHLER
+                                 IF$
+                              IF$
+                           IF$
+-             Um dies zu vermeiden, gibt es die Anweisung ELSEIF. Man kann
+0             unser letztes Beispiel damit dann schreiben:
+-                          $IF
+                              COPY FALL1
+                           THEN
+                              COPY GIB1AUS
+                           ELSEIF
+                              COPY FALL2
+                           THEN
+                              COPY GIB2AUS
+                           ELSEIF
+                              COPY FALL3
+                           THEN
+                              COPY GIB3AUS
+                           ELSE
+                              COPY FEHLER
+                           IF$
+-             Ein ELSE-Teil nach ELSEIF-THEN kann fehlen.
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                          ûberblick   25
+1
+-             2. Elementare Kontrollflu[strukturen
+              ------------------------------------------------------------
+-
+              Es  gibt  noch  ein  Üquivalentes  Konstrukt,   das   $CASE-
+0             Konstrukt. Das letzte Beispiel schreibt man damit so:
+-                          $CASE
+                           ON
+                              COPY FALL1
+                           DO
+                              COPY GIB1AUS
+                           ON
+                              COPY FALL2
+                           DO
+                              COPY GIB2AUS
+                           ON
+                              COPY FALL3
+                           DO
+                              COPY GIB3AUS
+                           ELSE
+                              COPY FEHLER
+                           CASE$
+-             Der ELSE-Teil in einem $CASE-Konstrukt kann auch fehlen.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                          ûberblick   26
+1
+-             2. Elementare Kontrollflu[strukturen
+              ------------------------------------------------------------
+-
+              Eine Wiederholung besteht aus einer Folge  von  Anweisungen,
+0             die  mehrfach  ausgefÇhrt werden sollen,  und aus einer oder
+0             mehrerer Bedingungen, die die Anzahl der AusfÇhrungen der zu
+0             wiederholenden Anweisungsfolge steuert.
+-             Anhand des Ergebnisses der Bedingung  wird  entschieden,  ob
+0             die Wiederholung beendet oder fortgesetzt werden soll.
+-             Die  Anweisungsfolge  oder die Bedingung sollten Anweisungen
+0             enthalten,  die bewirken,  da[ sich bei wiederholter AusfÇh-
+0             rung das Ergebnis der Bedingung derart Ündert,  da[ die Wie-
+0             derholung beendet wird.
+-             FÇr Wiederholungen gibt es mehrere Konstrukte.
+-             Das $WHILE-Konstrukt besteht aus:
+-
+              ® der Anweisung $WHILE
+0             ® einer Bedingung
+0             ® der Anweisung LOOP
+0             ® einer Folge von Anweisungen
+0             ® der Anweisung WHILE$
+-
+              Beispiel:    $WHILE
+                              COPY NOCHWAS
+                           LOOP
+                              COPY MACHWAS
+                           WHILE$
+-             Als erstes wird die Bedingung ausgefÇhrt. Trifft sie zu,  so
+0             wird die Anweisungsfolge ausgefÇhrt.  Anschlie[end wird wie-
+0             der die Bedingung ausgefÇhrt und so weiter. Die Wiederholung
+0             wird beendet,  wenn die Bedingung nicht  zutrifft,  und  die
+0             ProgrammausfÇhrung  wird  dann  mit  den  Anweisungen hinter
+0             WHILE$ fortgesetzt.
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                          ûberblick   27
+1
+-             2. Elementare Kontrollflu[strukturen
+              ------------------------------------------------------------
+-
+              Das $LOOP-UNTIL-Konstrukt besteht aus:
+-
+              ® der Anweisung $LOOP
+0             ® einer Folge von Anweisungen
+0             ® der Anweisung UNTIL
+0             ® einer Bedingung
+0             ® der Anweisung LOOP$
+-
+              Beispiel:    $LOOP
+                              COPY MACHWAS
+                           UNTIL
+                              COPY FERTIG
+                           LOOP$
+-             In diesem Fall wird als erstes  die  Anweisungsfolge  ausge-
+0             fÇhrt;  dann wird die Bedingung ausgefÇhrt.  Falls sie nicht
+0             zutrifft, wird wieder die Anweisungsfolge ausgefÇhrt. Trifft
+0             die Bedingung zu, so wird die ProgrammausfÇhrung mit den An-
+0             weisungen hinter LOOP$ fortgesetzt.
+-
+              Der UNTIL-Teil in diesem Konstrukt kann fehlen.  Die Wieder-
+0             holung wird dann zur Endlosschleife.
+-
+              Die Anweisung LEAVE erlaubt es,  eine Wiederholung von jeder
+0             Stelle innerhalb der Wiederholung aus zu beenden.
+-
+              Die Anweisung REPEAT erlaubt es, eine Wiederholung von jeder
+0             Stelle innerhalb der Wiederholung aus zu wiederholen.
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                          ûberblick   28
+1
+-             2. Elementare Kontrollflu[strukturen
+              ------------------------------------------------------------
+-
+              Beispiel:    A     $LOOP
+                                    ...
+                                    REPEAT A
+                                    ...
+                                    LEAVE A
+                                    ...
+                                 LOOP$
+-             LEAVE und REPEAT k°nnen auch in einem $WHILE-Konstrukt  ver-
+0             wendet werden.
+-
+-             Ein  $FOR-Konstrukt  ist  eine Wiederholung,  die durch eine
+0             ZÜhlvariable gesteuert wird. Das Konstrukt besteht aus:
+-
+              ® der Anweisung $FOR
+0             ® einer Folge von Anweisungen
+0             ® der Anweisung FOR$
+-
+              Beispiel:    $FOR (R2,:=,10),TIMES,LOOP
+                              COPY ZEHNMAL
+                           FOR$
+-             Die Operanden der  $FOR-Anweisung  bestimmen,  wie  oft  die
+0             Schleife  wiederholt werden soll.  Im Beispiel oben wird die
+0             Anweisungsfolge zehnmal ausgefÇhrt.  Bei der ersten  AusfÇh-
+0             rung ist der Inhalt des Registers R2 10,  bei jeder weiteren
+0             AusfÇhrung jeweils um 1 vermindert. Danach wird die auf FOR$
+0             folgende Anweisung ausgefÇhrt.  Der Inhalt des Registers ist
+0             dann 0.
+-
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                          ûberblick   29
+1
+-             2. Elementare Kontrollflu[strukturen
+              ------------------------------------------------------------
+-
+              Bei den bisher beschriebenen Formen von Schleifenanweisungen
+0             hatten  wir  i. a.  nur  eine  Bedingung fÇr den Abbruch der
+0             Schleife angeben k°nnen.  Es werden nun  zwei  weitere  Kon-
+0             strukte  eingefÇhrt,  die  eine  flexiblere  Gestaltung  von
+0             Schleifenkonstrukten erm°glichen.  Diese Konstrukte erlauben
+0             es,  innerhalb der Schleife an jeder Stelle, an der eine An-
+0             weisung erlaubt ist,  eine Abbruchbedingung  anzugeben.  Die
+0             Konstrukte mÇssen nicht auf der Strukturebene des Schleifen-
+0             konstrukts angegeben werden. Sie beziehen sich immer auf das
+0             nÜchste umgebende $LOOP-, $WHILE- oder $FOR-Konstrukt.
+-
+              Das WHILE-LOOP-Konstrukt besteht aus:
+-
+              ® der Anweisung WHILE
+0             ® einer Bedingung
+0             ® der Anweisung LOOP
+-
+              Beispiel:    $FOR (R10,:=,1),STEP,1,TO,10
+                           WHILE
+                              COPY NOCHMEHR
+                           LOOP
+                              COPY ZEHNMAL
+                           FOR$
+-             Die Bedingung wird ausgefÇhrt.  Trifft sie nicht zu, so wird
+0             das nÜchste umgebende $LOOP-,  $WHILE-  oder  $FOR-Konstrukt
+0             verlassen. Trifft die Bedingung zu, so wird die Programmaus-
+0             fÇhrung  mit den Anweisungen hinter der LOOP-Anweisung fort-
+0             gesetzt.
+-
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                          ûberblick   30
+1
+-             2. Elementare Kontrollflu[strukturen
+              ------------------------------------------------------------
+-
+              Das UNTIL-LOOP-Konstrukt besteht aus:
+-
+              ® der Anweisung UNTIL
+0             ® einer Bedingung
+0             ® der Anweisung LOOP
+-
+              Beispiel:    $LOOP
+                               ...
+                              UNTIL
+                                 COPY FERTIG
+                              LOOP
+                               ...
+                           LOOP$
+-             Die Bedingung wird ausgefÇhrt.  Trifft sie zu,  so wird  das
+0             nÜchste  umgebende $LOOP-,  $WHILE- oder $FOR-Konstrukt ver-
+0             lassen.  Trifft die Bedingung nicht zu,  so  wird  die  Pro-
+0             grammausfÇhrung   mit   den  Anweisungen  hinter  der  LOOP-
+0             Anweisung fortgesetzt.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                          ûberblick   31
+1
+-             2. Elementare Kontrollflu[strukturen
+              ------------------------------------------------------------
+-
+              Weiterhin gibt es die M°glichkeit,  eine Folge von Anweisun-
+0             gen zu klammern. Das $BLOCK-Konstrukt besteht aus:
+-
+              ® der Anweisung $BLOCK
+0             ® einer Folge von Anweisungen
+0             ® der Anweisung BLOCK$
+-
+              Beispiel:    $BLOCK
+                              COPY ANWEIS
+                           BLOCK$
+-             Innerhalb dieses Konstrukts k°nnen  die  Anweisungen  REPEAT
+0             und LEAVE benutzt werden,  um die Anweisungsfolge zu wieder-
+0             holen bzw. zu verlassen.
+-
+              Beispiel:    A     $BLOCK
+                                    ...
+                                    REPEAT A
+                                    ...
+                                    LEAVE A
+                                    ...
+                                 BLOCK$
+-             ZusÜtzlich gibt es noch das Makro GOTO,  mit  dem  beliebige
+0             Programmverzweigungen durchgefÇhrt werden k°nnen.
+-
+              Das  Makro  IF  erlaubt es,  die Anweisungen LEAVE,  REPEAT,
+0             SIGNAL  (siehe unten)  und GOTO in einfacher  Weise  bedingt
+0             auszufÇhren.
+-
+              Beispiel:    B     $BLOCK
+                                    COPY SETZER1
+                                    IF  R1,=,0,REPEAT,B
+                                    COPY MEHR
+                                 BLOCK$
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                          ûberblick   32
+1
+-             2. Elementare Kontrollflu[strukturen
+              ------------------------------------------------------------
+-
+              Wir  beschreiben als nÜchstes Situationsklauseln,  ein durch
+0             zwei Anweisungen  realisiertes  Hilfsmittel:  die  POSTLUDE-
+0             Anweisung  und  die SIGNAL-Anweisung.  Zur Motivierung geben
+0             wir zunÜchst ein Beispiel: Treten bei Abarbeitung eines Kon-
+0             strukts SonderfÜlle (Situationen) auf, die einen Abbruch er-
+0             fordern, so findet man hÜufig eine Konstruktion wie:
+-
+              Beispiel:    B     $BLOCK
+                                    ...
+                                    $IF R15,¬=,0,THEN
+                                       COPY FEHLER1
+                                       LEAVE B
+                                    IF$
+                                    ...
+                                 BLOCK$
+-             Treten derartige  Konstruktionen  mehrfach  innerhalb  eines
+0             Blocks  auf,  so  verliert man leicht die ûbersicht Çber die
+0             FehlerfÜlle und m°gliche AusgÜnge eines Blocks.
+0             Das letzte Beispiel kann alternativ geschrieben werden:
+-                          B     $BLOCK
+                                    ...
+                                    IF R15,¬=,0,SIGNAL,F1
+                                    ...
+                                 POSTLUDE F1
+                                    COPY FEHLER1
+                                 BLOCK$
+-             Eine POSTLUDE Anweisung kann vor der  abschlie[enden  Anwei-
+0             sung eines jeden Konstrukts stehen. Sie definiert den Beginn
+0             einer   Alternative   zur  normalen  AusfÇhrung  des  Blocks
+0             (Situationsklausel).  Die Alternative oder Situationsklausel
+0             wird beendet durch  eine  weitere  POSTLUDE  Anweisung  oder
+0             durch die abschlie[ende Anweisung des unmittelbar umgebenden
+0             Strukturblocks.
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                          ûberblick   33
+1
+-             2. Elementare Kontrollflu[strukturen
+              ------------------------------------------------------------
+-
+              Eine  Situationsklausel wird unter Verwendung der SIGNAL An-
+0             weisung aufgerufen.  In der jetzigen Version ist die  SIGNAL
+0             Anweisung  Üquivalent zu einer GOTO Anweisung.  Die POSTLUDE
+0             Anweisung hat als Operanden eine Liste von Namen,  von denen
+0             in einer SIGNAL Anweisung einer als Operand verwendet werden
+0             kann. Die Namen sind globale Namen.
+0             Nach  Abarbeitung einer Situationsklausel wird der umgebende
+0             Block verlassen.
+0             Der Aufruf einer Situationsklausel mu[ nicht  der  Ausnahme-
+0             fall der ProgrammausfÇhrung sein. Im folgenden Beispiel wird
+0             fast immer eine Situationsklausel aufgerufen:
+0             Beispiel:
+-             SCREENINPUT  $BLOCK
+                              ...
+                              IF PRESSED,=,RETURNKEY,SIGNAL,RETURNFUNCTION
+                              IF PRESSED,=,ENDKEY,SIGNAL,ENDFUNCTION
+                              IF PRESSED,=,CANCELKEY,SIGNAL,CANCELFUNCTION
+                              ...
+                              $IF PRESSED,=,ENTERKEY
+                              ANDTHEN COMMAND,¬=,BLANK
+                              THEN
+                                 ...
+                                 IF COMMAND,=,'END',SIGNAL,ENDFUNCTION
+                                 ...
+                              IF$
+                              ...
+                           POSTLUDE ENDFUNCTION,RETURNFUNCTION
+                                ...
+                           POSTLUDE CANCELFUNCTION
+                                ...
+                           BLOCK$
+-
+              Situationsklauseln k°nnen auch implizit,  d.h.  ohne Verwen-
+0             dung von SIGNAL Anweisungen aufgerufen werden.
+0             Beispiel:
+-             COPYFILE     $LOOP
+                              GET FILE1
+                              ...
+                           POSTLUDE ENDFILE
+                              ...
+                           LOOP$
+                           ...
+              FILE1        DCB EODAD=ENDFILE,...
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                          ûberblick   34
+1
+-             2.1 Bedingungen
+              ------------------------------------------------------------
+-
+              Eine Bedingung besteht aus einer Folge von Anweisungen,  die
+0             das Condition-Code-Register der Maschine setzen sollten, und
+0             einer  Interpretation,  die  angibt,  fÇr  welche  Werte des
+0             Condition-Code-Registers die Bedingung als "zutreffend" bzw.
+0             "nicht zutreffend" gelten soll. In dem Beispiel
+-                          $IF
+                              LTR   R1,R1
+                           THEN
+                              COPY JA
+                           ELSE
+                              COPY NEIN
+                           IF$
+-             wÜre nicht klar,  wann der THEN-Teil ausgefÇhrt werden  soll
+0             und wann der ELSE-Teil ausgefÇhrt werden soll. Eine m°gliche
+0             korrekte Form ist z. B.
+-                          $IF
+                              LTR   R1,R1
+                              TRUECC 8
+                           THEN
+                           ...
+                           IF$
+-             Sie  bedeutet,  da[ der THEN-Teil ausgefÇhrt wird,  wenn der
+0             Inhalt von Register R1 0 ist,  ansonsten wird der  ELSE-Teil
+0             ausgefÇhrt.
+-
+              Bekanntlich  lassen  sich  die  numerischen  Werte  fÇr  die
+0             Condition-Code-Interpretation (Maske) schlecht merken. Daher
+0             kann man statt TRUECC 8 z. B.  auch TRUECC EQ oder  TRUECC Z
+0             schreiben.
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                        Bedingungen   35
+1
+-             2.1 Bedingungen
+              ------------------------------------------------------------
+-
+              HÜufig vorkommende Bedingungen sind z. B.  Relationen. Diese
+0             bestehen aus einem Vergleich zwischen zwei Objekten und  ei-
+0             ner Interpretation des Ergebnisses, z. B.:
+-
+                           R1 = 0
+-
+              Man kann unser Beispiel nun auch schreiben:
+-                          $IF
+                              $EX$ R1,=,0
+                           THEN
+                           ...
+                           IF$
+-             Das  Makro  $EX$ dient zur Generierung von Anweisungen,  die
+0             Vergleichsoperationen durchfÇhren, und einer Condition-Code-
+0             Interpretation, d. h. es wird implizit eine TRUECC-Anweisung
+0             generiert.
+-
+              Eine Relation besteht aus drei Operanden.  Die auszufÇhrende
+0             Vergleichsoperation  wird  bestimmt durch den Typ des ersten
+0             und dritten Operanden und durch Mnemocodes als zweiten  Ope-
+0             randen.  Der zweite Operand bestimmt ebenfalls die Interpre-
+0             tation der Bedingung.
+-
+              Relationen k°nnen direkt als positionelle Parameter  in  den
+0             Makros $IF, $WHILE, UNTIL, WHILE, ON, IF, $EX, $EX$, ANDTHEN
+0             und ORELSE angegeben werden.
+-                          $IF R1,=,0
+                           THEN
+                           ...
+                           IF$
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                        Bedingungen   36
+1
+-             2.1 Bedingungen
+              ------------------------------------------------------------
+-
+              Bedingungen k°nnen verknÇpft werden:
+-                          $IF R1,=,0
+                           ANDTHEN R2,¬=,0
+                           ORELSE R3,=,0
+                           THEN
+                           ...
+                           IF$
+-             Die  VerknÇpfungen  ORELSE und ANDTHEN entsprechen nicht den
+0             Boolschen VerknÇpfungen ODER und UND:  nach  AusfÇhrung  der
+0             ersten  Bedingung  wird festgestellt,  ob das Gesamtergebnis
+0             bereits feststeht,  und dann entsprechend  verzweigt,  d. h.
+0             die VerknÇpfungen sind nicht kommutativ:
+-                          $IF R1,=,GUELTIG
+                           ANDTHEN 0(R1),¬=,0
+                           THEN
+                           ...
+                           IF$
+-             Zur  Realisation  von Vorrangrelationen zwischen verknÇpften
+0             Bedingungen gibt es "Klammern":
+-                          $IF
+                              $EX  R1,=,0,ANDTHEN,R2,¬=,0,EX$
+                           ORELSE
+                              $EX  R1,¬=,0,ANDTHEN,R2,=,0,EX$
+                           THEN
+                           ...
+                           IF$
+-             Eine Relation,  in der der erste und dritte  Operand  fehlt,
+0             entspricht  einem  Aufruf  des Makros TRUECC mit dem zweiten
+0             Operanden als Parameter.
+-                          $IF ,EQ
+                              TS   LOCK
+                           THEN
+                           ...
+                           IF$
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                        Bedingungen   37
+1
+-             2.1 Bedingungen
+              ------------------------------------------------------------
+-
+              TRUECC           INTERPRETATION EINER BEDINGUNG
++             _______________________________________________
+-
+              Das Makro TRUECC wird wie folgt verwendet:
+-
+              ® innerhalb jeder Bedingung genau einmal,  es sei denn,  da[
+0             Makro  $EX$ wird statt dessen explizit oder implizit verwen-
+0             det.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨    | TRUECC | Maske                             |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Maske        - Wert | Mnemo
+-
+              Wert         - Zahl zwischen 1 und 14
+0                            sie  gibt  die  Condition-Code-Interpretation
+0                            an,  fÇr  die  die Bedingung als "zutreffend"
+0                            gelten soll.
+-
+              Mnemo        - EQ | Z | %        entspricht Wert=8
+0                            NE | NZ | ¬%      entspricht Wert=7
+0                            LT | M | < | :%   entspricht Wert=4
+0                            GT | >            entspricht Wert=2
+0                            LE | <=           entspricht Wert=12
+0                            GE | >=           entspricht Wert=10
+0                            O | :             entspricht Wert=1
+0                            NO | ¬:           entspricht Wert=14
+0                            NM | ¬:%          entspricht Wert=11
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                             TRUECC   38
+1
+-             2.1 Bedingungen
+              ------------------------------------------------------------
+-
+              $EX$       GENERIEREN EINER RELATION
++             ____________________________________
+-
+              Das Makro $EX$ wird wie folgt verwendet:
+-
+              ® In jeder Bedingung explizit oder  implizit  genau  einmal,
+0             falls nicht das Makro TRUECC statt dessen verwendet wird.
+-
+              1. Der arithmetische Vergleich:
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨    | $EX$  | Operand1,Relation,Operand2         |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Operand1
+0             Operand2     - Register  |  RX-AdresseÝ:Typ¨ | :RX-Adresse |
+0                            EQUN-Objekt | ganze Zahl
+-
+                           - Semantik siehe Makro LET.
+0             Anmerkung:   Ist mindestens ein  Vergleichsoperand  von  der
++             _________
+0                          Form :RX-Adresse,  so werden nur die drei rech-
+0                          ten Bytes der Operanden verglichen.
+-
+              Relation     - EQ | =   Sind die Operanden gleich?
+0                          - NE | ¬=  Sind die Operanden ungleich?
+0                          - LT | <   Ist Operand1 kleiner als Operand2?
+0                          - GT | >   Ist Operand1 gr°[er als Operand2?
+0                          - LE | <=  Ist  Operand1  kleiner  oder  gleich
+0                                     Operand2?
+0                          - GE | >=  Ist Operand1 gr°[er oder gleich Ope-
+0                                     rand2?
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                               $EX$   39
+1
+-             2.1 Bedingungen
+              ------------------------------------------------------------
+-
+              2. Der Bitvergleich:
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨    | $EX$  | Operand1,Relation,Operand2         |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+-             Operand1     - Register | S-AdresseÝ:Typ¨ | :S-Adresse
+-
+                           - Der  Operand  spezifiziert  die Adresse eines
+0                            Bytes. Die Angabe von Typ ist wirkungslos.
+-
+              Operand2     - selbstdefinierender Wert
+0                            Der Wert wird als Bitmaske interpretiert  und
+0                            darf  zwischen  B'00000000'  und  B'11111111'
+0                            liegen.
+-
+              Relation     - O  | :   Sind in dem durch Operand1 angegebe-
+0                                     nen Byte die in der  Bitmaske  (Ope-
+0                                     rand2)  angegebenen  Bits  alle  ge-
+0                                     setzt?
+0                          - NO | ¬:  Sind in dem durch Operand1 angegebe-
+0                                     nen Byte die in der  Bitmaske  (Ope-
+0                                     rand2)  angegebenen  Bits nicht alle
+0                                     gesetzt?
+0                          - Z  | %   Sind in dem durch Operand1 angegebe-
+0                                     nen Byte die in der  Bitmaske  (Ope-
+0                                     rand2)  angegebenen  Bits alle nicht
+0                                     gesetzt?
+0                          - NZ | ¬%  Sind in dem durch Operand1 angegebe-
+0                                     nen Byte die in der  Bitmaske  (Ope-
+0                                     rand2)  angegebenen  Bits nicht alle
+0                                     nicht gesetzt?
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                               $EX$   40
+1
+-             2.1 Bedingungen
+              ------------------------------------------------------------
+-
+                           - M | :%   Sind in dem durch Operand1 angegebe-
+0                                     nen Byte die in der  Bitmaske  (Ope-
+0                                     rand2)  angegebenen  Bits weder alle
+0                                     gesetzt noch alle nicht gesetzt?
+0                          - NM | ¬:% Sind in dem durch Operand1 angegebe-
+0                                     nen Byte die in der  Bitmaske  (Ope-
+0                                     rand2) angegebenen Bits alle gesetzt
+0                                     oder alle nicht gesetzt?
+-
+-             3. Der Zeichenkettenvergleich:
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨    | $EX$  | (Operand1,LÜnge),Relation,Operand2 |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+-             Operand1
+0             Operand2     - Register | S-AdresseÝ:Typ¨
+-
+                           - Der  Operand spezifiziert eine Speicheradres-
+0                            se. Die Angabe von Typ ist wirkungslos.
+-
+              LÜnge        - selbstdefinierender Wert | Register
+0                            Der Wert darf zwischen 1 und 256 liegen.
+-
+              Relation     - siehe: arithmetischer Vergleich
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                               $EX$   41
+1
+-             2.1 Bedingungen
+              ------------------------------------------------------------
+-
+              4. Der Adre[vergleich:
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨    | $EX$  | Operand1,Relation,Operand2         |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+-             Operand1     - Register | RX-AdresseÝ:Typ¨ |  :RX-Adresse  |
+0                            selbstdefinierender Wert
+-
+                           - Semantik siehe Makro LET.
+-
+              Operand2     - RX-AdresseÝ:Typ¨
+-
+                           - Semantik siehe Makro LET.
+-
+              Relation     - ->   EnthÜlt  Operand1  die  Adresse von Ope-
+0                                 rand2?
+0                          - ¬->  EnthÜlt Operand1 nicht die  Adresse  von
+0                                 Operand2?
+-
+              Anmerkung:   Es  werden  nur die drei rechten Bytes der Ope-
++             _________
+0                          randen verglichen.
+-
+-
+-
+-
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                               $EX$   42
+1
+-             2.1 Bedingungen
+              ------------------------------------------------------------
+-
+              5. Setzen der Condition-Code Interpretation:
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨    | $EX$   | ,Mnemo                            |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+-             Mnemo        - siehe Makro TRUECC.
+0                            Der Aufruf ist Üquivalent mit einem Aufruf:
+-
+                                  TRUECC  Mnemo       (s.38)
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                               $EX$   43
+1
+-             2.1 Bedingungen
+              ------------------------------------------------------------
+-
+              $EX        ANFANG EINER KOMPLEXEN GESCHACHTELTEN BEDINGUNG
++             __________________________________________________________
+-
+              Das Makro $EX wird verwendet:
+-
+              ®  »$IF | $WHILE | WHILE | UNTIL |  ONº  $EX  Bedingung  EX$
+0                Ý»ORELSE | ANDTHENº Bedingung¨... ..
+-
+              Dieses  Makro  dient  zur Erzeugung komplexer geschachtelter
+0             Bedingungen. Es hat die Funktion von 'Klammer auf'.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨    | $EX    | ÝBedingung,VerknÇpfung,¨          |
+              |             |        | ÝBedingungÝ,EX$¨¨                 |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-             Bedingung    - siehe Makro $EX$
+-
+              VerknÇpfung  - ANDTHEN
+0                            VerknÇpfung der Bedingungen durch  das  Makro
+0                            ANDTHEN
+0                          - ORELSE
+0                            VerknÇpfung  der  Bedingungen durch das Makro
+0                            ORELSE
+-
+              EX$          - Aufruf des Makros EX$
+-
+-
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                                $EX   44
+1
+-             2.1 Bedingungen
+              ------------------------------------------------------------
+-
+              EX$          ENDE EINER KOMPLEXEN GESCHACHTELTEN BEDINGUNG
++             __________________________________________________________
+-
+              Das Makro EX$ wird verwendet in Strukturen der Form:
+-
+              ® ..$EX Bedingung EX$ ..
+-
+              Es beendet diese Struktur, d. h. hat die Funktion von 'Klam-
+0             mer zu'.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              |             | EX$    | ÝStrukturname¨                    |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-             Strukturname - Symbol
+0                            bezeichnet die  zu  beendende  aktuelle  $EX-
+0                            Struktur.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                                EX$   45
+1
+-             2.1 Bedingungen
+              ------------------------------------------------------------
+-
+              ORELSE     VERKNûPFUNG VON BEDINGUNGEN DURCH BOOLESCHES ODER
++             ____________________________________________________________
+-
+              Das Makro ORELSE wird wie folgt verwendet:
+-
+              An allen Stellen,  an denen eine Bedingung stehen darf, kann
+0             ein Konstrukt der Form
+-
+                       Bedingung
+0                      ORELSE
+0                      Bedingung
+-
+              stehen.
+-
+              Dieses Makro verknÇpft zwei Bedingungen zu einer  Bedingung.
+0             Trifft die erste Bedingung zu,  so wird die zweite Bedingung
+0             nicht ausgefÇhrt,  und das Gesamtergebnis der AusfÇhrung ist
+0             das Ergebnis der ersten Bedingung. Ansonsten wird die zweite
+0             Bedingung ausgefÇhrt,  und das Gesamtergebnis ist das Ergeb-
+0             nis der zweiten Bedingung.
+-
+              Es bestehen  keine  Vorrangrelationen  zwischen  den  Makros
+0             ORELSE und ANDTHEN (siehe auch $EX ...).
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              |             | ORELSE | ÝBedingungÝ,Aktion¨¨              |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Bedingung      siehe Makro $EX$
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                             ORELSE   46
+1
+-             2.1 Bedingungen
+              ------------------------------------------------------------
+-
+              Aktion       - THEN    benutzt in $IF-Struktur
+0                                    (siehe THEN-Makro)
+0                          - DO      benutzt in $CASE-Struktur
+0                                    (siehe DO-Makro)
+0                          - LOOP    benutzt  in $WHILE-,  WHILE-LOOP- und
+0                                    UNTIL-LOOP-Strukturen
+0                                    (siehe LOOP-Makro)
+0                          - EX$     benutzt in $EX-Struktur
+0                                    (siehe EX$-Makro)
+-
+              Die Wirkung der Aktion besteht aus der Wirkung  des  Aufrufs
+0             des entsprechenden Makros.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                             ORELSE   47
+1
+-             2.1 Bedingungen
+              ------------------------------------------------------------
+-
+              ANDTHEN     VERKNûPFUNG VON BEDINGUNGEN DURCH BOOLESCHES UND
++             ____________________________________________________________
+-
+              Das Makro ANDTHEN wird wie folgt verwendet:
+-
+              An allen Stellen,  an denen eine Bedingung stehen darf, kann
+0             ein Konstrukt der Form
+-
+                       Bedingung
+0                      ANDTHEN
+0                      Bedingung
+-
+              stehen.
+-
+              Dieser Makro verknÇpft zwei Bedingungen zu einer  Bedingung.
+0             Trifft die erste Bedingung nicht zu,  so wird die zweite Be-
+0             dingung nicht ausgefÇhrt, und das Gesamtergebnis ist das Er-
+0             gebnis der ersten Bedingung.  Ansonsten wird die zweite  Be-
+0             dingung  ausgefÇhrt  und das Gesamtergebnis ist das Ergebnis
+0             der zweiten Bedingung.
+-
+              Es bestehen  keine  Vorrangrelationen  zwischen  den  Makros
+0             ORELSE und ANDTHEN (siehe auch $EX ...).
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              |             | ANDTHEN | ÝBedingungÝ,Aktion¨¨             |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Bedingung      siehe Makro $EX$
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                            ANDTHEN   48
+1
+-             2.1 Bedingungen
+              ------------------------------------------------------------
+-
+              Aktion       - THEN    benutzt in $IF-Struktur
+0                                    (siehe THEN-Makro)
+0                          - DO      benutzt in $CASE-Struktur
+0                                    (siehe DO-Makro)
+0                          - LOOP    benutzt  in $WHILE-,  WHILE-LOOP- und
+0                                    UNTIL-LOOP-Strukturen
+0                                    (siehe LOOP-Makro)
+0                          - EX$     benutzt in $EX-Struktur
+0                                    (siehe EX$-Makro)
+-
+              Die Wirkung der Aktion besteht aus der Wirkung  des  Aufrufs
+0             des entsprechenden Makros.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                            ANDTHEN   49
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              $IF          ANFANG EINER BEDINGTEN ANWEISUNG
++             _____________________________________________
+-
+              Das Makro $IF wird verwendet in Strukturen der Form:
+-
+              ®  $IF  Bedingung  THEN  Anweisungen  ÝELSEIF Bedingung THEN
+0                Anweisungen¨... ÝELSE Anweisungen¨ IF$
+-
+              Es definiert den Anfang einer solchen Struktur und erlaubt
+0             die Angabe einer komplexen Bedingung.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨    | $IF    | ÝBedingung,VerknÇpfung,¨          |
+              |             |        | ÝBedingungÝ,THEN¨¨                |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Bedingung      siehe Makro $EX$
+-
+              VerknÇpfung  - siehe Makro $EX
+-
+              THEN         - Aufruf des Makros THEN
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                                $IF   50
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              THEN          ERôFFNET THEN-BLOCK
++             _________________________________
+-
+              Das Makro THEN wird verwendet in Strukturen der Form:
+-
+              ®  $IF Bedingung THEN  Anweisungen  ÝELSEIF  Bedingung  THEN
+0                Anweisungen¨... ÝELSE Anweisungen¨ IF$
+-
+              Es  beendet  den  Bedingungsteil und beginnt den THEN-Block.
+0             Die hinter dem  THEN-Makro  angegebenen  Anweisungen  werden
+0             ausgefÇhrt,  wenn  die  im Makro $IF spezifizierte Bedingung
+0             zutrifft. Danach wird der Block verlassen.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              |             | THEN   |                                   |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                               THEN   51
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              ELSE          ERôFFNET ELSE-BLOCK
++             _________________________________
+-
+              Das Makro ELSE wird verwendet in Strukturen  folgender  For-
+0             men:
+-
+              ®  $IF  Bedingung  THEN  Anweisungen  ÝELSEIF Bedingung THEN
+0                Anweisungen¨... ELSE Anweisungen IF$
+-
+              Es beendet den THEN-Block und beginnt  den  ELSE-Block.  Die
+0             hinter  dem ELSE-Makro angegebenen Anweisungen werden ausge-
+0             fÇhrt, wenn keine der in den Makros $IF und ELSEIF angegebe-
+0             nen Bedingungen zutrifft.
+-
+              ®  $CASE »ON Bedingung DO Anweisungenº...  ELSE  Anweisungen
+0                CASE$
+-
+              Es beendet den DO-Block und beginnt den ELSE-Block. Die hin-
+0             ter  dem  ELSE-Makro  angegebenen  Anweisungen werden ausge-
+0             fÇhrt, wenn keine der in den ON-Makros spezifizierten Bedin-
+0             gungen zutrifft.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              |             | ELSE   |                                   |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+-
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                               ELSE   52
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              ELSEIF       FALLUNTERSCHEIDUNG
++             _______________________________
+-
+              Das Makro ELSEIF  wird  verwendet  in  Strukturen  folgender
+0             Form:
+-
+              ®   $IF  Bedingung  THEN  Anweisungen »ELSEIF Bedingung THEN
+0                Anweisungenº... ÝELSE Anweisungen¨ IF$
+-
+              Es definiert die Fortsetzung  einer  Fallunterscheidung  und
+0             erlaubt die Angabe einer komplexen Bedingung.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨    | ELSEIF | ÝBedingung,VerknÇpfung,¨          |
+              |             |        | ÝBedingungÝ,THEN¨¨                |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Bedingung    - siehe Makro $EX$
+-
+              VerknÇpfung  - siehe Makro $EX
+-
+              THEN         - Aufruf des Makros Then
+-
+              Die  Wirkung des Makros entspricht einem Aufruf von ELSE mit
+0             nachfolgendem Aufruf von $IF mit dem Unterschied,  da[ keine
+0             neue Struktur er°ffnet wird.  Dadurch ist nur ein Aufruf von
+0             IF$ zur Beendigung der gesamten Struktur n°tig.
+-
+              Man vergleiche hierzu Üquivalente Strukturen mit $CASE,  ON,
+0             DO und CASE$.
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                             ELSEIF   53
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              IF$          ENDE EINER BEDINGTEN ANWEISUNG
++             ___________________________________________
+-
+              Das Makro IF$ wird verwendet in Strukturen der Form:
+-
+              ®  $IF  Bedingung  THEN  Anweisungen  ÝELSEIF Bedingung THEN
+0                Anweisungen¨ ÝELSE Anweisungen¨ IF$
+-
+              Es beendet diese Struktur.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              |             | IF$    | ÝStrukturname¨                    |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Strukturname - Symbol
+0                            bezeichnet die  zu  beendende  aktuelle  $IF-
+0                            Struktur.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                                IF$   54
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              $CASE          ANFANG EINER MEHRFACHEN FALLBEHANDLUNG
++             _____________________________________________________
+-
+              Das Makro $CASE wird verwendet in Strukturen der Form:
+-
+              ®  $CASE »ON Bedingung DO Anweisungenº... ÝELSE Anweisungen¨
+0                CASE$
+-
+              Es  definiert  den Anfang einer solchen Struktur.  Mit Hilfe
+0             dieser Struktur kann man mehrere Bedingungen abfragen und in
+0             AbhÜngigkeit von ihrem Wahrheitswert die angegebenen  Anwei-
+0             sungen ausfÇhren lassen.
+0             Die  zwischen ON- und DO-Makroaufrufen angegebenen Bedingun-
+0             gen werden nacheinander ausgefÇhrt.  Trifft  eine  Bedingung
+0             zu,  so  wird der zugeh°rige DO-TEIL ausgefÇhrt und dann zum
+0             CASE$-Makroaufruf verzweigt. Es wird also h°chstens eine DO-
+0             Anweisungsfolge ausgefÇhrt. Trifft keine der Bedingungen zu,
+0             so wird der ELSE-Teil ausgefÇhrt.
+-
+0             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨ | $CASE  |                                      |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Strukturen mit $IF und  ELSEIF  sind  Üquivalent  zu  $CASE-
+0             Strukturen.
+-
+-
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                              $CASE   55
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              ON          FALLUNTERSCHEIDUNG
++             ______________________________
+-
+              Das Makro ON wird verwendet in Strukturen der Form:
+-
+              ®  $CASE »ON Bedingung DO Anweisungenº... ÝELSE Anweisungen¨
+0                CASE$
+-
+              Es erlaubt die Angabe einer komplexen Bedingung. Die auf das
+0             DO-Makro  folgenden Anweisungen werden ausgefÇhrt,  wenn die
+0             spezifizierte Bedingung zutrifft.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨    | ON     | ÝBedingung,VerknÇpfung,¨          |
+              |             |        | ÝBedingungÝ,DO¨¨                  |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-             Bedingung    - siehe Makro $EX$
+-
+              VerknÇpfung  - siehe Makro $EX
+-
+              DO           - Aufruf des Makros DO
+-
+-
+-
+-
+-
+-
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                                 ON   56
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              DO          ERôFFNET DO BLOCK
++             _____________________________
+-
+              Das Makro DO wird verwendet in Strukturen der Form:
+-
+              ®  $CASE »ON Bedingung DO Anweisungenº... ÝELSE Anweisungen¨
+0                CASE$
+-
+              Es beendet den Bedingungsteil und beginnt den DO-Block.  Die
+0             hinter  dem  DO-Makro  angegebenen Anweisungen werden ausge-
+0             fÇhrt, wenn die im vorhergehenden Makro ON spezifizierte Be-
+0             dingung zutrifft. Danach wird das $CASE-CASE$-Konstrukt ver-
+0             lassen.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              |             | DO     |                                   |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              DO in $CASE-Strukturen ist Üquivalent zu THEN in  $IF-  bzw.
+0             ELSEIF-Strukturen.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                                 DO   57
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              CASE$          ENDE EINER MEHRFACHEN FALLBEHANDLUNG
++             ___________________________________________________
+-
+              Das Makro CASE$ wird verwendet in Strukturen der Form:
+-
+              ®  $CASE »ON Bedingung DO Anweisungenº... ÝELSE Anweisungen¨
+0                CASE$
+-
+              Es beendet diese Struktur.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              |             | CASE$  | ÝStrukturname¨                    |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-             Strukturname - Symbol
+0                            bezeichnet  die  zu beendende aktuelle $CASE-
+0                            Struktur.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                              CASE$   58
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              $LOOP          ANFANG EINER SCHLEIFE
++             ____________________________________
+-
+              Das Makro $LOOP wird verwendet in Strukturen der Form:
+-
+              ®  $LOOP Anweisungen ÝUNTIL Bedingung¨ LOOP$
+-
+              Er spezifiziert den Anfang einer Schleife.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨ | $LOOP  |                                      |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                              $LOOP   59
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              LOOP$           ENDE EINER SCHLEIFE
++             ___________________________________
+-
+              Das Makro LOOP$ wird verwendet in Strukturen der Form:
+-
+              ®  $LOOP Anweisungen ÝUNTIL Bedingung¨ LOOP$
+-
+              Es beendet diese Struktur.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              |          | LOOP$  | ÝStrukturname¨                       |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Strukturname - Symbol
+0                            bezeichnet die zu beendende  aktuelle  $LOOP-
+0                            Struktur.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                              LOOP$   60
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              $WHILE          ANFANG EINER BEDINGTEN WIEDERHOLUNG
++             ___________________________________________________
+-
+              Das Makro $WHILE wird verwendet in Strukturen der Form:
+-
+              ®  $WHILE Bedingung LOOP Anweisungen WHILE$
+-
+              Das Makro $WHILE er°ffnet diese Struktur und erlaubt die An-
+0             gabe einer komplexen Bedingung.  Die angegebenen Anweisungen
+0             werden wiederholt, solange die Bedingung zutrifft.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨    | $WHILE | ÝBedingung,VerknÇpfung,¨          |
+              |             |        | ÝBedingungÝ,LOOP¨¨                |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-             Bedingung      siehe Makro $EX$
+-
+              VerknÇpfung  - siehe Makro $EX
+-
+              LOOP         - Aufruf des Makros LOOP
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                             $WHILE   61
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              WHILE$          ENDE EINER BEDINGTEN WIEDERHOLUNG
++             _________________________________________________
+-
+              Das Makro WHILE$ wird verwendet in Strukturen der Form:
+-
+              ®  $WHILE Bedingung LOOP Anweisungen WHILE$
+-
+              Es beendet diese Struktur.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              |             | WHILE$ | ÝStrukturname¨                    |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-             Strukturname - Symbol
+0                            bezeichnet die zu beendende aktuelle  $WHILE-
+0                            Struktur.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                             WHILE$   62
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              $FOR          ANFANG EINER SCHLEIFENKONTROLLE
++             _____________________________________________
+-
+              Mit  dem  Makro  $FOR kann man SchleifendurchlÜufe mit Hilfe
+0             verschiedener Parameter kontrollieren.
+-
+              M°glichkeiten des Aufrufs:
+-
+-             1. Die explizite Angabe der Anzahl der Wiederholungen.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨ | $FOR   | Wiederholungen,TIMES,LOOP            |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Wiederholungen - Register | (Register,:=,Wert)
+0                              Der Inhalt dieses Registers  gibt  an,  wie
+0                              oft  ein  Programmteil  durchlaufen  werden
+0                              soll.  (Das Register soll in  der  Schleife
+0                              nicht verÜndert werden.)
+0                              Ist die zweite Form gewÜhlt,  so wird unter
+0                              Verwendung des Makros LET dem  Register  zu
+0                              Beginn ein Wert zugewiesen
+0                              (LET Register,:=,Wert).
+-
+                               Der  Inhalt  des  Register wird am Ende der
+0                              Schleife um den Wert 1 vermindert.  Ist das
+0                              Ergebnis dann nicht 0, so wird die Schleife
+0                              erneut  durchlaufen.  Ist  der  Inhalt  des
+0                              Registers  zu  Beginn  der  Schleife  nicht
+0                              positiv,  so wird die Schleife nicht durch-
+0                              laufen.
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                               $FOR   63
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              2. Eine unbestimmte Anzahl von Wiederholungen.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨ | $FOR   | Anfangswert,STEP,Schrittweite,LOOP   |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Anfangswert    - Register | (Register,:=,Wert)
+0                              Dieses Register spezifiziert  den  Anfangs-
+0                              wert  einer Schleifenvariablen.  (Das Regi-
+0                              ster sollte in der Schleife nicht verÜndert
+0                              werden.)
+-
+              Schrittweite   - ganze Zahl | Register
+0                              Bei jedem Durchlauf wird der Anfangswert um
+0                              den Wert  des  Schrittweitenparameters  er-
+0                              h°ht.
+-
+                               Der  Abbruch  dieser  Schleife  kann  z. B.
+0                              durch Strukturen der Form  IF  ..,LEAVE,..,
+0                              IF  ..,SIGNAL,..,           IF  ..,GOTO,..,
+0                              WHILE  ..,LOOP oder UNTIL  ..,LOOP erreicht
+0                              werden.
+-
+-
+-
+-
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                               $FOR   64
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              3. Die implizite  Angabe  der  DurchlÜufe  mit  Hilfe  eines
+0             Schleifenparameters,  der nur in einem angegebenen Intervall
+0             liegen darf.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨ | $FOR   | Anfangswert,STEP,Schrittweite,TO,    |
+              |          |        | Endwert,LOOP                         |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Anfangswert    - Register | (Register,:=,Wert)
+0                              Dieses Register spezifiziert  den  Anfangs-
+0                              wert einer Schleifenvariablen.
+-
+              Schrittweite   - ganze Zahl | Register
+0                              Bei  jedem  Durchlauf wird zum Wert des An-
+0                              fangswertregister  der  Wert  des  Schritt-
+0                              weitenparameters addiert.
+-
+              Endwert        - ganze Zahl | Register
+0                              Der  Endwert ist der h°chste Wert,  den die
+0                              Schleifenvariable annehmen kann. Ist dieser
+0                              Wert erreicht oder Çberschritten,  wird die
+0                              AusfÇhrung der Schleife abgebrochen.
+0                              Ein   negativer  oder  variabler  Wert  des
+0                              Schrittweitenparameters  fÇhrt nicht zu ei-
+0                              ner {nderung des Abbruchkriteriums.
+-
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                               $FOR   65
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              FOR$          ENDE EINER SCHLEIFENKONTROLLE
++             ___________________________________________
+-
+              Das Makro FOR$ wird verwendet in Strukturen der Form:
+-
+              ®  $FOR Register TIMES LOOP Anweisungen $FOR
+-
+              ®  $FOR Anfangswert STEP Anzahl LOOP Anweisungen FOR$
+-
+              ®  $FOR  Anfangswert  STEP  Schrittweite  TO  Endwert   LOOP
+0                Anweisungen FOR$
+-
+              Es beendet diese Strukturen.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              |          | FOR$    | ÝStrukturname¨                      |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Strukturname   - Symbol
+0                              bezeichnet die zu beendende aktuelle  $FOR-
+0                              Struktur.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                               FOR$   66
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              WHILE          ERôFFNET WHILE-BLOCK
++             ___________________________________
+-
+              Das Makro WHILE wird verwendet in Strukturen der Form:
+-
+              ®  ... WHILE Bedingung LOOP ...
+-
+              Das nÜchste umgebende Schleifenkonstrukt ($WHILE,  $LOOP und
+0             $FOR-Konstrukt)  wird verlassen,  wenn die  Bedingung  nicht
+0             mehr zutrifft.A
+-
+0             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨    | WHILE  | ÝBedingung,VerknÇpfung,¨          |
+              |             |        | ÝÝBedingung¨,LOOP¨                |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+-             Bedingung        siehe Makro $EX$
+-
+              VerknÇpfung      siehe Makro $EX
+-
+              LOOP             Aufruf des Makros LOOP
+-
+-
+-
+-
+-
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                              WHILE   67
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              UNTIL          ERôFFNET UNTIL-BLOCK
++             ___________________________________
+-
+              Das Makro UNTIL wird verwendet in Strukturen der Form:
+-
+              ®  $LOOP Anweisungen UNTIL Bedingung LOOP$
+-
+              Die Schleifen-Struktur wird verlassen, wenn die im Makro UN-
+0             TIL spezifizierte Bedingung zutrifft.
+-
+              ®  ... UNTIL Bedingung LOOP ...
+-
+              Das nÜchste umgebende Schleifenkonstrukt ($WHILE,  $LOOP und
+0             $FOR-Konstrukt)   wird   verlassen,   wenn   die   Bedingung
+0             zutrifft.A
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨    | UNTIL  | ÝBedingung,VerknÇpfung,¨          |
+              |             |        | ÝÝBedingung¨,LOOP¨                |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+-             Bedingung        siehe Makro $EX$
+-
+              VerknÇpfung      siehe Makro $EX
+-
+              LOOP             Aufruf des Makros LOOP
+-
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                              UNTIL   68
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              LOOP          ERôFFNET LOOP-BLOCK
++             _________________________________
+-
+              Das Makro LOOP wird verwendet in Strukturen der Form:
+-
+              ®  $WHILE Bedingung LOOP Anweisungen WHILE$
+-
+              Es  beendet  den  Bedingungsteil und beginnt den LOOP-Block.
+0             Die hinter dem  LOOP-Makro  angegebenen  Anweisungen  werden
+0             ausgefÇhrt, solange die Bedingung zutrifft.
+-
+              ®  »WHILE | UNTILº Bedingung LOOP
+-
+              Das nÜchste umgebende Schleifenkonstrukt ($WHILE,  $LOOP und
+0             $FOR-Konstrukt) wird verlassen, wenn die Bedingung nicht zu-
+0             trifft (WHILE) bzw. zutrifft (UNTIL).
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              |             | LOOP   |                                   |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                               LOOP   69
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              IF          BEDINGUNGSMAKRO
++             ___________________________
+-
+              Mit diesem Makro kann man abhÜngig von einer angegebenen Be-
+0             dingung zu einer Adresse im Programm verzweigen,  einen Pro-
+0             grammabschnitt  verlassen  bzw.  wiederholen  oder  zu einer
+0             SITUATIONSKLAUSEL verzweigen.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨ | IF     | Bedingung,ÝAktion¨                   |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Bedingung    - siehe Makro $EX$
+0                            Wird durch  die  Vergleichsoperation  festge-
+0                            stellt,  da[ die Bedingung zutrifft, wird die
+0                            spezifizierte Aktion ausgefÇhrt.
+0             Aktion       - GOTO,Adresse einer Anweisung
+0             Adresse einer Anweisung
+0                          - Register | RX-Adresse
+0                            Die Adresse bzw.  der  Inhalt  des  Registers
+0                            spezifiziert die nÜchste auszufÇhrende Anwei-
+0                            sung.
+0             Aktion       - REPEAT,Strukturname
+0             Strukturname - Symbol
+0                            Der  angegebene Strukturblock soll wiederholt
+0                            werden.
+0             Aktion       - LEAVE,Strukturname
+0             Strukturname - Symbol
+0                            Der angegebene Strukturblock  soll  verlassen
+0                            werden.
+0             Aktion       - SIGNAL,Klauselname
+0             Klauselname  - Symbol
+0                            verzweige zu einer Situationsklausel.
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                                 IF   70
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              GOTO          VERZWEIGUNGSMAKRO
++             _______________________________
+-
+              Mit  Hilfe  dieses  Makros kann man zu einer Adresse im Pro-
+0             gramm verzweigen.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨ | GOTO   | Adresse einer Anweisung              |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-             Adresse einer Anweisung
+0                          - Register | RX-Adresse | S-Adresse
+0                            Diese Adresse bzw.  der Inhalt  des  Register
+0                            als  Adresse interpretiert gibt die als nÜch-
+0                            stes auszufÇhrende Anweisung an.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                               GOTO   71
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              REPEAT          WIEDERHOLUNGSMAKRO
++             __________________________________
+-
+              Durch dieses Makro kann  man  $BLOCK-,  $WHILE-  und  $LOOP-
+0             Strukturen wiederholen lassen.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              |          | REPEAT | ÝStrukturname¨                       |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Strukturname - Symbol
+0                            Dieser  Name bezeichnet den Anfang  einer um-
+0                            gebenden   $WHILE-,   $LOOP-   oder   $BLOCK-
+0                            Struktur.
+0                            Das Fehlen dieses  Operanden  impliziert  den
+0                            Anfang der aktuellen Struktur.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                             REPEAT   72
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              LEAVE          VERLASSEN EINER STRUKTUR
++             _______________________________________
+-
+              Durch  dieses  Makro kann man jede  $PROC-,  $BLOCK-,  $IF-,
+0             $CASE-, $WHILE-, $LOOP und $FOR-Struktur verlassen.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨ | LEAVE  | ÝStrukturname¨                       |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Strukturname - Symbol
+0                            Dieser Name bezeichnet eine umgebende $PROC-,
+0                            $BLOCK-, $IF-, $CASE-,  $WHILE-,  $LOOP- oder
+0                            $FOR-Struktur.
+0                            Wird kein Name angegeben,  so impliziert dies
+0                            das Verlassen der aktuellen Struktur.
+-
+                             Es sollten nur Strukturen  bis  zur  nÜchsten
+0                            umgebenden  $PROC-Struktur  auf  diese  Weise
+0                            verlassen werden,  da sonst  unter  UmstÜnden
+0                            lokale  Datenbereiche  nicht  freigegeben und
+0                            Registerinhalte  nicht  richtig  wiederherge-
+0                            stellt werden.
+-
+-
+-
+-
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                              LEAVE   73
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              SIGNAL         VERZWEIGUNGSMAKRO
++             ________________________________
+-
+              Mit  Hilfe dieses Makros kann man zu einer Situationsklausel
+0             (POSTLUDE-Alternative)  eines umgebenden Strukturblocks ver-
+0             zweigen.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨ | SIGNAL | Alternative                          |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-             Alternative  - Symbol
+0                            Das Symbol ist der Name einer Situationsklau-
+0                            sel  eines  umgebenden  Struktur-Blocks.  Die
+0                            ProgrammausfÇhrung wird mit der ersten Anwei-
+0                            sung   der  spezifizierten  Situationsklausel
+0                            fortgesetzt.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                           POSTLUDE   74
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              POSTLUDE    BEGINN EINER SITUATIONSKLAUSEL
++             __________________________________________
+-
+0             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨ | POSTLUDE | NameÝ,Name¨                        |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Name         - Symbol
+0                            Der   Aufruf   definiert   den  Beginn  einer
+0                            Situationsklausel (POSTLUDE-Alternative)  der
+0                            aktuellen  umgebenden  Struktur.  Der  Anwei-
+0                            sungsteil der aktuellen Struktur ist beendet.
+0                            Name bezeichnet den Namen der Situationsklau-
+0                            sel.
+-
+              Die Situationsklausel wird syntaktisch  beendet  durch  eine
+0             weiteren POSTLUDE-Aufruf,  d. h. durch den Beginn einer wei-
+0             teren Sitautionsklausel, oder durch die abschlie[ende Anwei-
+0             sung des umgebenden Strukturblocks.
+-
+              Nur Konstrukte der Form $name ...  name$ k°nnen  Situations-
+0             klauseln haben.
+-
+              Die  AusfÇhrung  einer SIGNAL-Anweisung mit Name als Operand
+0             bewirkt eine Programmverzweigung zu  dieser  Situstionsklau-
+0             sel.
+-
+              Wird  bei AusfuÇhrung einer Situationsklausel deren Ende er-
+0             reicht, so wird anschlie[end das umgebende Kontrollkonstrukt
+0             verlassen.
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                           POSTLUDE   75
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              $BLOCK          ANFANG EINER ANWEISUNGSFOLGE
++             ____________________________________________
+-
+              Das Makro $BLOCK kennzeichnet den Beginn  eines  Anweisungs-
+0             blocks.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨ | $BLOCK |                                      |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Symbol       - Symbol
+0                            bezeichnet  den  zu  er°ffnenden  Anweisungs-
+0                            block.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                             $BLOCK   76
+1
+-             2.2 Elementare Programmstrukturen
+              ------------------------------------------------------------
+-
+              BLOCK$          ENDE EINER ANWEISUNGSFOLGE
++             __________________________________________
+-
+              Das Makro BLOCK$ kennzeichnet  das  Ende  eines  Anweisungs-
+0             blocks.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              |          | BLOCK$ | ÝBlockname¨                          |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-             Blockname    - Symbol
+0                            bezeichnet den zu beendenden Anweisungsblock.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                             BLOCK$   77
+1
+-             3. Programmstrukturen
+              ------------------------------------------------------------
+-
+              Prozeduren werden verwendet, wenn
+-
+              ®  ein  Programmteil  benannt  und als "black box" verwendet
+0                werden soll,
+-
+              ®  ein bis auf eventuelle Parameter identischer Programmteil
+0                in verschiedenen Stellen im Programmtext ausgefÇhrt  wer-
+0                den soll,
+-
+              ®  lokale Daten verwendet werden sollen,  d. h. Objekte, die
+0                nur fÇr die Dauer der ProzedurausfÇhrung  vorhanden  sein
+0                sollen,
+-
+              ®  Programmteile rekursiv sein sollen.
+-
+              Zur    Implementierung    von   Prozeduren   gibt   es   das
+0             $PROC-PROC$-Konstrukt. Jedes Programm mu[ auf oberster Ebene
+0             ein $PROC-PROC$-Konstrukt sein.
+-
+              Beispiel:
+-
+                       MAIN   $PROC   TYPE=(STANDARD,CSECT),BASE=R10
+0                                ...
+0                             PROC$
+-
+              Hierbei wird eine Kontrollsektion (CSECT) mit Namen MAIN de-
+0             finiert und Register 10 als Basisregister verwendet.  Au[er-
+0             dem wird ein lokaler Datenbereich  zur  VerfÇgung  gestellt;
+0             der   Speicherbereich  hierfÇr  wird  unter  Verwendung  des
+0             GETMAIN-SVC besorgt.
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146            Programmierkonventionen   78
+1
+-             3. Programmstrukturen
+              ------------------------------------------------------------
+-
+              Einer $PROC-PROC$-Struktur sind i. a. zwei Kontrollsektionen
+0             zugeordnet: eine Sektion vom Typ CSECT fÇr auszufÇhrende An-
+0             weisungen  und  konstante  Datenobjekte und eine Sektion vom
+0             Typ DSECT fÇr  variable  lokale  Daten.  Die  CSECT  enthÜlt
+0             mindestens zwei "location-counter":  einen fÇr die Anweisun-
+0             gen und einen fÇr die konstanten Daten.
+-
+              Will man die Sektion (bzw. den "location counter") wechseln,
+0             so geschieht das unter  Verwendung  der  Anweisungen  CONST,
+0             DATA und CODE.
+-
+              Beispiel:
+-
+                       MAIN   $PROC   TYPE=(STANDARD,CSECT),BASE=R10
+0                             DATA
+0                      VAR       DS   F
+0                             CONST
+0                      KONSTANT  DC   F'1234'
+0                             CODE
+0                                LET VAR,:=,KONSTANT
+0                                ...
+0                             PROC$
+-
+              Ein  Programm kann mehrere $PROC-PROC$-Strukturen nacheinan-
+0             der enthalten.  $PROC-PROC$-Strukturen  k°nnen  geschachtelt
+0             werden.  Ein  Aufruf  einer $PROC-PROC$-STRUKTUR erfolgt mit
+0             Hilfe der Makros XCALL und ICALL.
+0             Geschachtelte $PROC-PROC$-Strukturen erhalten einen  eigenen
+0             "location-counter". Die Anordnung von Unterprogrammen inner-
+0             halb der Programmkontrollsektion ist nicht festgelegt.
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146            Programmierkonventionen   79
+1
+-             3. Programmstrukturen
+              ------------------------------------------------------------
+-
+              ®  Definition und Aufruf von internen Unterprogrammen:
+0                Unterprogramme,  deren Aufruf durch das Makro ICALL gene-
+0                riert wird,  mÇssen im Programm als $PROC-PROC$-Konstrukt
+0                definiert sein.
+-
+              ®  Gebrauch von Mehrzweckregistern:
+0                Die  Mehrzweckregister 14 und 15 werden standardmÜ[ig als
+0                'link'-Register verwendet. Zur ParameterÇbergabe kann der
+0                Benutzer jedes der Register 0, 1 und 2 benutzen.
+0                Ferner wird das Mehrzweckregister  13  als  Basisregister
+0                fÇr  den  lokalen Datenbereich eines Programms verwendet.
+0                Dieser Datenbereich enthÜlt nach OS-Konvention auch  eine
+0                'save-area'  fÇr Registerinhalte.  Es wird bei jedem Pro-
+0                grammaufruf angenommen,  da[ Register 13 auf den Datenbe-
+0                reich des aufrufenden Programmes zeigt.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146            Programmierkonventionen   80
+1
+-             3.1 Prozedurbl°cke
+              ------------------------------------------------------------
+-
+              $PROC          ANFANG EINER PROZEDUR
++             ____________________________________
+-
+              Das Makro $PROC definiert den Beginn einer Prozedur.
+-
+              Es generiert Anweisungen zur Initialisierung einer  Prozedur
+0             wie  Register abspeichern,  lokalen Datenbereich anlegen und
+0             Basisregister definieren und laden. Das Makro kann innerhalb
+0             jeder Kontrollsektion vom Typ CSECT stehen.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | Symbol  | $PROC | ÝRettebereich¨Ý,ID=name¨Ý,TYPE=type¨   |
+              |         |       | Ý,BASE=base¨Ý,LOCAL=local¨             |
+              |         |       | Ý,RETURN=return¨                       |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-             Rettebereich - (Anfangsregister, Endregister)
+0                            Der  angegebene  Registerbereich  wird  gesi-
+0                            chert. Bei Angabe von TYPE=BASIC werden keine
+0                            Register  gerettet.  StandardmÜ[ig werden die
+0                            Register 14, 15 und 0 bis 12 gerettet.
+-
+              Anfangsregister -  R14 | 14
+-
+              Endregister  - ein durch  EQUR  definiertes  Registersymbol,
+0                            dessen  Wert zwischen Register 2 und Register
+0                            12 liegen darf.
+-
+              name         - Prozedurname | *
+0                            Der Name mu[ au[er bei typeÉ=BASIC|LOW  ange-
+0                            geben werden (s. u.).
+-
+              Prozedurname - Zeichenkette in Apostrophen
+0                            Die Angabe von Programmname,  Version und Au-
+0                            tor ist zweckmÜ[ig.
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                              $PROC   81
+1
+-             3.1 Prozedurbl°cke
+              ------------------------------------------------------------
+-
+              *            - Hierbei wird  als  Identifikation  das  Label
+0                            'Symbol' des $PROC-Makros verwendet.
+0                            Standardwert:  das Label 'Symbol'  des $PROC-
+0                            Makros
+-
+              type         - (ÝtypeÉ¨,ÝtypeÊ¨) | typeÉ
+0                            Typ der Prozedur
+-
+              typeÉ        - STANDARD | LOW | BASIC
+-
+                             STANDARD  - Es  wird ein lokaler Datenbereich
+0                                        mit  Rettebereich  zur  VerfÇgung
+0                                        gestellt und die Register der ru-
+0                                        fenden Prozedur werden gerettet.
+0                            LOW       - Die  Register  der  rufenden Pro-
+0                                        zedur werden  gerettet,  es  wird
+0                                        aber  kein neuer lokaler Datenbe-
+0                                        reich fÇr diese Prozedur zur Ver-
+0                                        fÇgung gestellt.
+0                            BASIC     - Es werden weder die Register  der
+0                                        aufrufenden  Prozedur  gesichert,
+0                                        noch wird  ein  lokaler  Datenbe-
+0                                        reich zur VerfÇgung gestellt.
+0                            Standardwert: STANDARD .
+-
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                              $PROC   82
+1
+-             3.1 Prozedurbl°cke
+              ------------------------------------------------------------
+-
+              typeÊ        - CSECT | ENTRY | INTERNAL
+-
+                             CSECT     - bezeichnet    eine   von   extern
+0                                        zugreifbare Prozedur. Es wird ei-
+0                                        ne CSECT generiert.
+0                            ENTRY     - bezeichnet    eine   von   extern
+0                                        zugreifbare  Prozedur.  Der erste
+0                                        Aufruf von $PROC in  einer  ûber-
+0                                        setzung   erzeugt   eine   CSECT-
+0                                        Anweisung,   alle  weiteren  eine
+0                                        ENTRY-Anweisung und  einen  neuen
+0                                        "location-counter"        (LOCTR-
+0                                        Anweisung).
+0                            INTERNAL  - bezeichnet eine interne Prozedur.
+0                                        Diese Prozedur kann nur von  Pro-
+0                                        grammstellen  aufgerufen  werden,
+0                                        die gemeinsam mit dieser Prozedur
+0                                        assembliert worden sind.  Es wird
+0                                        ein    neuer   "location-counter"
+0                                        generiert (LOCTR-Anweisung).
+0                                        Strukturen  dieses  Typs  sollten
+0                                        unter Verwendung des Makros ICALL
+0                                        aufgerufen werden.
+0                            Standardwert: CSECT .
+-
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                              $PROC   83
+1
+-             3.1 Prozedurbl°cke
+              ------------------------------------------------------------
+-
+              base         - Register |  (Register,RegisterÝ,Register¨)
+0                            bezeichnet die Register,  die als  Basisregi-
+0                            ster verwendet werden.
+0                            Das  erste  Basisregister dient zur Adressie-
+0                            rung der ersten 4  K-Bytes  eines  Programms.
+0                            Das  zweite bzw.  dritte Basisregister adres-
+0                            sieren die weiteren 8 K-Bytes des Programms.
+0                            Der  Parameter  darf  nur  in  dem  Üu[ersten
+0                            $PROC-PROC$-Konstrukt angegeben werden.
+-
+              local        - (areaname,STATIC) |
+0                            (dsectname,BASED,Adresse) |
+0                            (dsectname,SIZED,LÜnge) |
+0                            dsectname
+0                            Diese  Angabe  kann gemacht werden,  wenn die
+0                            Prozedur einen lokalen Datenbereich ben°tigt,
+0                            der durch 'dsectname' definiert ist.  Bei der
+0                            Angabe  von typeÉ=LOW|BASIC darf keine LOCAL-
+0                            Angabe gemacht werden,  da diese keinen loka-
+0                            len Datenbereich haben.
+0                            Die   auf  diese  Weise  definierten  lokalen
+0                            Datenbereiche  mÇssen am Anfang einen Bereich
+0                            von 72 Bytes zum Retten  der  Registerinhalte
+0                            enthalten, falls weitere externe oder interne
+0                            Unterprogramme    aufgerufen   werden,    die
+0                            Registerinhalte retten.
+-
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                              $PROC   84
+1
+-             3.1 Prozedurbl°cke
+              ------------------------------------------------------------
+-
+              (areaname,STATIC)
+0             areaname     - Symbol | *
+0                            bezeichnet  den Namen des lokalen Datenberei-
+0                            ches.  Wird * oder kein Symbol angegeben,  so
+0                            wird  intern  ein Name generiert  (siehe auch
+0                            Makro DATA).
+0                            Der durch 'areaname' definierte und zu adres-
+0                            sierende lokale  Datenbereich  wird  mit  dem
+0                            Datenbereich der aufrufenden Prozedur verket-
+0                            tet.  Register  13 zeigt danach auf den neuen
+0                            Datenbereich.  Die Adresse des Bereichs  wird
+0                            aus einem Wort A('Areaname') geladen.
+-
+              (dsectname,BASED,Adresse)
+0             Adresse      - siehe Makro LET:
+0                            (LET   R13,:=,Adresse).
+0                            spezifiziert  die aktuelle Adresse des Daten-
+0                            bereiches.
+0                            Der durch  'dsectname'  definierte und  durch
+0                            'Adresse'  zu adressierende Datenbereich wird
+0                            mit dem Datenbereich der aufrufenden Prozedur
+0                            verkettet.  Register  13  enthÜlt  danach die
+0                            spezifizierte Startadresse.
+-
+-
+-
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                              $PROC   85
+1
+-             3.1 Prozedurbl°cke
+              ------------------------------------------------------------
+-
+              (dsectname,SIZED,LÜnge)
+0             LÜnge        - Register | RX-AdresseÝ:Typ¨ |
+0                            EQUN-Objekt | ganze Zahl
+0                            spezifiziert  die  LÜnge  des   zuzuweisenden
+0                            Datenbereiches.
+0                            Ein Datenbereich wird in  der  spezifizierten
+0                            LÜnge zur VerfÇgung gestellt  (und intern mit
+0                            dem  Datenbereich  der  aufrufenden  Prozedur
+0                            verkettet).  Register 13 enthÜlt  die  Start-
+0                            adresse des zugewiesenen Bereiches.
+-
+              dsectname    - Dieser     Aufruf     ist    Üquivalent    zu
+0                            LOCAL=(dsectname,SIZED,dsectname#), d. h. als
+0                            LÜnge  fÇr den angeforderten Bereich wird der
+0                            dem Symbol  'dsectname#' zugewiesene Wert ge-
+0                            nommen.  Das Programm mu[ z. B.  eine  Makro-
+0                            Anweisung der Form
+0                            dsectname# EQUN (*-dsectname | Wert)
+0                            enthalten.)  Register  13 zeigt auf den neuen
+0                            Datenbereich.
+-
+                             Standardwert: ein automatisch generierter Na-
+0                            me.
+-
+              return       - Register
+0                            Dieses Register enthÜlt die Adresse  der  als
+0                            nÜchstes   auszufÇhrenden   Instruktion  nach
+0                            Beendigung des Programms.
+0                            Gibt man kein Register an,  so wird das Regi-
+0                            ster 14 angenommen.
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                              $PROC   86
+1
+-             3.1 Prozedurbl°cke
+              ------------------------------------------------------------
+-
+              PROC$          ENDE EINER PROZEDUR
++             __________________________________
+-
+              Das Makro PROC$ definiert das Ende einer Prozedur.  Es  gibt
+0             die  im  entsprechenden $PROC-Makro zur VerfÇgung gestellten
+0             Bereiche frei,  macht eine eventuelle Verkettung eines loka-
+0             len  Datenbereichs mit dem Datenbereich der aufrufenden Pro-
+0             zedur rÇckgÜngig,  nimmt die Deklarationen  der  verwendeten
+0             Basisregister  zurÇck und setzt,  falls spezifiziert,  RÇck-
+0             sprungkodes.
+0             Die aktive Kontrollsektion hinter einem Aufruf von PROC$  in
+0             einer ûbersetzung ist die CODE-Sektion der Prozedur.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              |          | PROC$  | ÝRC=rc¨Ý,LTORG=ltorg¨                |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              rc           - WertÉÍ | (ÝWertÉÍ¨,ÝWertø¨,ÝWertÉ¨)
+-
+              WertÉÍ       - Syntax siehe Makro LET
+0                            (LET  R15,:=,WertÉÍ).
+0                            spezifiziert  den  Wert,  der  in Register 15
+0                            Çbergeben werden soll.
+-
+              Wertø        - Syntax siehe WertÉÍ
+0                            spezifiziert  den  Wert,  der  in  Register 0
+0                            Çbergeben werden soll.
+-
+              WertÉ        - Syntax siehe WertÉÍ
+0                            spezifiziert  den  Wert,  der  in  Register 1
+0                            Çbergeben werden soll.
+-
+              Falls kein Wert fÇr WertÉÍ, Wertø oder WertÉ angegeben wird,
+0             so bleibt das jeweilige Register unverÜndert.
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                              PROC$   87
+1
+-             3.1 Prozedurbl°cke
+              ------------------------------------------------------------
+-
+              ltorg        - YES
+0                            Bei dieser Angabe werden die Literale, die im
+0                            Programm  seit  der  letzten  LTORG-Anweisung
+0                            verwendet wurden, an dieser Stelle generiert.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                              PROC$   88
+1
+-             3.1 Prozedurbl°cke
+              ------------------------------------------------------------
+-
+              DATA          WIEDERAUFNAHME DES DATENBEREICHES
++             _______________________________________________
+-
+              Der  Makro  DATA  nimmt die Definition von lokalen variablen
+0             Daten   der   nÜchsten   umgebenden    $PROC-Struktur    mit
+0             typeÉ=STANDARD auf.
+-
+0             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              |             | DATA   |                                   |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Nach Aufruf dieses Makros sind nur noch  Aufrufe  von  CONST
+0             und  CODE oder Anweisungen sinnvoll,  die Datenfelder reser-
+0             vieren.
+0             DATA kann nur angegeben werden,  wenn der Parameter LOCAL im
+0             $PROC-Makro nicht angegeben wurde.
+0             (Ausnahme: LOCAL=(*,STATIC)).
+0             SpeicherplÜtze,  die  durch DC-Anweisungen definiert werden,
+0             haben nur dann den angegebenen Wert,  wenn der LOCAL-Bereich
+0             der aktuellen Prozedur vom Typ STATIC oder BASED ist.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                               DATA   89
+1
+-             3.1 Prozedurbl°cke
+              ------------------------------------------------------------
+-
+              CONST          WIEDERAUFNAHME DES KONSTANTENBEREICHES
++             _____________________________________________________
+-
+              Der  Makro CONST nimmt die Definition von lokalen konstanten
+0             Daten   der   nÜchsten   umgebenden    $PROC-Struktur    mit
+0             typeÉ=STANDARD auf.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              |             | CONST  |                                   |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Nach Aufruf dieses Makros sind nur  noch  oder  Aufrufe  von
+0             DATA  und  CODE  oder  Anweisungen  sinnvoll,  die konstante
+0             Datenfelder reservieren.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                              CONST   90
+1
+-             3.1 Prozedurbl°cke
+              ------------------------------------------------------------
+-
+              CODE          WIEDERAUFNAHME DES ANWEISUNGSTEILES
++             _________________________________________________
+-
+              Der Makro CODE nimmt den Anweisungsteil der  aktuellen  Pro-
+0             zedur auf.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              |             | CODE   |                                   |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                               CODE   91
+1
+-             3.2 Prozeduraufrufe und Programmstrukturen
+              ------------------------------------------------------------
+-
+              ICALL          AUFRUF EINES INTERNEN UNTERPROGRAMMES
++             ____________________________________________________
+-
+              Mit Hilfe des Makros ICALL k°nnen Unterprogramme, die inner-
+0             halb eines Programms stehen, aufgerufen werden.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨ | ICALL  | NameÝ,ParameterÉ¨,ÝParameterø¨       |
+              |          |        | Ý,ParameterÊ¨                        |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-             Name         - Symbol
+0                            bezeichnet den Namen des Unterprogramms,  das
+0                            aufgerufen werden soll.
+-
+              ParameterÉ   - Syntax siehe Makro LET
+0                            (LET   R1,:=,ParameterÉ)
+0                            spezifiziert  den  Wert,  der  in  Register 1
+0                            Çbergeben werden soll.
+-
+              Parameterø   - Syntax wie ParameterÉ
+0                            spezifiziert  den  Wert,  der  in  Register 0
+0                            Çbergeben werden soll.
+-
+              ParameterÊ   - Syntax wie ParameterÉ
+0                            spezifiziert  den  Wert,  der  in  Register 2
+0                            Çbergeben werden soll.
+-
+              Falls  kein Wert fÇr ParameterÉ,  Parameterø oder ParameterÊ
+0             angegeben wird,  so bleibt das jeweilige  Register  unverÜn-
+0             dert.
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                              ICALL   92
+1
+-             3.2 Prozeduraufrufe und Programmstrukturen
+              ------------------------------------------------------------
+-
+              XCALL          AUFRUF EINES EXTERNEN PROGRAMMS
++             ______________________________________________
+-
+              Mit dem Makro XCALL kann man externe Programme ,  die an das
+0             Lade-Modul gebunden sind, aufrufen.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              | ÝSymbol¨ | XCALL  |  NameÝ,ParameterÉ¨Ý,Parameterø¨      |
+              |          |        |  Ý,ParameterÊ¨                       |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-             Name         - Symbol
+0                            Name des  Programms,  das  aufgerufen  werden
+0                            soll.
+-
+              ParameterÉ   - Syntax siehe Makro LET
+0                            (LET   R1,:=,ParameterÉ)
+0                            spezifiziert  den  Wert,  der  in  Register 1
+0                            Çbergeben werden soll.
+-
+              Parameterø   - Syntax wie ParameterÉ
+0                            spezifiziert  den  Wert,  der  in  Register 0
+0                            Çbergeben werden soll.
+-
+              ParameterÊ   - Syntax wie ParameterÉ
+0                            spezifiziert  den  Wert,  der  in  Register 2
+0                            Çbergeben werden soll.
+-
+              Falls kein Wert fÇr ParameterÉ,  Parameterø oder  ParameterÊ
+0             angegeben  wird,  so  bleibt das jeweilige Register unverÜn-
+0             dert.
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                              XCALL   93
+1
+-             3.3 Verfeinerungstechnik
+              ------------------------------------------------------------
+-
+              Als Verfeinerungstechnik bezeichnen wir  hier  die  Methode,
+0             Anweisungsfolgen  zusammenzufassen  und  mit Hilfe von COPY-
+0             Anweisungen in Programme einzufÇgen.
+0             Bei den bisher beschrieben Hilfsmittel lÜ[t  es  sich  nicht
+0             vermeiden, da[ Konstrukte erst nach vielen Anweisungen abge-
+0             schlossen  werden.  Dies  ist einer der Nachteile der block-
+0             strukturierten  Programmierung.   COPY-Anweisungen  schaffen
+0             hier Abhilfe insoweit,  da[ in der Datei,  die das Quellpro-
+0             gramm  enthÜlt,  Konstrukte  schon nach relativ wenig Zeilen
+0             abgeschlossen sind.
+0             In dem Beispielen von Kapitel 2 wird die  Verfeinerungstech-
+0             nik angedeutet:
+-
+                       $IF
+0                         COPY  BEDING
+0                      THEN
+0                         COPY  MACHWAS
+0                      IF$
+-
+              "BEDING" und "MACHWAS" sind an anderer Stelle zu programmie-
+0             ren.  Sie  mÇssen  als  "member" einer untergliederten Datei
+0             (PDS,  partitioned dataset)  vorliegen,  die mit der  Makro-
+0             bibliothek verkettet sein mu[.
+-
+-
+-
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                         Einleitung   94
+1
+-             3.3 Verfeinerungstechnik
+              ------------------------------------------------------------
+-
+              COPY            BEGINN EINER VERFEINERUNG
++             _________________________________________
+-
+              Das Assembler-Anweisung COPY definiert den Beginn einer Ver-
+0             feinerung.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              |                | COPY    | Name                          |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Name         - Symbol
+0                            bezeichnet die zu beginnende Verfeinerung.
+-
+              Anmerkung:
++             _________
+0             Der Aufruf mu[ ein leeres Namensfeld haben. COPY-Anweisungen
+0             innerhalb  von  Makros sollten nicht verwendet werden,  wenn
+0             dann die COPY-Anweisung in der  Ausgabeliste  erscheint,  da
+0             sonst  Konflikte  durch  fehlende  ENDCOPY-Aufrufe entstehen
+0             k°nnen. Eine "PRINT-OFF"-Anweisung darf nicht wirksam sein.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                               COPY   95
+1
+-             3.3 Verfeinerungstechnik
+              ------------------------------------------------------------
+-
+              ENDCOPY            ENDE EINER VERFEINERUNG
++             __________________________________________
+-
+              Das Makro ENDCOPY beendet eine Verfeinerung.
+-
+              Das  Ende  einer  Anweisungsfolge,   die  durch  eine  COPY-
+0             Anweisung in ein Programm eingefÇgt wird,  ist in  der  Aus-
+0             gabeliste  des Assemblers nicht zu erkennen.  Wir fÇhren nun
+0             die Konvention ein,  da[  jede  Verfeinerung  eine  ENDCOPY-
+0             Anweisung  als  letzte Anweisung enthalten soll.  Der Makro-
+0             aufruf kann innerhalb der Verfeinerung als letzte  Anweisung
+0             geschrieben werden (vergleichbar mit der END-Anweisung eines
+0             Programms)   oder  die  nÜchste  Anweisung  nach  der  COPY-
+0             Anweisung sein.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              |                | ENDCOPY | Name                          |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Name         - Symbol
+0                            bezeichnet die zu beendende Verfeinerung.
+-
+              Anmerkung:
++             _________
+0             Der Aufruf mu[ im "open-code" des Programms stehen  und  ein
+0             leeres  Namensfeld  haben.  Eine  "PRINT-OFF"-Anweisung darf
+0             nicht wirksam sein.
+-
+-
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                            ENDCOPY   96
+1
+-             3.3 Verfeinerungstechnik
+              ------------------------------------------------------------
+-
+              Die Verwendung von COPY-Instruktionen zur  Realisierung  von
+0             Verfeinerungen  hat den Nachteil,  da[ zur Generierung eines
+0             Programms eine untergliederte Datei (PDS) ben°tigt wird, die
+0             die einzelnen Verfeinerungen (MEMBER) enthÜlt. Diese zerleg-
+0             te Speicherung des Quellprogramms hat den Vorteil,  da[ Ver-
+0             feinerungen  einfacher  geÜndert werden k°nnen.  Sollen Pro-
+0             gramme einer gr°[eren Programmbibliothek mit allen Verfeine-
+0             rungen in einer Quellprogrammdatei verwaltet werden,  so er-
+0             geben sich jedoch gelegentlich Namensprobleme.
+0             Will  man  das  gesamte Quellprogramm in einer sequentiellen
+0             Datei halten,  so mu[ man vor jeder Generierung eine  unter-
+0             gliederte  Datei  erstellen.  Das IBM-Hilfsprogramm IEBUPDTE
+0             leistet hier hinreichende Hilfe. IEBUPDTE kann zur Erzeugung
+0             von untergliederten Dateien aus sequentiellen  Dateien  ver-
+0             wendet werden. Die Daten fÇr die zu erzeugenden Verfeinerun-
+0             gen  (MEMBER)  werden  durch ADD-Steuerkarten getrennt.  Die
+0             ADD-Steuerkarten definieren den Namen der Verfeinerung.  FÇr
+0             die Assembler-Phase ben°tigt man nur noch den Namen der Ver-
+0             feinerung, die das Hauptprogramm enthÜlt.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              |./ ADD NAME=name                                          |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              name         - Name der Verfeinerung
+-
+-
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                           IEBUPDTE   97
+1
+-             3.3 Verfeinerungstechnik
+              ------------------------------------------------------------
+-
+              SASLIST   ist  ein  Programm,   das  folgende  Probleme  der
+0             Assemblerprogrammierung  mit Verfeinerungstechnik und Makro-
+0             technik vermeiden soll:
+-
+              1. Verfeinerungstechnik:
+0             Anweisungsfolgen, die durch COPY-Anweisungen in ein Programm
+0             eingefÇgt werden (Verfeinerungen),  sind in der Ausgabeliste
+0             des  Assemblers eingesetzt.  Damit geht der Vorteil der Les-
+0             barkeit des Quellprogramms mit "nicht aufgel°sten" Verfeine-
+0             rungen verloren.
+-
+              2. Makrotechnik:
+0             Wird die Assemblerkontrollanweisung  "PRINT GEN"  verwendet,
+0             so wird die Programmliste schwer lesbar;  wird "PRINT NOGEN"
+0             verwendet,  so werden wenig Informationen Çber den generier-
+0             ten Code (Location Counter, Maschinencode) und keine Fehler-
+0             meldungen innerhalb der Makroexpansionen ausgegeben.
+-
+              SASLIST  hat  die  Aufgabe,  die Ausgabeliste des Assemblers
+0             derart neu zu sortieren,  da[ jeweils die  Anweisungen  zwi-
+0             schen einem COPY-ENDCOPY-Paar weiter hinten in der Programm-
+0             liste erscheinen.
+-
+              Die  Ebenen  der  Verfeinerung  haben  vor Bearbeitung durch
+0             SASLIST eine geschachtelte Struktur. Nach Bearbeitung werden
+0             die durch die Verfeinerung festgelegten Bl°cke sortiert aus-
+0             gegeben.  Als erstes Sortierkriterium gilt die Ebenennummer,
+0             als zweites die Anweisungsnummer.
+-
+              In  der Ausgabeliste werden die Anweisungsnummern um die da-
+0             zugeh°rigen Ebenennummern ergÜnzt.
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                            SASLIST   98
+1
+-             3.3 Verfeinerungstechnik
+              ------------------------------------------------------------
+-
+              Die Titelzeilen der Seiten erhalten als neuen Eintrag:
+0               - den Namen der aktuellen Ebene,
+0               - den Namen der rufenden Ebene,
+0               - die Ebenen- und Anweisungsnummer der COPY Anweisung.
+-
+              In der Querverweisliste werden die Anweisungsnummern um  die
+0             entsprechenden Ebenennummern ergÜnzt.
+-
+              Au[erdem  wird  eine  Liste Çber die Ebenenstruktur erstellt
+0             und Fehlermeldungen fÇr fehlerhafte  "COPY"-"ENDCOPY"  Paare
+0             ausgegeben.
+-
+              Makroexpansionen  k°nnen  komprimiert  werden.  HierfÇr sind
+0             mehrere M°glichkeiten vorgesehen:
+-
+                - Das erste nicht-leere LOC-Feld einer expandierten Anwei-
+0                 sung wird dem Makroaufrufstatement beigefÇgt.
+0                 Alle anderen expandierten Statements werden nicht ausge-
+0                 geben.
+0               - ZusÜtzlich  wird  der  Maschinencode  aller  generierten
+0                 Statements ausgegeben (etwa wie mit "PRINT DATA").
+0               - Alle Statements werden unverÜndert ausgegeben.
+-
+              ZusÜtzlich bleiben in allen FÜllen Fehlermeldungen erhalten.
+0             Die  unterschiedlichen  M°glichkeiten werden durch das Makro
+0             SASLIST gesteuert.
+-
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                            SASLIST   99
+1
+-             3.3 Verfeinerungstechnik
+              ------------------------------------------------------------
+-
+              Eingabe ist eine Datei,  die als Ausgabeliste vom  Assembler
+0             generiert  wurde und die Çber den DDNAME SYSUT1 vom Programm
+0             SASLIST benutzt wird.  Diese Datei ist  sequentiell  organi-
+0             siert  und  hat  fÇr  den  verwendeten  Assembler  die  DCB-
+0             Attribute LRECL=121 und RECFM=FBM.
+-
+              Sinnvollerweise sollte die Datei mit COPY, ENDCOPY Anweisun-
+0             gen,   wie  oben  angegeben,   strukturiert  sein  und   die
+0             "PRINT GEN" Anweisung verwendet worden sein.
+-
+              Die Ausgabedaten sind SÜtze in der Ausgabedatei. Diese Datei
+0             hat die DCB-Attribute LRECL=124 und RECFM=FBA und  wird  vom
+0             Programm SASLIST mit dem DDNAME SYSUT2 benutzt.
+0             Unterschiede  zur Eingabestruktur eines Satzes treten in dem
+0             Kapitel auf,  in dem die Assemblerstatements enthalten sind.
+0             Die Struktur eines Satzes mit Assemblerstatement Ündert sich
+0             folgenderma[en:
+-
+                - Die  Statementnummer erhÜlt als ErgÜnzung die Ebenennum-
+0                 mer, in der sich das Statement befindet.
+0               - Die zweite Titelzeile hat  als  ErgÜnzung  den  Eintrag,
+0                 welchen Namen der aktuelle Einschlu[ hat,  den Namen des
+0                 aufrufenden Einschlu[es und die Statementnummer der  ru-
+0                 fenden Verfeinerung.
+0               - Die Liste Çber die Ebenenstruktur befindet sich zwischen
+0                 (Cross-Reference und Diagnostics).
+-
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                            SASLIST  100
+1
+-             3.3 Verfeinerungstechnik
+              ------------------------------------------------------------
+-
+              SASLIST            STEUERUNG DES POSTPROZESSORS
++             _______________________________________________
+-
+              Das  Makro SASLIST steuert die AusfÇhrung des Postprozessor-
+0             programms SASLIST.
+-             +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+              |                | SASLIST | Option                        |
+              +-- --- --- --- --- --- --- --- --- --- --- --- --- --- ---+
+-
+              Option       - LOC | DATA | ASIS
+-
+                             LOC     Das erste nicht-leere Loc-Feld  einer
+0                                    Makroexpansion  wird  dem Makroaufruf
+0                                    beigefÇgt.
+-
+                             DATA    ZusÜtzlich wird der Maschinencode al-
+0                                    ler generierten Anweisungen  ausgege-
+0                                    ben.
+-
+                             ASIS    Die Makroexpansion bleibt ungeÜndert.
+-
+              Anmerkung:
++             _________
+0             Der  Makroaufruf mu[ im "open-code" des Programms stehen und
+0             ein leeres Namensfeld haben. Eine "PRINT OFF"-Anweisung darf
+0             nicht wirksam sein.
+0             Die Anweisung hat nur dann einen Effekt, wenn vorher im Pro-
+0             gramm eine PRINT GEN-Anweisung erfolgt ist.
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                            SASLIST  101
+1
+-             4. Benutzung und Hilfsmittel
+              ------------------------------------------------------------
+-
+              Die  beschrieben  Makros  befinden   sich   in   der   Datei
+0             SYS2.SPTS.MACLIB. In der gleichen Datei befinden sich einige
+0             andere Makros,  die von den beschriebenen Makros als  Unter-
+0             bzw. Hilfsmakros zur DurchfÇhrung gemeinsamer Teilfunktionen
+0             aufgerufen werden. Es ist m°glich, da[ sich die Funktion und
+0             das  Au[enverhalten dieser Hilfsmakros Ündert.  Diese Makros
+0             sollten daher nicht explizit vom Benutzer verwendet werden.
+-
+              Die jeweils gÇltige Beschreibung aller Makros befindet  sich
+0             in der Datei SYS2.SPTS.INFO(MACLIB).
+-
+              Die  Erzeugung des Quellprogramms kann auf verschiedene Wei-
+0             sen erfolgen. Neben der herk°mmlichen Methode,  das Programm
+0             manuell  direkt  zu schreiben,  sind Techniken denkbar,  die
+0             halbautomatisch ProgrammgerÇste aus Pseudo-Code erzeugen und
+0             somit die Arbeit erleichtern.
+-
+              Ein solches Verfahren ist in Ý5¨ beschrieben.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                                     102
+1
+-             4.1 Quellprogramm-Konventionen und Restriktionen
+              ------------------------------------------------------------
+-
+              Die Benutzung von IEBUPDTE als Preprozessor fÇr den  Assemb-
+0             ler und von SASLIST als Postprozessor erfordert einige {nde-
+0             rungen  im  Quellprogramm  und  Ündert  die  Wirkung einiger
+0             Assembler Kontrollanweisungen.  Die Wirkung der Modifikatio-
+0             nen des SLAC-Assemblers ist in einigen FÜllen eingeschrÜnkt.
+-             1. Im Quellprogramm mÇssen IEBUPDTE-Steuerkarten eingebettet
+0             sein.
+-             2.  Jede durch eine COPY-Anweisung aufgerufenen Verfeinerung
+0             mu[ durch einen ENDCOPY Makroaufruf beendet werden. ZweckmÜ-
+0             [ig ist es,  diese Anweisung am Ende jeder  Verfeinerung  zu
+0             schreiben.
+-             3.  Werden im Quellprogramm TITLE-Anweisungen verwendet,  so
+0             sollte jede Verfeinerung als  erste  Anweisung  eine  TITLE-
+0             Anweisung haben.
+-             4.  Das  Namensfeld der ersten TITLE-Anweisung des Hauptpro-
+0             gramms sollte den Programmnamen enthalten.
+-             5. EJECT-Anweisungen haben keine Wirkung.  SPACE-Anweisungen
+0             haben  dann  keine Wirkung,  wenn sie am Ende einer Seite in
+0             der Orginal-Assembler-Output-Datei erscheinen,  da sie  dann
+0             nicht von EJECT-Anweisungen zu unterscheiden sind.
+-             6.  Die  Anweisungen/Makros COPY,  ENDCOPY,  END und SASLIST
+0             mÇssen ein leeres Namensfeld haben.  (Es dÇrfen  auch  keine
+0             Conditional-Assembly-Label vorhanden sein.)  Die Anweisungen
+0             dÇrfen  nicht  durch  PRINT OFF-Anweisungen  verborgen sein,
+0             wenn sie vom Postprozessor SASLIST erkannt werden sollen.
+-             7. Die Wirkung von PRINT GEN-Anweisungen wird durch SASLIST-
+0             Makroaufrufe beeinflu[t.
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                                     103
+1
+-             4.1 Quellprogramm-Konventionen und Restriktionen
+              ------------------------------------------------------------
+-
+0             8. Es erscheinen keine Angaben Çber aktive USING-Anweisungen
+0             innerhalb des Titels bei Verwendung des Parameters UMAP.
+-             9.  Die "zweite" Titelzeile der Programmliste  entÜlt  immer
+0             'LOC  OBJECT ...'.
+-             10. Der Parameter EXITP der SLAC-Version des Assemblers darf
+0             nicht benutzt werden, das Programm SASLIST eigenwillige Vor-
+0             stellungen  von der Struktur der Assembler-Ausgabeliste hat.
+0             Es ist m°glich,  das in Zukunft das Programm SASLIST in  den
+0             Assembler  integriert  wird.  Entsprechend  darf  die  OCTL-
+0             Anweisung nicht benutzt werden.
+-             11.  Die SLAC-Version des Assemblers  unterstreicht  in  der
+0             "Cross-Reference" die Nummern der Anweisungen, bei denen das
+0             benutzte Symbol ver#andert wurde.  SASLIST ersetzt diese Un-
+0             terstreichungen durch  einen  Doppelpunkt  als  Trennzeichen
+0             zwischen Ebenennummer und Anweisungsnummer.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                                     104
+1
+-             4.2 Prozeduren
+              ------------------------------------------------------------
+-
+              Zum Benutzen der Makros,  des Preprozessors IEBUPDTE und des
+0             Postprozessors SASLIST stehen JCL-Prozeduren zur  VerfÇgung.
+0             Diese befinden sich in der Datei SYS2.PROCLIB. Die Namen der
+0             Prozeduren haben alle den PrÜfix CASMX.  Die letzten ein bis
+0             drei Zeichen des Prozedurnamens stehen fÇr die Funktion  der
+0             Prozeduren:
+-             CASMXC:
+-             //CASMXC   PROC MAC='SYS2.SPTS.MACLIB',
+              //             MAC1='SYS2.SPTS.MACLIB',
+              //             MEMBER=,TERM='*',PRINT=A
+              //*
+              //UPDATE   EXEC PGM=IEBUPDTE,PARM=NEW
+              //SYSPRINT DD   DUMMY,SYSOUT=
+              //SYSUT2   DD   DSN=&&SOURCE,DISP=(NEW,PASS),
+              //             UNIT=VIODA,SPACE=(6160,(1000,1000,20)),
+              //             DCB=(BLKSIZE=6160,LRECL=80,RECFM=FB)
+              //*
+              //ASM      EXEC PGM=IEV90,COND=(0,NE,UPDATE)
+              //STEPLIB  DD   DSN=SYS2.ASMS.LINKLIB,DISP=SHR
+              //SYSIN    DD   DSN=&&SOURCE(&MEMBER),DISP=(OLD,DELETE)
+              //SYSLIB   DD   DSN=&&SOURCE,DISP=(OLD,DELETE),
+              //             VOL=REF=*.SYSIN
+              //         DD   DSN=&MAC,DISP=SHR
+              //         DD   DSN=&MAC1,DISP=SHR
+              //         DD   DSN=SYS2.SPTS.MACLIB,DISP=SHR
+              //         DD   DSN=GMD.MACLIB,DISP=SHR
+              //         DD   DSN=SYS1.MACLIB,DISP=SHR
+              //SYSLIN   DD   DSN=&LOADSET,UNIT=VIODA,SPACE=(1024,(1000,10
+              //             DISP=(MOD,PASS),DCB=BLKSIZE=3200
+              //SYSUT1   DD   DSN=&&SYSUT1,
+              //             UNIT=VIODA,SPACE=(1024,(1000,1000))
+              //SYSTERM  DD   SYSOUT=&TERM
+              //SYSPRINT DD   DSN=&&LIST,DISP=(NEW,PASS),
+              //             UNIT=SYSDA,SPACE=(1024,(1000,1000))
+              //SYSPUNCH DD   SYSOUT=B
+              //*
+              //SASLIST  EXEC PGM=SASLIST,COND=((0,NE,UPDATE),EVEN)
+              //STEPLIB  DD   DSN=SYS2.SPTS.LINKLIB,DISP=SHR
+              //SORTLIB  DD   DSN=SYS1.SORTLIB,DISP=SHR
+              //SORTWK01 DD   UNIT=SYSDA,SPACE=(1024,500,,CONTIG)
+              //SORTWK02 DD   UNIT=SYSDA,SPACE=(1024,500,,CONTIG)
+              //SORTWK03 DD   UNIT=SYSDA,SPACE=(1024,500,,CONTIG)
+              //SYSTERM  DD   SYSOUT=&TERM
+              //SYSPRINT DD   SYSOUT=&PRINT
+              //SYSOUT   DD   SYSOUT=&PRINT
+              //SYSUT1   DD   DISP=(OLD,DELETE),DSN=&&LIST
+              //SYSUT2   DD   SYSOUT=&PRINT
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                                     105
+1
+-             4.2 Prozeduren
+              ------------------------------------------------------------
+-             CASMXCL:
+-             //CASMXCL  PROC MAC='SYS2.SPTS.MACLIB',
+              //             MAC1='SYS2.SPTS.MACLIB',
+              //             LMOD=,
+              //             MEMBER=,TERM='*',PRINT=A
+                ...
+                UPDATE-Step und ASM-Step wie bei CASMXC
+                ...
+              //LKED     EXEC PGM=IEWL,PARM=(XREF,LET,LIST,NCAL),
+              //             REGION=128K,COND=((0,NE,UPDATE),(8,LT,ASM))
+              //SYSLIN   DD   DSN=&LOADSET,DISP=(OLD,DELETE)
+              //         DD   DDNAME=SYSIN
+              //SYSLMOD  DD   DSN=&LMOD,DISP=SHR
+              //SYSPRINT DD   SYSOUT=&PRINT
+              //SYSUT1   DD   DSN=&&SYSUT1,UNIT=VIODA,
+              //             SPACE=(1024,(50,20))
+              //*
+                ...
+                SASLIST-Step wie bei CASMXC
+                ...
+-             CASMXCLL:
+-             //CASMXCLL PROC MAC='SYS2.SPTS.MACLIB',
+              //             MAC1='SYS2.SPTS.MACLIB',
+              //             LMOD=,
+              //             LIB='GMD.LINKLIB',
+              //             MEMBER=,TERM='*',PRINT=A
+              //*
+                ...
+                UPDATE-Step und ASM-Step wie bei CASMXC
+                ...
+              //LKED     EXEC PGM=IEWL,PARM=(XREF,LET,LIST),REGION=128K,
+              //             COND=((0,NE,UPDATE),(8,LT,ASM))
+              //SYSLIB   DD   DISP=SHR,DSN=&LIB
+              //         DD   DISP=SHR,DSN=GMD.LINKLIB
+              //SYSLIN   DD   DSN=&LOADSET,DISP=(OLD,DELETE)
+              //         DD   DDNAME=SYSIN
+              //SYSLMOD  DD   DSN=&LMOD,DISP=SHR
+              //SYSPRINT DD   SYSOUT=&PRINT
+              //SYSUT1   DD   DSN=&&SYSUT1,UNIT=VIODA,
+              //             SPACE=(1024,(50,20))
+              //*
+                ...
+                SASLIST-Step wie bei CASMXC
+                ...
+-
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                                     106
+1
+-             4.2 Prozeduren
+              ------------------------------------------------------------
+-             CASMXCG:
+-             //CASMXCG  PROC MAC='SYS2.SPTS.MACLIB',
+              //             MAC1='SYS2.SPTS.MACLIB',
+              //             LIB='GMD.LINKLIB',
+              //             MEMBER=,TERM='*',PRINT=A
+              //*
+                ...
+                UPDATE-Step, ASM-Step und SASLIST-Step wie bei CASMXC
+                ...
+              //GO       EXEC PGM=LOADER,PARM='MAP,PRINT,NOCALL,LET',
+              //             COND=(8,LT,ASM)
+              //*
+              //SYSLIB   DD   DISP=SHR,DSN=&LIB
+              //         DD   DISP=SHR,DSN=GMD.LINKLIB
+              //SYSLIN   DD   DSN=&LOADSET,DISP=(OLD,DELETE)
+              //SYSLOUT  DD   SYSOUT=&PRINT
+              //SYSPRINT DD   SYSOUT=&PRINT
+              //SYSOUT   DD   SYSOUT=&PRINT
+              //SYSTERM  DD   SYSOUT=&TERM
+-             CASMXG:
+-             //CASMXG   PROC LIN=,LIB='GMD.LINKLIB',
+              //             TERM='*',PRINT=A
+              //GO       EXEC PGM=LOADER,PARM=(MAP,PRINT,LET)
+              //SYSLIB   DD   DISP=SHR,DSN=&LIB
+              //         DD   DISP=SHR,DSN=GMD.LINKLIB
+              //SYSLIN   DD   DSN=&LIN,DISP=SHR
+              //SYSLOUT  DD   SYSOUT=&PRINT
+              //SYSPRINT DD   SYSOUT=&PRINT
+              //SYSOUT   DD   SYSOUT=&PRINT
+              //SYSTERM  DD   SYSOUT=&TERM
+0             CASMXS:
+-             //CASMXS   PROC TERM='*',PRINT=A
+              //SASLIST  EXEC PGM=SASLIST
+              //STEPLIB  DD   DSN=SYS2.SPTS.LINKLIB,DISP=SHR
+              //SORTLIB  DD   DSN=SYS1.SORTLIB,DISP=SHR
+              //SORTWK01 DD   UNIT=SYSDA,SPACE=(TRK,20,,CONTIG)
+              //SORTWK02 DD   UNIT=SYSDA,SPACE=(TRK,20,,CONTIG)
+              //SORTWK03 DD   UNIT=SYSDA,SPACE=(TRK,20,,CONTIG)
+              //SYSPRINT DD   SYSOUT=&PRINT
+              //SYSOUT   DD   SYSOUT=&PRINT
+              //SYSTERM  DD   SYSOUT=&TERM
+              //*SYSUT1  DD   *.ASM.SYSPRINT
+              //SYSUT2   DD   SYSOUT=&PRINT
+-
+-
+-
+-
+0             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                                     107
+1
+-             5. Alphabetischer Index
+              ------------------------------------------------------------
+-
+0             Makro $BLOCK . .. .. .. .. .. .. .. .. .. .. ..    76
+              Makro $CASE .. .. .. .. .. .. .. .. .. .. .. ..    55
+              Makro $EX.. .. .. .. .. .. .. .. .. .. .. .. ..    44
+              Makro $EX$. .. .. .. .. .. .. .. .. .. .. .. ..    39
+              Makro $FOR  .. .. .. .. .. .. .. .. .. .. .. ..    64
+              Makro $IF . .. .. .. .. .. .. .. .. .. .. .. ..    50
+              Makro $LOOP .. .. .. .. .. .. .. .. .. .. .. ..    59
+              Makro $PROC .. .. .. .. .. .. .. .. .. .. .. ..    81
+              Makro $WHILE . .. .. .. .. .. .. .. .. .. .. ..    61
+              Makro #DROP .. .. .. .. .. .. .. .. .. .. .. ..    23
+              Makro #USE  .. .. .. .. .. .. .. .. .. .. .. ..    21
+              Anweisung ADD (IEBUPDTE) . .. .. .. .. .. .. ..    97
+              Makro ANDTHEN. .. .. .. .. .. .. .. .. .. .. ..    48
+              Makro BLOCK$ . .. .. .. .. .. .. .. .. .. .. ..    77
+              Makro CASE$ .. .. .. .. .. .. .. .. .. .. .. ..    58
+              Makro CODE  .. .. .. .. .. .. .. .. .. .. .. ..    91
+              Makro CONST .. .. .. .. .. .. .. .. .. .. .. ..    90
+              Anweisung COPY .. .. .. .. .. .. .. .. .. .. ..    95
+              Makro DATA  .. .. .. .. .. .. .. .. .. .. .. ..    89
+              Makro DO .. .. .. .. .. .. .. .. .. .. .. .. ..    57
+              Makro ENDCOPY. .. .. .. .. .. .. .. .. .. .. ..    96
+              Makro ELSE  .. .. .. .. .. .. .. .. .. .. .. ..    52
+              Makro ELSEIF . .. .. .. .. .. .. .. .. .. .. ..    53
+              Makro EQUN  .. .. .. .. .. .. .. .. .. .. .. ..    13
+              Makro EQUR  .. .. .. .. .. .. .. .. .. .. .. ..    14
+              Makro EX$ . .. .. .. .. .. .. .. .. .. .. .. ..    45
+              Makro FOR$  .. .. .. .. .. .. .. .. .. .. .. ..    66
+              Makro GOTO  .. .. .. .. .. .. .. .. .. .. .. ..    71
+              Makro ICALL .. .. .. .. .. .. .. .. .. .. .. ..    92
+              Makro IF .. .. .. .. .. .. .. .. .. .. .. .. ..    70
+              Makro IF$ . .. .. .. .. .. .. .. .. .. .. .. ..    54
+              Makro LEAVE .. .. .. .. .. .. .. .. .. .. .. ..    73
+              Makro LET . .. .. .. .. .. .. .. .. .. .. .. ..    15
+              Makro LOOP  .. .. .. .. .. .. .. .. .. .. .. ..    69
+              Makro LOOP$ .. .. .. .. .. .. .. .. .. .. .. ..    60
+              Makro ON .. .. .. .. .. .. .. .. .. .. .. .. ..    56
+              Makro ORELSE.. .. .. .. .. .. .. .. .. .. .. ..    46
+              Makro POSTLUDE .. .. .. .. .. .. .. .. .. .. ..    75
+              Makro PROC$ .. .. .. .. .. .. .. .. .. .. .. ..    87
+              Makro REPEAT . .. .. .. .. .. .. .. .. .. .. ..    72
+              Makro SASLIST. .. .. .. .. .. .. .. .. .. .. ..   101
+              Makro SIGNAL.. .. .. .. .. .. .. .. .. .. .. ..    74
+              Makro THEN  .. .. .. .. .. .. .. .. .. .. .. ..    51
+              Makro TRUECC.. .. .. .. .. .. .. .. .. .. .. ..    38
+              Makro UNTIL .. .. .. .. .. .. .. .. .. .. .. ..    68
+              Makro WHILE .. .. .. .. .. .. .. .. .. .. .. ..    67
+              Makro WHILE$ . .. .. .. .. .. .. .. .. .. .. ..    62
+              Makro XCALL .. .. .. .. .. .. .. .. .. .. .. ..    93
+-
+-
+-
+-
+-
+              ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                              Index  108
+1
+-             6. Literatur
+              ------------------------------------------------------------
+-
+              Ý1¨
+0                 E.Schwarz,   U.Viebeg,   J.Geist-Stoffleth:  Makros  fÇr
+0                 strukturierte Programmierung und komplexe Zuweisungen in
+0                 Assembler  GMD interner Bericht des IST Nr.  5,  Oktober
+0                 1978
+-
+              Ý2¨
+0                 IBM System  /370  Principles  of  Operation  IBM-Form-No
+0                 GA22-7000
+-
+              Ý3¨
+0                 OS/VS-DOS/VSE-VM/370   Assembler   Language  IBM-Form-No
+0                 GC33-4010
+-
+              Ý4¨
+0                 OS Assembler H-Language IBM-Form-No GC26-3771
+-
+              Ý5¨
+0                 K.Birkenbihl:   Projekterfahrung  mit  fortgeschrittenen
+0                 Softwareimplementationsverfahren.  GMD-interner  Bericht
+0                 RZ.80.206
+-
+              Ý6¨
+0                 G.Mushial:  SLAC Enhancements to and Beautifications  of
+0                 the IBM H-Level Assembler,  1 August 1980 SLAC Computing
+0                 Services,  Stanford  Linear  Accelerator  Center,  Menlo
+0                 Park, CA 94025, USA
+-
+-
+-
+-             ------------------------------------------------------------
+              GMD-Z1.BN P.Sylvester 2.4.1985
+              Arbeitspapier Nr.146                          Literatur  109

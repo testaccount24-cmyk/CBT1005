@@ -1,0 +1,339 @@
+./ ADD NAME=TSO
+TSO       TITLE 'TSO   --  PROGRAM DESCRIPTION'
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+*                                                                     *
+* COPYRIGHT: COPYRIGHT BY GESELLSCHAFT FUER MATHEMATIK UND            *
+*                                      DATENVERARBEITUNG MBH BONN,    *
+*                         - RECHENZENTREN -                           *
+*                         SCHLOSS BIRLINGHOVEN                        *
+*                         5205 ST. AUGUSTIN 1                         *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+*                                                                     *
+*        T S O                                                        *
+*                                                                     *
+*                                                                     *
+* <CLASS>: TSO-KOMMANDO                                               *
+*                                                                     *
+*                                                                     *
+* <FUNCTION/OPERATION>:                                               *
+*   THIS 'TSO' COMMAND ALLOWS THE TSO USER TO INVOKE HIS OWN          *
+*   COMMAND PROCESSOR FROM A PRIVATE LIBRARY WITHOUT NEED TO          *
+*   ALLOCATE IT STATICALLY TO FILE 'STEPLIB' IN HIS LOGON             *
+*   PROCEDURE.                                                        *
+*                                                                     *
+*   THE SYMBOL FOLLOWING THE 'TSO' COMMAND IS THE NAME OF THE         *
+*   COMMAND PROCESSOR TO BE INVOKED. THIS MODULE IS FIRST SEARCHED    *
+*   IN A PRIVATE LIBRARY ALLOCATED TO FILENAME 'TSOLIB'.  IF NOT IN   *
+*   THERE, THE NORMAL SYSTEM SEARCH IS PERFORMED.  MODULES CALLED     *
+*   DYNAMICALLY FROM INSIDE THE COMMAND PROCESSOR MAY RESIDE IN THE   *
+*   SAME PRIVATE LIBRARY.                                             *
+*                                                                     *
+*   TO THE END USER THE COMMAND PROCESSOR INVOKED APEARS AS NOT       *
+*   PREFIXED BY 'TSO', THAT IS, IT BEHAVES EQUAL IN CASE OF NORMAL    *
+*   TERMINATION AND ABNORMAL END.                                     *
+*                                                                     *
+*   SOME INCOMPATIBILITIES OCCURS IF THE COMMAND PROCESSOR NAME IS    *
+*   SYNTACTICALLY INVALID, OR NOT FOUND IN ANY LIBRARY.               *
+*                                                                     *
+*                                                                     *
+* <ENTRY POINTS>:                                                     *
+*        TSO                                                          *
+*                                                                     *
+*                                                                     *
+* <INPUT>:                                                            *
+*                                                                     *
+*                                                                     *
+*      C P P L (COMMAND PROCESSOR PARAMETER LIST)                     *
+*        ------------------------                                     *
+* R1 --> |  00  |          -----|----> CBUF (COMMAND BUFFER)          *
+*        ------------------------                                     *
+*        |  00  |          -----|----> UPT  (USER PROFILE TABLE)      *
+*        ------------------------                                     *
+*        |  00  |          -----|----> PSCB (PROTECTED STEP CONTROL   *
+*        ------------------------            BLOCK)                   *
+*        |  80  |          -----|----> ECT  (ENVIRONMT.CONTROL TABLE) *
+*        ------------------------                                     *
+*                                                                     *
+* <OUTPUT>:                                                           *
+*        ---                                                          *
+*                                                                     *
+*                                                                     *
+* <DD-STATEMENTS/DATA SETS>:                                          *
+*        ---                                                          *
+*                                                                     *
+*                                                                     *
+* <NORMAL EXIT>:                                                      *
+*        VIA PROC$                                                    *
+*                                                                     *
+*                                                                     *
+* <ERROR EXIT>:                                                       *
+*        ABEND WITH ABEND CODE OF PROGRAM INVOKED                     *
+*                                                                     *
+*                                                                     *
+* <RETURN CODES>:                                                     *
+*    0  -  COMMAND NAME IS A QUESTION MARK                            *
+*    8  -  OPEN FAILED FOR TSOLIB                                     *
+*   12  -  COMMAND NAME IS SYNTACTICALLY INVALID                      *
+*   **  -  SAME AS CALLED PROGRAM IF TERMINATED NORMALLY              *
+*                                                                     *
+*                                                                     *
+* <EXTERNAL ROUTINES>:                                                *
+*        IKJSCAN                                                      *
+*                                                                     *
+*                                                                     *
+* <TABLES/WORK AREAS>:                                                *
+*        CPPL - COMMAND PROCESSOR PARAMETER LIST                      *
+*                                                                     *
+*                                                                     *
+* <ATTRIBUTES>:                                                       *
+*        REFR                                                         *
+*                                                                     *
+*                                                                     *
+* <RESTRICTIONS>:                                                     *
+*        CAN BE USED ONLY IN A TSO-ENVIRONMENT                        *
+*                                                                     *
+*                                                                     *
+* <AUTHORIZATION REQUIRED>:                                           *
+*        ---                                                          *
+*                                                                     *
+*                                                                     *
+* <RELATED PROGRAMS>:                                                 *
+*        --                                                           *
+*                                                                     *
+*                                                                     *
+* <STORAGE>:                                                          *
+*        PROGRAM:  --                                                 *
+*        DYNAMIC:  --                                                 *
+*        BUFFER :  --                                                 *
+*                                                                     *
+*                                                                     *
+* <LOAD MODULE CREATION>:                                             *
+*      SOURCE LANGUAGE      : ASSEMBLER                               *
+*      COMPILE LIBRARIES    : RZ.SPTS.MACLIB, GMD.MACLIB, SYS1.MACLIB *
+*      COMPILE PARAMETERS   :                                         *
+*      LINK-EDIT LIBRARIES  : RZ.LINKLIB                              *
+*      LINK-EDIT PARAMETERS : RENT,REFR,REUS                          *
+*      LINK-EDIT INPUT      :                                         *
+*      DESTINATION LIBRARIES: GMD.CMDLIB                              *
+*                                                                     *
+*      GENERATING DECK      : GMD.JCL(TSO)                            *
+*                                                                     *
+*                                                                     *
+* <STATUS>:                                                           *
+*          CHANGE LEVEL - 0.0               08AUG79                   *
+*                         1.0               18OKT84    SAND (TOTALLY  *
+*                                                          REWRITTEN) *
+*                                                                     *
+* <NOTES>:  ---                                                       *
+*                                                                     *
+*                                                                     *
+* <AUTHOR>: BURSCHKIES (GMD-RZ.BN)                                    *
+*                                                                     *
+*-- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --*
+ TITLE 'TSO   --  MAIN PROGRAMM'
+                                                       SASLIST LOC
+TSO       $PROC TYPE=(STANDART,CSECT),BASE=R12
+                                       @ * DEFINE MAPPING MACROS ;
+             CVT   DSECT=YES
+             IHASDWA
+             IHAECB
+             IKJCPPL
+             IKJUPT
+             IKJECT
+             IKJCSPL
+             IKJCSOA
+CBUF         DSECT
+                                       @ * DEFINE GLOBAL
+                                       @ * CONSTANTS ;
+NO_ERROR       EQUN 0
+OPEN_FAILED    EQUN 8
+INVALID_SYNTAX EQUN 12
+                                       @ * DEFINE GLOBAL
+                                       @ * VARIABLES ;
+             DATA
+RETCODE      DS    F
+ECB@         DS    F
+CSPL@        DS    6A
+CSOA@        DS    2A
+                                       @ * DEFINE GLOBAL SUBROUTINES
+             COPY SUBROUTS
+                                       @ * INITIALIZE PROGRAM DATA
+             CODE
+             #USE  R11,CPPL,R1
+             #USE  R10,CBUF,CPPLCBUF
+             #USE  R9,UPT,CPPLUPT
+             #USE  R8,ECT,CPPLECT
+             #USE  R7,ECB,:ECB@
+             #USE  R6,CSPL,:CSPL@
+             #USE  R5,CSOA,:CSOA@
+             LET   RETCODE,:=,NO_ERROR
+             COPY  SCAN                @ * EXTRACT THE COMMAND NAME ;
+             $IF
+                                       @ * NO COMMAND NAME PRESENT
+                $EX$  CSOAFLG,:,CSOANOC
+             THEN
+             ELSEIF
+                                       @ * COMMAND NAME IS A QUESTION
+                                       @ * MARK
+                $EX$  CSOAFLG,:,CSOAQM
+             THEN
+             ELSEIF
+                                       @ * COMMAND NAME IS
+                                       @ * SYNTACTICALLY INVALID
+                $EX$  CSOAFLG,NZ,CSOABAD+CSOAEXEC
+             THEN
+                                       @ * WRITE "INVALID COMMAND NAME
+                                       @ * SYNTAX" ;
+                PUTLNE ' INVALID COMMAND NAME SYNTAX'
+                                       @ * INDICATE "INVALID COMMAND
+                                       @ * NAME SYNTAX" ;
+                LET   RETCODE,:=,INVALID_SYNTAX
+             ELSE
+                COPY  TRYCALL          @ * TRY TO CALL COMMAND
+                                       @ * PROCESSOR
+             IF$
+          PROC$ TSO,RC=RETCODE
+          END TSO
+./ ADD NAME=SCAN
+  TITLE 'SCAN -- EXTRACT AND SYNTAX CHECK THE COMMAND NAME'
+SCAN      $BLOCK
+                                       @ * BUILD PARAMETER LIST FOR
+                                       @ * 'IKJSCAN' ;
+             LET   CSPLUPT,->,UPT
+             LET   CSPLECT,->,ECT
+             LET   CSPLECB,->,ECB
+             LET   CSPLFLG,->,=X'00'   "SYNTAX SCAN COMMAND"
+             LET   CSPLOA,->,CSOA
+             LET   CSPLCBUF,->,CBUF
+             LET   ECB,:=,0
+                                       @ * CALL 'IKJSCAN' TO GET THE
+                                       @ * COMMAND NAME
+             CALLTSSR EP=IKJSCAN,MF=(E,CSPL)
+          BLOCK$ SCAN
+          ENDCOPY SCAN
+./ ADD NAME=TRYCALL
+  TITLE 'TRYCALL'
+TRYCALL   $BLOCK
+             CONST
+TSOLIBP      DCB   DDNAME=TSOLIB,MACRF=(R),DSORG=PO
+TSOLIB#      EQUN  *-TSOLIBP
+OPENP        OPEN  (*-*),MF=L
+OPEN#        EQUN  *-OPENP
+CLOSEP       CLOSE (*-*),MF=L
+CLOSE#       EQUN  *-CLOSEP
+             DATA
+TSOLIB       DS    0A,XL(TSOLIB#)
+OPEN         DS    0A,XL(OPEN#)
+CLOSE        DS    0A,XL(CLOSE#)
+             CODE
+             $IF
+                                       @ * TRY TO OPEN FILE "TSOLIB"
+                LET   (TSOLIB,TSOLIB#),:=,TSOLIBP
+                LET   (OPEN,OPEN#),:=,OPENP
+                OPEN  TSOLIB,MF=(E,OPEN)
+                                       @ * FILE CANNOT BE OPENED
+                $EX$  R15,¬=,0
+             THEN
+                                       @ * WRITE "OPEN FAILED FOR
+                                       @ * TSOLIB"
+                PUTLNE ' OPEN FAILED FOR TSOLIB'
+                                       @ * INDICATE "OPEN FAILED"
+                LET   RETCODE,:=,OPEN_FAILED
+             ELSEIF
+                                       @ * COPY COMMAND NAME TO
+                                       @ * PRIVATE AREA AND ECT
+                DATA
+COMMAND_NAME    DS    CL8
+                CODE
+                LET   (COMMAND_NAME,8),:=,=CL8' '
+                LET   R2,:=,CSOACNM:F
+                LET   R3,:=,CSOALNM:H
+                LET   (COMMAND_NAME,R3),:=,0(R2)
+                LET   (ECTPCMD,8),:=,COMMAND_NAME
+                                       @ * TRY TO INVOKE COMMAND
+                                       @ * PROCESSOR ;
+                DATA
+TCBAD           DS    A
+ATTACH          ATTACH SF=L
+ABENDED         DS    A
+                CODE
+                LET   ECB,:=,0
+                LET   ABENDED,->,ECB
+                ATTACH EPLOC=COMMAND_NAME,DCB=TSOLIB,TASKLIB=TSOLIB,   X
+               ESTAI=(ESTAI,ABENDED),SHSPV=78,ECB=ECB,                 X
+               MF=(E,CPPL),SF=(E,ATTACH)
+                LET   TCBAD,=,R1
+                                       @ * WAIT FOR TERMINATION OF
+                                       @ * COMMAND ;
+                WAIT  ECB=ECB
+                                       @ * DETACH SUBTASK AND CLOSE
+                                       @ * "TSOLIB"
+                DETACH TCBAD
+                LET   (CLOSE,CLOSE#),:=,CLOSEP
+                CLOSE TSOLIB,MF=(E,CLOSE)
+                                       @ * COMMAND TERMINATED
+                                       @ * NORMALLY
+                $EX$  ABENDED:C,=,X'00'
+             THEN
+                                       @ * INDICATE CONDITION AS
+                                       @ * RETURNED BY CALLED PGM
+                NI    ECB,X'3F'
+                LET   RETCODE,:=,ECB
+             ELSE
+                                       @ * ABEND WITH ABEND CODE OF
+                                       @ * CALLED PROGRAMM
+                MVI   ECB,X'00'
+                LET   R1,:=,ECB
+                ABEND (R1)
+             IF$
+          BLOCK$ TRYCALL
+          ENDCOPY TRYCALL
+./ ADD NAME=SUBROUTS
+SUBROUTS  $BLOCK
+ESTAI        $PROC TYPE=(LOW,INTERNAL),BASE=R15
+             LA    R2,12
+             $IF
+                                       @ * SDWA COULD NOT OBTAINED
+                $EX$  R0,¬=,R2
+             THEN
+                                       @ * LOAD R2 WITH PARM LIST ADDR
+                                       @ * AND R1 WITH ABEND CODES
+                #USE  R1,SDWA
+                LET   R2,:=,SDWAPARM
+                ICM   R1,B'0111',SDWACMPC
+                #DROP R1
+             IF$
+                                       @ * INDICATE ABEND OCCURED
+             LET   0(R2):C,:=,X'FF'
+                                       @ * SIGNAL COMPLETION OF SUBTASK
+             LET   R2,:=,0(R2)
+             LA    R1,0(R1)
+             POST  (R2),(R1)
+                                       @ * INDICATE "NO FUTHER ABEND
+                                       @ * PROCESSING" TO THE RETRY
+                                       @ * ROUTINE ;
+             PROC$ RC=16
+          BLOCK$ SUBROUTS
+          ENDCOPY SUBROUTS
+./ ADD NAME=PUTLNE
+         MACRO
+&NAME    PUTLNE &MSG
+         GBLB  &NOTFIRSTPUTLNE
+         AIF   (&NOTFIRSTPUTLNE).NOTFIRST
+&NOTFIRSTPUTLNE SETB 1
+         DATA
+IOPL     DS    4F
+PUTLINE  PUTLINE MF=L
+.NOTFIRST ANOP
+&ID      SETC  'PUTLNE_&SYSNDX._'
+         CONST
+&ID.OLD  DC    A(1,&ID.MSG)
+&ID.MSG  DC    AL2(L'&ID.TXT+4,0)
+&ID.TXT  DC    C&MSG
+         CODE
+         PUTLINE UPT=UPT,ECT=ECT,PARM=PUTLINE,MF=(E,IOPL),             X
+               OUTPUT=&ID.OLD
+         MEND
+./ ENDUP

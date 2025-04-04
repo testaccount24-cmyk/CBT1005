@@ -1,0 +1,33 @@
+         MACRO                  V:01JUL73-PAHL     REV:15MAY74-GEIST    ----0100
+         #SYSPARM                                                       15MAY741
+.*                                                                      ----0300
+.*  BREAK &SYSPARM INTO SUBLIST OPERANDS IF (H-ASM DOES NOT DO SO)      ----0400
+.*  AND LOAD THEM INTO &SYSPARL ARRAY.                                  ----0500
+.*                                                                      ----0600
+.*  IN THE EXEC-STMT PARM INFO, SYSPARM CAN BE SPECIFIED AS FOLLOWS:    ----0700
+.*     SYSPARM=AAA             &SYSPARL(1)='AAA'   N'=1                 ----0800
+.*     SYSPARM=(AAA,...,ZZZ)   &SYSPARL(1)='AAA',...,&SYSPARL(N)='ZZZ'  ----0900
+.*     SYSPARM(AAA)            &SYSPARL(1)='AAA'   N'=1                 ----1000
+.*     SYSPARM(AAA,...,ZZZ)    &SYSPARL(1)='AAA',...,&SYSPARL(N)='ZZZ'  ----1100
+.*  PARENTHESES WITHIN THE OPERANDS ARE NOT ALLOWED.                    ----1200
+.*                                                                      ----1300
+         GBLC  &SYSPARL(1)                                              ----1400
+         LCLA  &K,&I1,&I2,&N                                            ----1500
+.*                                                                      ----1600
+&K       SETA  K'&SYSPARM                                               ----1700
+         AIF   (&K EQ 0).MEND                                           ----1800
+         AIF   ('&SYSPARM'(1,1) NE '(').SCAN                            ----1900
+&I1      SETA  1                                                        ----2000
+&K       SETA  &K-1                                                     ----2100
+&I2      SETA  1                                                        ----2200
+.SCAN    AIF   (&I2 GE &K).LAST                                         ----2300
+&I2      SETA  &I2+1                                                    ----2400
+         AIF   ('&SYSPARM'(&I2,1) NE ',').SCAN                          ----2500
+&N       SETA  &N+1                                                     ----2600
+&SYSPARL(&N) SETC '&SYSPARM'(&I1+1,&I2-&I1-1)                           ----2700
+&I1      SETA  &I2                                                      ----2800
+         AGO   .SCAN                                                    ----2900
+.LAST    ANOP                                                           ----3000
+&N       SETA  &N+1                                                     ----3100
+&SYSPARL(&N) SETC '&SYSPARM'(&I1+1,&I2-&I1)                             ----3200
+.MEND    MEND                                                           ----3300

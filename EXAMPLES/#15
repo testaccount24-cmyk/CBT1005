@@ -1,0 +1,389 @@
+         #TEST   $PROC                                                  #20  001
+         AIF   (&NOTFND).$PROC                                          #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   $PROC'                             #20  004
+         SPACE 3
+         PROC$
+DSECT    DSECT
+DSAFLD   DS    12F
+DSECT#   EQU   *-DSECT
+PGM      LOCTR                                                          #20  006
+         GBLC  &PRCTYPE(04),&PRCCODE(04)
+         EJECT
+***********************************************************************
+*    &PRCCODE(1) SETC ''               INDICATE NO $PROC BEFORE       *
+*    PROC3    $PROC ,MAIN,TYPE=(STD,EXTERNAL),BASE=R10                *
+*    *           SEQUENCE OF STATEMENTS                               *
+*             PROC$                                                   *
+***********************************************************************
+         SPACE 3
+&PRCCODE(1) SETC ''               INDICATE NO $PROC BEFORE
+PROC3    $PROC ,MAIN,TYPE=(STD,EXTERNAL),BASE=R10
+*           SEQUENCE OF STATEMENTS
+         PROC$
+         EJECT
+***********************************************************************
+*    PROC1    $PROC TYPE=(BASIC,INTERNAL)                             *
+*    *           SEQUENCE OF STATEMENTS                               *
+*             PROC$                                                   *
+***********************************************************************
+         SPACE 3
+PROC1    $PROC TYPE=(BASIC,INTERNAL)
+*           SEQUENCE OF STATEMENTS
+         PROC$
+         SPACE 6
+***********************************************************************
+*    PROC8    $PROC TYPE=(BASIC,EXTERNAL)                             *
+*    *           SEQUENCE OF STATEMENTS                               *
+*             PROC$                                                   *
+***********************************************************************
+         SPACE 3
+PROC8    $PROC TYPE=(BASIC,EXTERNAL)
+*           SEQUENCE OF STATEMENTS
+         PROC$
+         SPACE 6
+***********************************************************************
+*    PROC5    $PROC TYPE=(BASIC,EXTERNAL),BASE=(R15,R14,R13)          *
+*    *           SEQUENCE OF STATEMENTS                               *
+*             PROC$                                                   *
+***********************************************************************
+         SPACE 3
+PROC5    $PROC TYPE=(BASIC,EXTERNAL),BASE=(R15,R14,R13)
+*           SEQUENCE OF STATEMENTS
+         PROC$
+         EJECT
+***********************************************************************
+*             #USE  R8,DSECT                                          *
+*    PROC7    $PROC BASE=(R6,R7),LOCAL=(DSECT,STATIC)                 *
+*    *           SEQUENCE OF STATEMENTS                               *
+*             PROC$                                                   *
+***********************************************************************
+         SPACE 3
+         #USE  R8,DSECT
+PROC7    $PROC BASE=(R6,R7),LOCAL=(DSECT,STATIC)
+*           SEQUENCE OF STATEMENTS
+         PROC$
+         EJECT
+***********************************************************************
+*             #DROP R9
+*             #USE  R9,*                                              *
+*    PROC9    $PROC (R14,R12),LOCAL=(DSECT,BASED,R7)                  *
+*    *           SEQUENCE OF STATEMENTS                               *
+*             PROC$                                                   *
+***********************************************************************
+         SPACE 3
+         #DROP R9
+         #USE  R9,*
+PROC9    $PROC (R14,R12),LOCAL=(DSECT,BASED,R7)
+*           SEQUENCE OF STATEMENTS
+         PROC$
+         EJECT
+***********************************************************************
+*             #USE  R7,DSECT                                          *
+*    PROC11   $PROC (R14,R12),LOCAL=(DSECT,STATIC)                    *
+*    *           SEQUENCE OF STATEMENTS                               *
+*             PROC$                                                   *
+***********************************************************************
+         SPACE 3
+         #USE  R7,DSECT
+PROC11   $PROC (R14,R12),LOCAL=(DSECT,STATIC)
+*           SEQUENCE OF STATEMENTS
+         PROC$
+         EJECT
+***********************************************************************
+*    PROC15   $PROC LOCAL=(DSECT,SIZED,88)                            *
+*    *           SEQUENCE OF STATEMENTS                               *
+*             PROC$                                                   *
+***********************************************************************
+         SPACE 3
+PROC15   $PROC LOCAL=(DSECT,SIZED,88)
+*           SEQUENCE OF STATEMENTS
+         PROC$
+         EJECT
+***********************************************************************
+*             #USE  R9,*                                              *
+*    PROC17   $PROC (14,12),TYPE=(STD,CSECT),BASE=R10                 *
+*    *           SEQUENCE OF STATEMENTS                               *
+*             PROC$                                                   *
+***********************************************************************
+         SPACE 3
+         #USE  R9,*
+PROC17   $PROC (14,12),TYPE=(STD,CSECT),BASE=R10
+*           SEQUENCE OF STATEMENTS
+         PROC$
+         EJECT
+***********************************************************************
+*             $PROC (R14,R12),ID                                      *
+*    *           SEQUENCE OF STATEMENTS                               *
+*             PROC$                                                   *
+***********************************************************************
+         SPACE 3
+         $PROC (R14,R12),ID
+*           SEQUENCE OF STATEMENTS
+         PROC$
+         EJECT
+***********************************************************************
+*    PROC0    $PROC (R14,13),ID,LOCAL=(DSECT,FALSCH)                  *
+*    *           SEQUENCE OF STATEMENTS                               *
+*             PROC$                                                   *
+***********************************************************************
+         SPACE 3
+PROC0    $PROC (R14,13),ID,LOCAL=(DSECT,FALSCH)
+*           SEQUENCE OF STATEMENTS
+         PROC$
+         EJECT
+***********************************************************************
+*    PROC2    $PROC TYPE=(BASIC,EXTERNAL),BASE=R15,LOCAL=DSECT        *
+*    *           SEQUENCE OF STATEMENTS                               *
+*             PROC$                                                   *
+***********************************************************************
+         SPACE 3
+PROC2    $PROC TYPE=(BASIC,EXTERNAL),BASE=R15,LOCAL=DSECT
+*           SEQUENCE OF STATEMENTS
+         PROC$
+         SPACE 6
+***********************************************************************
+*    PROC4    $PROC TYPE=(BASIC,EXTERNAL),BASE=(15,14,13)             *
+*    *           SEQUENCE OF STATEMENTS                               *
+*             PROC$                                                   *
+***********************************************************************
+         SPACE 3
+PROC4    $PROC TYPE=(BASIC,EXTERNAL),BASE=(15,14,13)
+*           SEQUENCE OF STATEMENTS
+         PROC$
+         EJECT
+***********************************************************************
+*    PROC6    $PROC TYPE=(BASIC,EXTERNAL),BASE=(R15,R14,R13,R12)      *
+*    *           SEQUENCE OF STATEMENTS                               *
+*             PROC$                                                   *
+***********************************************************************
+         SPACE 3
+PROC6    $PROC TYPE=(BASIC,EXTERNAL),BASE=(R15,R14,R13,R12)
+*           SEQUENCE OF STATEMENTS
+         PROC$
+         SPACE 6
+***********************************************************************
+*    PROC10   $PROC (R14,R12),LOCAL=(DSECT,SIZED,14)                  *
+*    *           SEQUENCE OF STATEMENTS                               *
+*             PROC$                                                   *
+***********************************************************************
+         SPACE 3
+PROC10   $PROC (R14,R12),LOCAL=(DSECT,SIZED,14)
+*           SEQUENCE OF STATEMENTS
+         PROC$
+         SPACE 6
+***********************************************************************
+*    PROC12   $PROC TYPE=(BASIC,FALSCH)                               *
+*    *           SEQUENCE OF STATEMENTS                               *
+*             PROC$                                                   *
+***********************************************************************
+         SPACE 3
+PROC12   $PROC TYPE=(BASIC,FALSCH)
+*           SEQUENCE OF STATEMENTS
+         PROC$
+         EJECT
+***********************************************************************
+*    &PRCTYPE(1) SETC ''                                              *
+*    PROC13   $PROC (R12,R14)                                         *
+*    *           SEQUENCE OF STATEMENTS                               *
+*             PROC$                                                   *
+***********************************************************************
+         SPACE 3
+&PRCTYPE(1) SETC ''
+PROC13   $PROC (R12,R14)
+*           SEQUENCE OF STATEMENTS
+         PROC$
+         EJECT
+***********************************************************************
+*    PROC14   $PROC (R14,R100)                                        *
+*    *           SEQUENCE OF STATEMENTS                               *
+*             PROC$                                                   *
+***********************************************************************
+         SPACE 3
+PROC14   $PROC (R14,R100)
+*           SEQUENCE OF STATEMENTS
+         PROC$
+         EJECT
+***********************************************************************
+*    PROC18   $PROC (R12,R14),TYPE=(BASIC,EXTERNAL)                   *
+*    *           SEQUENCE OF STATEMENTS                               *
+*             PROC$                                                   *
+***********************************************************************
+         SPACE 3
+PROC18   $PROC (R12,R14),TYPE=(BASIC,EXTERNAL)
+*           SEQUENCE OF STATEMENTS
+         PROC$
+         EJECT
+***********************************************************************
+*    PROC19   $PROC ,TYPE=(STANDARD,CSECT),LOCAL=(*,STATIC)           *
+*    *           SEQUENCE OF STATEMENTS                               *
+*             LET   R4,->,PROC19DA    <--- REFERENCE WITH REG 13      *
+*             DATA ,                                                  *
+*    PROC19DA DS    F                                                 *
+*             CODE ,                                                  *
+*             PROC$                                                   *
+***********************************************************************
+         SPACE 3
+PROC19   $PROC ,TYPE=(STANDARD,CSECT),LOCAL=(*,STATIC)
+*           SEQUENCE OF STATEMENTS
+         LET   R4,->,PROC19DA    <--- REFERENCE WITH REG 13
+         DATA ,
+PROC19DA DS    F
+         CODE ,
+         PROC$
+         EJECT
+***********************************************************************
+*  PROCX1 $PROC TYPE=(STANDARD,CSECT),BASE=R11                             00220
+*            CONST ,                                                       00240
+*            #USE ?                                                        00260
+*  PROCX11   $PROC TYPE=(STANDARD,INTERNAL)                                00280
+*               #USE ?                                                     00300
+*               CONST ,                                                    00320
+*  PROCX111     $PROC TYPE=(STANDARD,INTERNAL)                             00340
+*                 CONST ,                                                  00360
+*                 DATA ,                                                   00380
+*                 CODE ,                                                   00400
+*               PROC$ DROP=NO,LTORG=NO                                     00420
+*               #USE ?                                                     00440
+*  PROCX112     $PROC TYPE=(STANDARD,INTERNAL)                             00460
+*                  CONST ,                                                 00480
+*                  DATA ,                                                  00500
+*                  CODE ,                                                  00520
+*               PROC$ DROP=NO,LTORG=NO                                     00540
+*               #USE ?                                                     00560
+*  PROCX113     $PROC TYPE=(LOW,INTERNAL)                                  00580
+*                  CONST ,                                                 00600
+*  PROCX1131       $PROC TYPE=(STANDARD,INTERNAL)                          00620
+*                     CONST ,                                              00640
+*                     DATA ,                                               00660
+*                     CODE ,                                               00680
+*                     #USE ?                                               00700
+*                  PROC$ DROP=NO,LTORG=NO                                  00720
+*                  DATA ,                                                  00740
+*                  #USE ?                                                  00760
+*                  CODE ,                                                  00780
+*               PROC$ DROP=NO,LTORG=NO                                     00800
+*               CODE ,                                                     00820
+*               #USE ?                                                     00840
+*            PROC$ DROP=NO,LTORG=NO                                        00860
+*            CODE ,                                                        00880
+*            #USE ?                                                        00900
+*         PROC$ DROP=NO,LTORG=NO                                           00920
+*         #USE ?                                                           00940
+***********************************************************************
+       EJECT
+PROCX1 $PROC TYPE=(STANDARD,CSECT),BASE=R11
+                                                       SPACE 5
+          CONST ,
+                                                       SPACE 5
+          #USE ?
+                                                       SPACE 5
+PROCX11   $PROC TYPE=(STANDARD,INTERNAL)
+                                                       SPACE 5
+             #USE ?
+                                                       SPACE 5
+             CONST ,
+                                                       SPACE 5
+PROCX111     $PROC TYPE=(STANDARD,INTERNAL)
+                                                       SPACE 5
+               CONST ,
+                                                       SPACE 5
+               DATA ,
+                                                       SPACE 5
+               CODE ,
+                                                       SPACE 5
+             PROC$ DROP=NO,LTORG=NO
+                                                       SPACE 5
+             #USE ?
+                                                       SPACE 5
+PROCX112     $PROC TYPE=(STANDARD,INTERNAL)
+                                                       SPACE 5
+                CONST ,
+                                                       SPACE 5
+                DATA ,
+                                                       SPACE 5
+                CODE ,
+                                                       SPACE 5
+             PROC$ DROP=NO,LTORG=NO
+                                                       SPACE 5
+             #USE ?
+                                                       SPACE 5
+PROCX113     $PROC TYPE=(LOW,INTERNAL)
+                                                       SPACE 5
+                CONST ,
+                                                       SPACE 5
+PROCX1131       $PROC TYPE=(STANDARD,INTERNAL)
+                                                       SPACE 5
+                   CONST ,
+                                                       SPACE 5
+                   DATA ,
+                                                       SPACE 5
+                   CODE ,
+                                                       SPACE 5
+                   #USE ?
+                                                       SPACE 5
+                PROC$ DROP=NO,LTORG=NO
+                                                       SPACE 5
+                DATA ,
+                                                       SPACE 5
+                #USE ?
+                                                       SPACE 5
+                CODE ,
+                                                       SPACE 5
+             PROC$ DROP=NO,LTORG=NO
+                                                       SPACE 5
+             CODE ,
+                                                       SPACE 5
+             #USE ?
+                                                       SPACE 5
+          PROC$ DROP=NO,LTORG=NO
+                                                       SPACE 5
+          CODE ,
+                                                       SPACE 5
+          #USE ?
+                                                       SPACE 5
+       PROC$ DROP=NO,LTORG=NO
+                                                       SPACE 5
+       #USE ?
+       EJECT
+***********************************************************************
+*  PROCX2 $PROC TYPE=(BASIC,CSECT),BASE=R5                                 00960
+*            CONST ,                                                       00980
+*  PROCX21   $PROC TYPE=(STANDARD,INTERNAL)                                01000
+*               CONST ,                                                    01020
+*               #USE ?                                                     01040
+*               DATA ,                                                     01060
+*               CODE ,                                                     01080
+*            PROC$ DROP=NO,LTORG=NO                                        01100
+*            CODE ,                                                        01120
+*            #USE ?                                                        01140
+*         PROC$ ,                                                          01160
+***********************************************************************
+          SPACE 5
+PROCX2 $PROC TYPE=(BASIC,CSECT),BASE=R5
+                                                       SPACE 5
+          CONST ,
+                                                       SPACE 5
+PROCX21   $PROC TYPE=(STANDARD,INTERNAL)
+                                                       SPACE 5
+             CONST ,
+                                                       SPACE 5
+             #USE ?
+                                                       SPACE 5
+             DATA ,
+                                                       SPACE 5
+             CODE ,
+                                                       SPACE 5
+          PROC$ DROP=NO,LTORG=NO
+                                                       SPACE 5
+          CODE ,
+                                                       SPACE 5
+          #USE ?
+                                                       SPACE 5
+       PROC$ ,
+       EJECT
+         SPACE 8
+         PRINT OFF                                                      #20  007
+&PRCCODE(1) SETC ''
+PROC99   $PROC BASE=(R10)              TO SET UP
+.$PROC   ANOP                                                           #20  008

@@ -1,0 +1,46 @@
+         MACRO                                         STRUCT MACRO SET
+         THEN
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                            PAHL (GMD-IST/RZ) 00JAN73
+.*  "(IF" CONDITION "THEN" BLOCK <"ELSE" BLOCK> "IF)"           03OCT75
+.*       END CONDITION SETTING PART,
+.*       BEGIN "THEN" PART OF "IF" CLAUSE.
+.*
+         GBLA  &BLK,&BLKCC(30)
+         GBLC  &BLKTYPE(30),&BLKID(30),&BLKNAME(30)
+         GBLB  &DEFER
+         LCLC  &B,&B1
+.*
+.SASLIST SASLIST MACRO,'THEN'
+         AIF   ('&BLKTYPE(&BLK)' NE 'IX').YTHEN   NO "IF"
+.FORCE   ANOP
+&B       SETC  '&BLKID(&BLK)'
+&B1      SETC  '&BLKID(&BLK+1)'
+         AIF   (NOT &DEFER).NODEFER
+@@T&B1     EQU @@T&B
+@@F&B1     EQU @@F&B
+@@W&B1     EQU @@W&B
+@@Y&B1     EQU @@Y&B
+@@V&B1     EQU @@V&B
+@@X&B1     EQU @@X&B
+&DEFER   SETB   0
+.NODEFER ANOP
+&BLKTYPE(&BLK) SETC 'IT'               NOW IN "THEN" PART
+ IF0BC    15-&BLKCC(&BLK),@@F&B,@@Y&B-@@W&B JUMP AROUND "THEN" PART
+ IF0BC    &BLKCC(&BLK),@@Z&B,@@X&B-@@V&B,@@Y&B-@@W&B EMPTY "THEN" PART
+         AIF   ('&BLKNAME(&BLK)' EQ '').NOXREF
+         DS    0S(&BLKNAME(&BLK))       REFERENCE TO '$IF' LABEL
+.NOXREF  ANOP
+@@T&B EQU @@Z&B-(@@Y&B-@@W&B)/(@@Y&B-@@W&B)*(@@Z&B-@@W&B)   '
+@@W&B      DS    0H                     'TRUE' LABEL AND REF
+         AGO  .MEND
+.**********************************************************************
+.YTHEN   AIF   ('&BLKTYPE(&BLK)' NE 'I ').YTHEN2  NO "IF"
+         MNOTE 8,'****** THEN: EXPRESSION NOT COMPLETE, TERMINATED'
+         AGO   .FORCE
+.YTHEN2  MNOTE 12,'****** THEN: NOT EXPECTED.  IGNORED.'
+.MEND    SASLIST MACEND
+         MEND

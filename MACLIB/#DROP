@@ -1,0 +1,63 @@
+         MACRO
+&LABEL   #DROP
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                                     LET/IF MACRO SET
+.*  CONTROL REGISTER USAGE: RELEASE REGISTER(S)
+.*
+.*  &SYSLIST(&I): REGISTER NAME
+.*       IF LAST ELEMENT IS ? INSTEAD OF REGISTER NAME, ADDITIONALLY
+.*       THE CURRENT USAGE STATUS IS DISPLAYED.
+.*
+         GBLA  &EQUR                   EQUR MACRO OUTPUT
+         GBLC  &EQURUSE(16),&EQURBLK(16)
+         LCLA  &N,&I,&R,&K
+         LCLB  &DISPLAY
+         LCLC  &GPR
+&LABEL   SASLIST MACRO,'#DROP'
+&DISPLAY SETB  ('&SYSLIST(N'&SYSLIST)' EQ '?')
+&N       SETA  N'&SYSLIST-&DISPLAY
+.*
+.LIST    AIF   (&I GE &N).USED
+&I       SETA  &I+1
+&GPR     SETC  '&SYSLIST(&I)'
+         EQUR  &SYSLIST(&I)            GET REG NUMBER+1
+         AIF   (&EQUR LT 1).YGPR       GPR NOT DEFINED
+.*   FIND REGISTER IN LIST
+&K       SETA  &EQUR
+&R       SETA  &K-1                    BINARY REGISTER NUMBER
+         AIF   ('&EQURUSE(&K)' EQ '').NOTUSED
+         AIF   ('&EQURUSE(&K)' EQ '&GPR').QDROP
+         MNOTE 1,'****** #DROP: WARNING -- &GPR (&R) IN USE W/NAME &EQU-
+               RUSE(&K)'
+.QDROP   AIF   ('&EQURBLK(&K)' EQ '').RLSE1
+         DROP  &GPR
+         AIF   (NOT &DISPLAY).RLSE1
+         MNOTE *,'             NOW DROPPED &GPR (&R) = &EQURBLK(&K)'
+.RLSE1   ANOP
+&EQURBLK(&K) SETC ''
+&EQURUSE(&K) SETC ''
+         AGO   .LIST
+.*
+.YGPR    MNOTE 8,'****** #DROP: REGISTER-SYMBOL &GPR NOT PREVIOUSLY DEF-
+               INED'
+         AGO   .LIST
+.NOTUSED MNOTE  8,'****** #DROP: &GPR NOT IN USE'
+         AGO   .LIST
+.*   GENERATE MESSAGE ABOUT REGISTERS THAT ARE STILL IN USE
+.USED    AIF  (NOT &DISPLAY).FIN
+&K       SETA  0
+.USED1   ANOP
+&K       SETA  &K+1
+         AIF   ('&EQURUSE(&K)' EQ '').USED8
+&R       SETA  &K-1                    BINARY REGISTER NUMBER
+         MNOTE *,'             STILL USED  &EQURUSE(&K) (&R) = &EQURBLK-
+               (&K)'
+.USED8   AIF   (&K LT 16).USED1
+.*
+.FIN     AIF   ('&LABEL' EQ '').MEND
+&LABEL   DS    0H
+.MEND    SASLIST MACEND
+         MEND

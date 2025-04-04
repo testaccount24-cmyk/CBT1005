@@ -1,0 +1,40 @@
+         MACRO
+&L       LET0R  &REG,&LENGTH
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*
+.*
+.*  GENERATE LM OR STM REGISTER OPERAND-LIST
+.*       SUB-MACRO FOR 'LET' AND ,MAY NOT BE USED AS OUTER MACRO
+.* &REG    DENOTES THE REGISTER SYMBOL OR (0) - (15)
+.* &LENGTH DENOTES A SELF.DEFINING TERM
+.*
+.* EXAMPLES:
+.*         '&LENGTH = 8'
+.*         '&REG = R2'
+.* RESULT: 'R2,R3'
+.*
+.*         '&LENGTH = 12'
+.*         '&REG = R15'
+.* RESULT: 'R15,R2'
+.*
+         GBLA  &EQUR
+         GBLC  &LET0M1
+         LCLA  &REG1,&REG2
+         AIF   ('&REG'(1,1) EQ '(').LET0R1
+         EQUR  &REG
+         AGO   .LET0R2
+.LET0R1  ANOP
+&EQUR    SETA  &REG(1)+1
+.LET0R2  ANOP
+&REG1    SETA  &EQUR-1
+&REG2    SETA  &REG1+(&LENGTH-1)/4
+&REG2    SETA  &REG2-(&REG2)/16*16
+         AIF   (&REG1 EQ &REG2).LET0R3
+&LET0M1  SETC  'R&REG1,R&REG2'           STM OR LM
+         AGO  .MEND
+.LET0R3  ANOP
+&LET0M1  SETC  'R&REG1'                  ST  OR  L
+.MEND    MEND

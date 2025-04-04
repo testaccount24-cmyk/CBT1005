@@ -1,0 +1,75 @@
+         MACRO
+&LABEL   LEAVE  &BLOCK,&RC=,&RETURN=@14
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+         GBLA  &BLK,&BLKCC(30)
+         GBLC  &BLKTYPE(30),&BLKNAME(30),&BLKID(30)
+         GBLA  &PRC
+         GBLC  &PRCTYPE(04),&PRCID(04)
+         LCLA  &A,&CC,&P
+         LCLC  &TLAB
+&LABEL   SASLIST MACRO,'LEAVE'
+&CC      SETA  15                                                    IF
+&P       SETA  &PRC
+         AIF   ('&LABEL' EQ '').LABDONE
+&LABEL   DS    0H
+.LABDONE AIF   ('&BLKTYPE(&BLK)' NE 'JX').NOIF                       IF
+.*  CONDITIONAL LEAVE:  "IF" CONDITION "EXIT"                        IF
+&CC      SETA  &BLKCC(&BLK)                                          IF
+&TLAB    SETC  '@@T&BLKID(&BLK)'                                     IF
+&BLK     SETA  &BLK-1                  POP-UP BLOCK STRUCTURE        IF
+.NOIF    ANOP
+&A       SETA  &BLK
+         AIF   ('&BLOCK' EQ '').FOUND1
+.*  SEARCH BLOCK NAME IN STRUCTURE STACK
+         AIF   ('&BLKNAME(&A)' EQ '&BLOCK').LOOP IF LEAVING ACTUAL: OK
+.*       MNOTE 0,'*** WARNING: LEAVING MORE THAN ONE STRUCTURE'
+.LOOP    AIF   ('&BLKTYPE(&A)' NE 'PX').LOOP1
+&P       SETA  &P-1
+.LOOP1   AIF   ('&BLKNAME(&A)' EQ '&BLOCK').FOUND
+&A       SETA  &A-1
+         AIF   (&A GT 0).LOOP
+         MNOTE 08,'****** LEAVE:  NAMED BLOCK "&BLOCK" NOT OPEN. IGNORED
+               .'
+         AGO  .MEND
+.FOUND   AIF   ('&BLKTYPE(&A)'(1,1) EQ 'R').XREFR
+         DC    0AL4(&BLKNAME(&A))    CREATE ASM-XREF FOR BLOCK NAME.
+         AGO   .XREFE
+.XREFR   DC    0AL4(@START@&PRCID(&PRC)@OF@&BLOCK) XREF FOR REFINEMENT
+.XREFE   ANOP
+&P       SETA  &P+1
+.FOUND1  AIF   ('&BLKTYPE(&A)' NE 'PX').EXITANY
+.*  EXIT FROM PROCEDURE
+         AIF   ('&RC' EQ '').EXITP
+.*  EXIT FROM PROCEDURE WITH RC SETTING.
+         AIF   (&CC EQ 15).PROCRC1
+      IF0BC    15-&CC,@@&SYSNDX        COND.LEAVE:  JUMP AROUND
+.PROCRC1 AIF   ('&RC(1)' EQ '').PROCRC2
+         LET0F @15,&RC(1)
+.PROCRC2 AIF   ('&RC(2)' EQ '').PROCRC3
+         LET0F @0,&RC(2)
+.PROCRC3 AIF   ('&RC(3)' EQ '').PROCRCN
+         LET0F @1,&RC(3)
+.PROCRCN AIF   (N'&RC LE 3).PROCRCB
+         MNOTE 04,'****** LEAVE: ONLY FIRST 3 RC SUB-OPERANDS ACCEPTED'
+.PROCRCB AIF   (&CC EQ 15).EXITP       UNCOND.LEAVE
+         AIF   ('&PRCTYPE(&P)'(1,1)   NE 'B').PROCRCS
+         TESTRET &RETURN,&BLKNAME(&A)
+         BR    &RETURN                 EXIT FROM BASIC PROC
+@@&SYSNDX EQU  *                       CONTINUE IF NO EXIT
+         AGO  .MEND
+.PROCRCS IF0BC 15,@@Z&BLKID(&A)          JUMP TO END OF PROC
+@@&SYSNDX EQU  *                       CONTINUE IF NO EXIT
+         AGO  .MEND
+.*  EXIT FROM PROCEDURE WITHOUT RC SETTING.
+.EXITP   AIF   ('&PRCTYPE(&P)'(1,1)   NE 'B').EXITAN1
+         IF0BC &CC,@@Z&BLKID(&A)         EXIT FROM BASIC PROC.
+         AGO  .MEND
+.*  EXIT FROM ANY OTHER BLOCK/PART
+.EXITANY AIF   ('&RC' EQ '').EXITAN1
+       MNOTE 04,'****** LEAVE:  RC OPERAND IGNORED--NOT LEAVING A PROC'
+.EXITAN1 IF0BC    &CC,@@Z&BLKID(&A)      JUMP TO END OF BLOCK
+.MEND    SASLIST MACEND
+         MEND

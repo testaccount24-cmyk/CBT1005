@@ -1,0 +1,261 @@
+         GBLA  &LETL(3)
+         GBLB  &LETLA
+         GBLC  &LETM(3),&LETA(3)
+         #TEST   LET0F                                                  #10  001
+         AIF   (&NOTFND).LET0F                                          #10  002
+         PRINT ON                                                       #10  003
+         TITLE 'EXAMPLES FOR MACRO   LET0F'                             #10  004
+         SPACE                                                          #10  005
+PGM      LOCTR                                                          #10  006
+LET0F1   LET0F R0,FULLWORD
+         SPACE 2                                                        #10  008
+         LET0F R15,CHAR
+         SPACE 2                                                        #10  010
+         LET0F R1,0
+         SPACE 2                                                        #10  012
+         LET0F R3,7
+         SPACE 2                                                        #10  014
+         LET0F R0,30000
+         SPACE 2                                                        #10  016
+         LET0F R7,34444
+         SPACE 2
+         LET0F R3,#BIT2
+         SPACE 2
+         LET0F R5,7(R6):C
+         SPACE 2
+         LET0F R6,R9
+         SPACE 2
+         LET0F R2,R2
+         SPACE 2
+         LET0F R3,R4,2
+         SPACE 2
+         PRINT OFF                                                      #10  017
+.LET0F   ANOP                                                           #10  018
+         #TEST   LET0X                                                  #20  001
+         AIF   (&NOTFND).LET0X                                          #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   LET0X'                             #20  004
+         SPACE                                                          #20  005
+PGM      LOCTR                                                          #20  006
+         GBLA  &LETL(3)
+         GBLB  &LETLA
+         GBLC  &LETA(3),&LETM(3)
+&LETL(3) SETA  2
+&LETM(3) SETC  'H'
+&LETA(3) SETC  'HALFWORD'
+         LET0X R0,+,HALFWORD,3,R=R1
+         SPACE 2                                                        EQU-A 25
+         LET0X R0,-,2300
+         SPACE 2                                                        EQU-A 25
+         LET0X R0,*,3
+         SPACE 2                                                        EQU-A 25
+         LET0X R0,+,HALFWORD,R=R0
+         SPACE 2
+         LET0X R0,-,HALFWORD,R=R5
+         SPACE 2                                                        EQU-A 25
+         LET0X R0,+,:HALFWORD
+         SPACE 2                                                        EQU-A 25
+         LET0X R1,/,4
+         SPACE 2                                                        EQU-A 25
+         LET0X R1,-,1
+         SPACE 2
+         LET0X R1,C,0
+         SPACE 2
+         LET0X R1,C,5
+         SPACE 2
+         LET0X R1,/,39999
+         SPACE 2
+         LET0X R5,+,7,+,3
+         SPACE 2
+         LET0X R0,*,H2
+         SPACE 2
+         LET0X R0,*,C2
+         SPACE 2
+         LET0X R5,*,C2
+         SPACE 2
+         LET0X R0,+,35000
+         SPACE 2
+         LET0X R0,*,2
+         SPACE 2
+&LETLA   SETB  1
+         LET0X R5,+,9
+         SPACE 2
+         LET0X R5,*,NINE
+         SPACE 2
+         LET0X R0,*,1
+         SPACE 2
+         LET0X R0,*,35000
+         PRINT OFF                                                      #20  007
+.LET0X   ANOP                                                           #20  008
+         #TEST   LET0Q                                                  #20  001
+         AIF   (&NOTFND).LET0Q                                          #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   LET0Q'                             #20  004
+         SPACE                                                          #20  005
+PGM      LOCTR                                                          #20  006
+         LET0Q DEF:H,1
+         SPACE 2
+         LET0Q DEF:F,1
+         SPACE 2
+         LET0Q DEF:C,1
+         SPACE 2
+         LET0Q DEF:N,1
+         SPACE 2
+         LET0Q DEF:#,1
+         SPACE 2
+         LET0Q DEF:A,1
+         SPACE 2
+         LET0Q :A,1
+         SPACE 2
+         LET0Q :R3,1
+         SPACE 2
+         LET0Q R3,1
+         SPACE 2
+         LET0Q (A,9),2
+         SPACE 2
+         LET0Q 9,2
+         SPACE 2
+         LET0Q PGM,1
+         SPACE 2
+         LET0Q F2,1
+         SPACE 2
+         LET0Q D2,1
+         SPACE 8
+         PRINT OFF                                                      #20  007
+.LET0Q   ANOP                                                           #20  008
+         #TEST   LET0M1                                                 #20  001
+         AIF   (&NOTFND).LET0M1                                         #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   LET0M1'                            #20  004
+         SPACE                                                          #20  005
+PGM      LOCTR                                                          #20  006
+         LET0M1 H2,2,H2
+         SPACE 2
+         LET0M1 4(R7),4,4(R7)
+         SPACE 2
+         LET0M1 R6),4,R6)
+         SPACE 2
+         LET0M1 4(,R7),4,4(,R7)
+         SPACE 2
+         LET0M1 4(R,R7),4,4(,R7)
+         SPACE 2
+         LET0M1 4(,(R7)),4,B
+         SPACE 2
+         LET0M1 4(,C'>'-C')'),4,4(,R7)
+         SPACE 2
+         LET0M1 4(,R7),4,4(,R7)
+         SPACE 8
+         PRINT OFF                                                      #20  007
+.LET0M1  ANOP                                                           #20  008
+         #TEST   LET0M                                                  #20  001
+         AIF   (&NOTFND).LET0M                                          #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   LET0M'                             #20  004
+         SPACE                                                          #20  005
+PGM      LOCTR                                                          #20  006
+&LETL(1) SETA 2
+&LETA(1) SETC 'H2'
+&LETL(2) SETA 1
+&LETA(2) SETC 'C2'
+         LET0M
+         SPACE 2
+&LETL(1) SETA 1
+&LETA(1) SETC 'C2'
+&LETL(2) SETA 2
+&LETA(2) SETC 'H2'
+         LET0M
+         SPACE 8
+         PRINT OFF                                                      #20  007
+.LET0M   ANOP                                                           #20  008
+         #TEST   IF0CE                                                  #20  001
+         AIF   (&NOTFND).IF0CE                                          #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   IF0CE'                             #20  004
+         SPACE                                                          #20  005
+PGM      LOCTR                                                          #20  006
+         IF0CE R5,=,R6
+         SPACE 2
+         IF0CE R5,¬->,R3
+         SPACE 2
+         IF0CE F2,NE,F2
+         SPACE 2
+         IF0CE R5,LT,0
+         SPACE 2
+         IF0CE A,GE,0
+         SPACE 2
+         IF0CE F2,LE,0
+         SPACE 2
+         IF0CE 3(R7),LT,0
+         SPACE 2
+         IF0CE F2,=,R7
+         SPACE 2
+         IF0CE F2,LT,R5
+         SPACE 2
+         IF0CE F2,GT,R2
+         SPACE 2
+         IF0CE 3(R7):C,EQ,C2
+         SPACE 2
+         IF0CE R5,GT,R7
+         SPACE 2
+         IF0CE F2,NE,F2
+         SPACE 2
+         IF0CE (A,2),LE,C2
+         SPACE 2
+         IF0CE C2,LT,H2
+         SPACE 2
+         IF0CE C2,LT,C2
+         SPACE 2
+         IF0CE C2,LT,8
+         SPACE 2
+         IF0CE H2,:,F2
+         SPACE 2
+         IF0CE F2,¬:,FULLWORD
+         SPACE 2
+         IF0CE R2,->,H2
+         SPACE 2
+         IF0CE F2,LEQ,F2
+         SPACE 2
+         IF0CE 3(,R7),EQ,F2
+         SPACE 2
+         IF0CE ,EQ,
+         SPACE 2
+         IF0CE :A,EQ,0
+         SPACE 2
+         IF0CE C2,EQ,0
+         SPACE 2
+         IF0CE F2,&,F2
+         SPACE 2
+         IF0CE (A,2),EQ,'9'
+         SPACE 2
+         IF0CE (A,R7),EQ,'9'
+         SPACE 2
+         IF0CE (A,3(R7)),EQ,F2
+         SPACE 2
+         IF0CE R5,L->,R6
+         SPACE 8
+         PRINT OFF                                                      #20  007
+.IF0CE   ANOP                                                           #20  008
+         #TEST   BLK0TEST                                               #20  001
+         AIF   (&NOTFND).BLK0TEST                                       #20  002
+         PRINT ON                                                       #20  003
+         TITLE 'EXAMPLES FOR MACRO   BLK0TEST'                          #20  004
+         SPACE                                                          #20  005
+PGM      LOCTR                                                          #20  006
+         GBLA  &BLK
+         GBLB  &BLKTEST
+         GBLC  &BLKTYPE(10),&BLKNAME(10),&BLKID(10)
+&BLK  SETA                    1
+&BLKTEST SETB                 0
+&BLKTYPE(1) SETC              'I'
+&BLKID(1) SETC                '0771IF'                                   .
+         BLK0TEST  'ON'
+         SPACE 2
+         BLK0TEST AND,IA
+         SPACE 2
+&BLKTEST SETB                 1
+         BLK0TEST
+         SPACE 2
+&BLKTEST SETB                 0
+         BLK0TEST
+         PRINT OFF                                                      #20  007
+.BLK0TEST ANOP                                                          #20  008

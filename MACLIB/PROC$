@@ -1,0 +1,220 @@
+         MACRO
+&LABEL   PROC$   &RC=,&RETURN=,&LTORG=YES,&DROP=,&PM=
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*
+.*  "(PROC" ..... "PROC)"
+.*       END OF PROCEDURE.
+.*                                                  SYLVESTER 81-09-16
+         GBLA  &PRC,&BLK,&EQUR,&PRCREG(04)
+         GBLC  &PRCTYPE(04),&PRCCODE(04),&PRCDATA(04),&PRCENV(04)
+         GBLC  &PRCBASE(04),&PRCSAVE(04)
+         GBLB  &PRCPMRES(04)
+         GBLC  &BLKTYPE(30),&BLKID(30),&BLKNAME(30)
+         GBLB  &BLKXCPT(30)
+         GBLC  &PRCPREL(4),&PRCPOST(4)
+         GBLB  &PRCPREF(4),&PRCPSTF(4)
+         LCLA  &I,&K,&RET
+         LCLB  &RC15,&RC0,&RC1
+         LCLC  &C,&CLOCTR
+&LABEL   SASLIST MACRO,'PROC)'
+         AIF   ('&LABEL' EQ '').NOLABEL
+&LABEL   DS    0H
+.NOLABEL AIF   (&PRC GT 0).PLOK
+         MNOTE 12,'****** PROC): IMPROPERLY PLACED. IGNORED'
+         AGO   .MEND
+.PLOK   ANOP
+.*
+&RET     SETA  14          DEFAULT RETURN REGISTER
+.*         AIF   ('&SYSECT' EQ '&PRCCODE(&PRC)').START
+.* &PRCCODE(&PRC) LOCTR ,                 RESUME PROC CODE SECTION
+.START   AIF   ('&BLKTYPE(&BLK)' EQ 'PX').BLID
+         MNOTE 12,'****** PROC): IMPROPERLY PLACED. TRYING  TO POP-UP S-
+               TRUCTURE'
+&BLK     SETA  &BLK-1
+         AGO   .START
+.BLID    ANOP  ,
+         AIF   (NOT &BLKXCPT(&BLK)).NOXCPT
+         CODEX ,
+&BLKXCPT(&BLK) SETB 0
+         IF0BC 15,@@Z&BLKID(&BLK)
+.NOXCPT  CODEX ,
+@@X&BLKID(&BLK) DS  0H                   PROCEDURE EXIT.
+@@Z&BLKID(&BLK) DS  0H                   PROCEDURE EXIT.
+.**********************************************************************
+.*
+.*  RETURN CODE
+.*
+         AIF   ('&RC' EQ '').NORC
+&RC15    SETB  ('&RC(1)' NE '')
+&RC0     SETB  ('&RC(2)' NE '')
+&RC1     SETB  ('&RC(3)' NE '')
+         AIF   (N'&RC LE 3).LRC15
+         MNOTE 04,'****** PROC): ONLY FIRST 3 RC SUB-OPERANDS ACCEPTED'
+.LRC15   AIF   (NOT &RC15).LRC0
+         LET0F @15,&RC(1)
+.LRC0    AIF   (NOT &RC0).LRC1
+         LET0F @0,&RC(2)
+.LRC1    AIF   (NOT &RC1).NORC
+         LET0F @1,&RC(3)
+.NORC    ANOP
+.*
+.*  PROC-TYPE = STD
+.*
+         AIF   ('&PRCTYPE(&PRC)'(1,1) NE 'S').TYPEL
+.*
+.*  PROC-TYPE = STD WITH AUTOMATIC LOCAL DATA
+.*
+         AIF   ('&PRCTYPE(&PRC)'(3,1) NE 'A').TYPESB
+*   PROC-TYPE = S   WITH AUTOMATIC LOCAL DATA
+*   RELEASE LOCAL AREA AND RETURN
+         L     @14,4(,@13)             -> CALLER'S SA
+         AIF   (&RC0).RC0
+         AIF   (NOT &RC15).RCN15
+         ST    @15,16(,@14)         STORE OUTPUT VALUE (@15)
+.RCN15   AIF   (NOT &RC1).UNSTACK
+         ST    @1,24(,@14)          STORE OUTPUT VALUE (@1)
+         AGO   .UNSTACK
+.*
+.RC0     AIF   (&RC15).RC0A15
+         AIF   (&RC1).RC0A1
+         ST    @0,20(,@14)          STORE OUTPUT VALUE (@0)
+         AGO   .UNSTACK
+.*
+.RC0A1   STM   @0,@1,20(@14)        STORE OUTPUT VALUES (@0),(@1)
+         AGO   .UNSTACK
+.*
+.RC0A15  AIF   (&RC1).RCALL
+         STM   @15,@0,16(@14)       STORE OUTPUT VALUES (@0),(@15)
+         AGO   .UNSTACK
+.*
+.RCALL   STM   @15,@1,16(@14)       STORE OUTPUT VALUES (@15),(@0),(@1)
+.UNSTACK LR    @1,@13
+         L     @0,0(,@1)
+         LM    @13,@14,4(@13)
+         ST    @14,8(@13)
+         FREEMAIN R,LV=(0),A=(1)
+.*       RETURN (14,12),T
+         LM    @14,@12,12(@13)
+         MVI   12(@13),X'FF'
+         AIF   ('&PM' NE 'RESTORE' AND NOT &PRCPMRES(&PRC)).NOPM1
+         SPM   @14
+.NOPM1   ANOP
+@@Y&BLKID(&BLK) BR @14
+         AGO   .BASE
+.*
+.*  PROC-TYPE = STD WITH STATIC LOCAL DATA
+.*
+.TYPESB  ANOP
+*   PROC-TYPE = S   WITH STATIC LOCAL DATA
+*   POP-UP SA-CHAIN AND RETURN
+         LM    @13,@14,4(@13)          POP SA CHAIN
+         ST    @14,8(,@13)
+         AGO   .TYPEL1
+.*
+.*  PROC-TYPE = LOW LEVEL
+.*
+.TYPEL   AIF   ('&PRCTYPE(&PRC)'(1,1)  NE 'L').TYPEBAS
+*   PROC-TYPE = L
+&RET     SETA  &PRCREG(&PRC)
+.TYPEL1  AIF   (&RC15).RCL15
+         AIF   (&RC0).RCL0
+         AIF   (&RC1).RCL1
+         LM    @14,&PRCSAVE(&PRC),12(@13)       RESTORE CALLER REGS.
+         AGO   .MVIFF
+.RCL1    LM    @14,@0,12(@13)                   RESTORE CALLER REGS.
+&C       SETC  '2'
+         AGO   .LMMOD
+.RCL0    LM    @14,@15,12(@13)                  RESTORE CALLER REGS.
+&C       SETC  '12'(1+&RC1,1)
+         AGO   .LMMOD
+.RCL15   L     @14,12(,@13)            RESTORE RETURN REG
+&C       SETC  '0122'(1+&RC0+2*&RC1,1) SELECT LM START
+         AIF   (&RC0 OR NOT &RC1).LMMOD
+         L     @0,20(,@13)             RESTORE CALLER'S (@0)
+.LMMOD   LM    &C,&PRCSAVE(&PRC),4*&C+20(@13) REMAINING CALLER'S REGS
+.MVIFF   MVI   12(@13),X'FF'
+         AGO   .TYPEB
+.*
+.*   BASIC WITH MODIFIED RETURN REG
+.*
+.TYPEBAS ANOP
+&RET     SETA  &PRCREG(&PRC)
+         AIF   ('&RETURN' EQ '').TYPEB
+         AIF   (T'&RETURN NE 'N').RETURN2
+         AIF   (&RETURN LT 1 OR &RETURN GT 15).RETERR
+&RET     SETA  &RETURN
+         TESTRET &RETURN,&BLKNAME(&BLK)
+         AGO   .TYPEB
+.RETURN2 EQUR  &RETURN
+         AIF   (&EQUR LT 2 OR &EQUR GT 16).RETERR
+&RET     SETA  &EQUR-1
+         TESTRET &RET,&BLKNAME(&BLK)
+         AGO   .TYPEB
+.RETERR  STRERMAC PROC,24,RETURN,&RETURN,@14
+.*
+.*  ALL ARRIVE HERE (EXCEPT PROC-TYPE-S) AND ??????
+.*
+.TYPEB   AIF   ('&PM' NE 'RESTORE' AND NOT &PRCPMRES(&PRC)).NOPM2
+         SPM   &RET
+.NOPM2   ANOP
+@@Y&BLKID(&BLK) BR &RET
+.**********************************************************************
+.*
+.*  DROP PROC INSTR BASE
+.*
+.BASE    AIF   ('&DROP' EQ 'NO').NDROP
+&I       SETA  &PRC*3
+&K       SETA  1
+.NEXT    AIF   ('&PRCBASE(&I)' EQ '').INCR
+         #DROP &PRCBASE(&I)            DROP INSTRUCTION BASE
+.INCR    ANOP
+&K       SETA  &K+1
+&I       SETA  &I-1
+         AIF   (&K LE 3).NEXT
+.NDROP   ANOP
+&PRCBASE(&I+1) SETC ''
+&PRCBASE(&I+2) SETC ''
+&PRCBASE(&I+3) SETC ''
+.**********************************************************************
+.*
+.*  TERMINATE LOCAL DATA AREA
+.*  (ADDITIONAL FIELDS MAY HAVE BEEN ADDED AFTER INITIAL SPECIFICATION)
+.*
+         AIF   ('&PRCDATA(&PRC)' EQ '').LOCAL9
+         AIF   ('&PRCTYPE(&PRC)'(3,1) NE 'A').LOCAL8
+         AIF   ('&PRCDATA(&PRC)' NE 'D&BLKID(&BLK)').LOCAL8
+&C       SETC  '&PRCDATA(&PRC)'(1,7)'#' LENGTH SYMBOL
+&CLOCTR  SETC  '&PRCDATA(&PRC)'(1,7)'@' LENGTH SYMBOL
+.*  RESUME LOCAL DATA SECTION TO DEFINE ITS LENGTH.
+&PRCDATA(&PRC) DSECT ,                 RESUME LOCAL DATA AREA IN ORDER
+.* A NEW LOCATION COUNTER IS USED TO INCLUDE USER DEFINED
+.* LOCATION COUNTERS FOR THE DATA SECTION.
+&CLOCTR  LOCTR                         DEFINE NEW LOCATION COUNTER
+&C       EQU   *-&PRCDATA(&PRC)        TO DEFINE ITS LENGTH.
+&PRCCODE(&PRC) LOCTR ,                 RESUME PROC CODE SECTION
+.LOCAL8  #DROP @13                     DROP LOCAL DATA BASE
+.LOCAL9  ANOP
+.**********************************************************************
+.*
+.*  LITERAL POOL
+.*
+         AIF   (&PRC NE 1).LTORG9
+         AIF   ('&LTORG' NE 'YES').LTORG9
+         LTORG ,
+         SASLIST MACRO,'LTORG'
+         SASLIST MACEND
+.LTORG9  ANOP
+.**********************************************************************
+         AIF   (&PRC LE 1).NOPOP       NO POP ON TOP PROC LEVEL
+         AIF   ('&PRCDATA(&PRC-1)' EQ '').NOPOP
+         #USE  @13,&PRCDATA(&PRC-1),,*
+.NOPOP   ANOP
+&PRC     SETA  &PRC-1                  POP PROC STACK
+&BLK     SETA  &BLK-1                  POP BLOCK STRUCTURE
+         AIF (&PRC EQ 0).MEND
+&PRCENV(&PRC) LOCTR
+.MEND    SASLIST MACEND
+         MEND

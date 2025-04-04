@@ -1,0 +1,137 @@
+         MACRO ,                                       COMPUT MACRO SET
+         LET0Q &A,&I
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                            PAHL (GMD-IST/RZ) 00MAR73
+.*                                                              27MAR75
+.*                                       MODIF GEIST (GMD-IST)  06AUG76
+.*                                          SYLVESTER (GMD-RZ)  13MAI80
+.*  ANALYSE OPERAND TYPE AND DECODE.
+.*       SUB-MACRO FOR "LET" ETC.,  MAY NOT BE USED AS OUTER MACRO.
+.*       THIS MACRO ANALYSES THE TYPE OF THE GIVEN OPERAND &A AND
+.*       STORES THE RESULT INTO THE &LETA/M/L VECTORS INDEXED BY &I.
+.*       NO OTHER MACRO OF COMPUT/STRUCT MACRO SETS MAY DO SO, THIS ONE
+.*       IS THE ONLY MACRO IN THESE SETS DEFINING WHAT TYPES OF
+.*       (ARITHMETIC) OPERANDS ARE RECOGNISED.
+.*       OPERAND TYPE ANALYSIS MAKES HEAVY USE OF THE TYPE ATTRIBUTE
+.*       (T') PROVIDED BY THE ASSEMBLER.  HOWEVER, THE USABILITY OF T'
+.*       IS STRONGLY DEPENDENT ON THE ASSEMBLER FEATURES:
+.*       IBM/OS ASM-H IS VERY POWERFUL HERE,  IBM/OS ASM-F, ASM-G AND
+.*       SIEMENS BS2000 ASM PROVIDE A RATHER POOR TYPE ATTRIBUTE.
+.*       KNOWLEDGE OF THE DIFFERENT ASSEMBLER POWER SHOULD BE RESTRICT-
+.*       ED TO: LET0Q, EQUR, EQUN, #USE, #DROP.
+.*       *** THE PRESENT CODE ASSUMES ASM-H ***
+.*
+.*  &A   MAY DENOTE:
+.*      -SELF.DEFINING TERM (T'=N, AS DEFINED IN ASM MANUAL):
+.*       STANDING FOR ITSSELF (USED AS LITERAL).
+.*      -STORAGE FULLWORD/HALFWORD/BYTE USING EXPLICIT LENGTH SPECIFI-
+.*       CATION:  "ADDR:#"  WHERE # MAY BE  "F", "H", OR "C".
+.*       ALSO "N" AND "#" ARE ALLOWED TO INDICATE SELF DEF TERM.
+.*      -IMMEDIATE VALUE/ADDRESS:  ":VALUE"  WHERE VALUE DOES NOT
+.*       ADDRESS A STORAGE FIELD (THE CONTENTS OF WHICH IS TO BE TAKEN)
+.*       BUT STANDS FOR ITSSELF: TO FETCH IT, OPCODE 'LA' IS USED
+.*       INSTEAD OF 'L'.
+.*       EXCEPTION: :RN IS AEQUIVALENT TO RN              06AUG76
+.*      -REGISTER-SYMBOL:  MUST HAVE BEEN DEFINED VIA EQUR MACRO,
+.*       SO THAT IT CAN BE DISCRIMINATED FROM ORDINARY SYMBOL.
+.*      -ORDINARY SYMBOL/EXPR (AS VALID IN AN ASSEMBLER RX/RS-INSTR)
+.*       DENOTING A STORAGE FULLWORD/HALFWORD/BYTE.  HERE T' AND L'
+.*       ARE INTERROGATED TO DETERMINE WHICH OF THE ABOVE (A SYMBOL
+.*       NAMING A CSECT/DSECT IS CONSIDERED AS FULLWORD DENOTATION).
+.*      -ANYTHING NOT RECOGNISED AS BELONGING TO ONE OF THE ABOVE CLAS-
+.*       SES IS ASSUMED TO DENOTE A FULLWORD...........................
+.*
+.*  OUTPUT:
+.*  &LETA(&I): &A REDUCED (ANY EXPLICIT LENGTH/TYPE CUT OFF)
+.*  &LETM(&I): TYPE/OPCODE MODIFIER:
+.*             ' ' -- FULLWORD STORAGE
+.*             'H' -- HALFWORD STORAGE
+.*             'C' -- BYTE STORAGE
+.*             'R' -- REGISTER
+.*             ''  -- SELF-DEF.TERM, IMMEDIATE VALUE/ADDRESS
+.*  &LETL(&I): LENGTH/INDEX
+.*             4,2,1 -- FULLWORD,HALFWORD,BYTE
+.*             1-16  -- REGISTER NUMBER + 1
+.*             0   -- SELF-DEF.TERM, IMMEDIATE VALUE/ADDRESS
+.*
+         GBLA  &LETL(3)
+         GBLC  &LETA(3),&LETM(3)       OUT: ADDR PART, LENGTH CODE
+.*
+&LETL(&I) SETA 0
+&LETA(&I) SETC '&A'
+&LETM(&I) SETC ''
+         AIF   (K'&A LT 3).GON
+         AIF   ('&A'(K'&A,1)   EQ '''').GON
+         AIF   ('&A'(K'&A-1,1) EQ ':').LENSPEC EXPLICIT LENGTH
+         AIF   ('&A'(1,2) EQ 'L''').MEND
+.GON     AIF   (T'&A EQ '@').GPR
+         AIF   (T'&A EQ '#').EQUN                  EQUN
+         AIF   (T'&A EQ 'N').MEND         SELF-DEF.TERM
+         AIF   (T'&A EQ 'U').TYPEU
+.**********************************************************************
+.*
+.*  STANDARD CASE: USE L' ATTRIBUTE OF SYMBOL
+.*
+         AIF   (T'&A EQ 'J').L44       ASSUME FULLWORD IF CSECT/DSECT
+&LETL(&I) SETA L'&A
+         AIF   (L'&A LT 1 OR L'&A EQ 3 OR L'&A GT 4).YLENT
+&LETM(&I) SETC 'CH? '(L'&A,1) GENERATE TYPE ACCORDING TO LENGTH
+         AGO  .MEND
+.**********************************************************************
+.*
+.*  OPERAND TYPE IS "UNDEFINED": MORE INQUIRY
+.*
+.TYPEU   AIF   ('&A'(1,1) NE ':').L44
+.*  SPECIAL NOTATION FOR EQU TO SELF-DEF: ':VALUE'
+&LETA(&I) SETC '&A'(2,K'&A-1)
+         AIF   (T'&LETA(&I) NE '@').MEND
+.*  EXCEPTION: &A IS :GPR  --> &A = GPR
+&LETM(&I) SETC 'R'                     MODIFIER CODE FOR GPR
+&LETL(&I) SETA L'&LETA(&I)+1           GPR NUMBER + 1 (1-16)
+         AGO  .MEND
+.*
+.L4      ANOP  ,                       DEFAULT ASSUMPTION: L'=4
+ MNOTE 4,'****** LET: TYPE OF OPERAND NOT SUPPORTED, FULLWORD ASSUMED'
+.L44     ANOP  ,
+&LETL(&I) SETA 4
+&LETM(&I) SETC ' '
+         AGO  .MEND
+.EQUN    ANOP
+&LETA(&I) SETC '=A(&A)'
+&LETM(&I) SETC ' '
+&LETL(&I) SETA 4
+         AGO  .MEND
+.EQU#    ANOP
+&LETA(&I) SETC '=A(&LETA(&I))'
+&LETM(&I) SETC ' '
+&LETL(&I) SETA 4
+         AGO  .MEND
+.**********************************************************************
+.*
+.*  OPERAND TYPE IS GPR
+.*
+.GPR     ANOP
+&LETM(&I) SETC 'R'                     MODIFIER CODE FOR GPR
+&LETL(&I) SETA L'&A+1                  GPR NUMBER + 1 (1-16)
+         AGO  .MEND
+.**********************************************************************
+.*
+.*  LENGTH CODE APPENDED TO ADDR SPECIFICATION: "ADDR:H"
+.*
+.LENSPEC ANOP
+&LETA(&I) SETC '&A'(1,K'&A-2)          ADDR PART
+         AIF   ('&A'(K'&A,1) EQ '#').EQU# EXPL. SELFDEF SYLV. 13.5.80
+         AIF   ('&A'(K'&A,1) EQ 'N').EQU# EXPL. SELFDEF SYLV. 13.5.80
+&LETM(&I) SETC '&A'(K'&A,1)            LENGTH SPEC
+         AIF   ('&LETM(&I)' EQ 'F').L44
+&LETL(&I) SETA 1
+         AIF   ('&LETM(&I)' EQ 'C').MEND
+&LETL(&I) SETA 2
+         AIF   ('&LETM(&I)' EQ 'H').MEND
+.*       AGO   .YLENT
+.*
+.YLENT   MNOTE 12,'****** LET: INVALID LENGTH ATTR OF "&A" OPERAND'
+.MEND    MEND

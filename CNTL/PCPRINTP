@@ -1,0 +1,32 @@
+//*-------------------------------------------------------------------
+//*
+//* FOR PRINTING THE PRETTY PRINT LIST OF THE EXAMPLE FROM THE PCP
+//* DOCUMENTATION, PLEASE USE THE LASER OPTION L.1 WITH THE
+//* INPUT-PARAMETERS AS LISTED BELOW.
+//*
+//*-------------------------------------------------------------------
+//********************************************
+//**
+//** ****************************************
+//** *
+//** * USER-IDENTIFICATION:   GRZ013
+//** *
+//** ****************************************
+//**
+//** PRINTFILE:   SYS2.SPTS.INFO(PCSAMPLP)
+//** USED PANEL:  L.1
+//** DATE:  ......
+//** TIME:  ......
+//**
+//********************************************
+//**
+//** PANEL INPUT-PARAMETERS:
+//**
+//**  CHARACTER SET:      STD
+//**  LINES/INCH:         8
+//**  CHARACTERS/INCH:    15
+//**  ADDITIONAL COPIES:  0
+//**  CUT PAPER (DIN-A4): NO
+//**  HANDLE BOXES:       YES
+//**
+//********************************************

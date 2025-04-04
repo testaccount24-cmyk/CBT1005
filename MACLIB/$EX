@@ -1,0 +1,64 @@
+         MACRO ,                                       STRUCT MACRO SET
+&LABEL   $EX   &A,&REL,&B,&EX
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*                                            SYLVESTER GMD-RZ) 00JAN79
+.*  "(EX" CONDITION "AND/OR" CONDITION >... "EX)"
+.*       EXPRESSION BLOCK
+.*
+.*  &A,&REL,&B  COMPRISES THE CONDITIONAL EXPRESSION, LEAVING TRUE OR
+.*       FALSE.  WHAT IS A LEGAL CONDITION, IS DEFINED IN MACRO IF0CE.
+.*
+         GBLA  &BLK
+         GBLC  &BLKTYPE(30),&BLKNAME(30),&BLKID(30)
+.*
+&LABEL   SASLIST MACRO,'(EX'
+         AIF   ('&BLKTYPE(&BLK)'(2,1) EQ 'X').YEX
+&BLK     SETA  &BLK+1                  PUSH BLOCK STRUCTURE
+&BLKTYPE(&BLK) SETC 'E '               BEING IN CONDITION PART OF "IF"
+&BLKNAME(&BLK) SETC '&LABEL'
+         SPTSNDX EX
+         AIF   ('&LABEL' EQ '').GO
+&LABEL   DS    0H
+.*
+.*  EVALUATE CONDITIONAL EXPRESSION
+.*
+.GO      ANOP
+@@A&BLKID(&BLK) DS  0H
+         AIF   ('&A&REL&B' NE '').IF0CE
+         AGO  .MEND
+.IF0CE   IF0CE &A,&REL,&B
+&BLKTYPE(&BLK) SETC 'EX'               BEING IN CONDITION PART OF "IF"
+.*
+.*  SEE WHAT TO BE DONE AFTER COMPARISON
+.*
+         AIF   ('&EX' EQ '').MEND
+.*
+.*  "THEN"
+.*
+.*       AIF   ('&EX' NE 'EX$' OR '&EX' NE 'EX)').OR
+.*       EX$ ,
+.*       AGO  .MEND
+.*
+.*  "OR CONDITION,..."
+.*
+.OR      AIF   ('&EX' NE '$OR$' AND '&EX' NE 'OR'                      -
+               AND '&EX' NE 'ORELSE').AND
+         ORELSE &SYSLIST(5),&SYSLIST(6),&SYSLIST(7),&SYSLIST(8)
+         AGO  .MEND
+.*
+.*  "AND CONDITION,..."
+.*
+.AND     AIF   ('&EX' NE '$AND$' AND '&EX' NE 'AND'                    -
+               AND '&EX' NE 'ANDTHEN').YTHEN
+         ANDTHEN &SYSLIST(5),&SYSLIST(6),&SYSLIST(7),&SYSLIST(8)
+         AGO  .MEND
+.**********************************************************************
+.YTHEN MNOTE 8,'****** (EX: ASSUMED "EX$" INSTEAD OF INVALID "&EX-$".'
+         EX$ ,
+         AGO  .MEND
+.YEX     MNOTE 8,'**** $EX NOT EXPECTED , IGNORED ****'
+.MEND    SASLIST MACEND
+         MEND

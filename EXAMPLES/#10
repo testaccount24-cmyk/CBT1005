@@ -1,0 +1,225 @@
+         #TEST   LET                                                    #10  001
+         AIF   (&NOTFND).LET                                            #10  002
+         PRINT ON                                                       #10  003
+         TITLE 'EXAMPLES FOR MACRO   LET   --- ARITH. ASSIGNMENTS ---'  #10  004
+PGM      LOCTR                                                          #10  005
+         SPACE                                                          #10  006
+*-------------------------------------   LET  X,=,Y  -----------------* #10  007
+         SPACE                                                          #10  008
+         LET   R5,=,R11                                                 #10  009
+         SPACE 2                                                        #10  010
+         LET   R5,=,R5                                                  #10  011
+         SPACE 2                                                        #10  012
+         LET   R1,=,:FULLWORD                                           #10  013
+         SPACE 2                                                        #10  014
+         LET   R1,=,FULLWORD:F                                          #10  013
+         SPACE 2                                                        #10  014
+         LET   R1,=,FULLWORD:H                                          #10  013
+         SPACE 2                                                        #10  014
+         LET   R1,=,FULLWORD:C                                          #10  013
+         SPACE 2                                                        #10  014
+         LET   R1,=,FULLWORD:N                                          #10  013
+         SPACE 2                                                        #10  014
+         LET   R1,=,FULLWORD:#                                          #10  013
+         SPACE 2                                                        #10  014
+         LET   FULLWORD,=,R5                                            #10  015
+         SPACE 2                                                        #10  016
+         LET   F2,=,H2,WORK=                                            #10  017
+         SPACE 2                                                        #10  018
+         LET   H2,=,9,WORK=                                             #10  019
+         SPACE 2                                                        #10  020
+         LET   C2,=,9                                                   #10  021
+         SPACE 2                                                        #10  022
+         LET   R1,=,-9                                                  #10  021
+         SPACE 2                                                        #10  022
+         LET   R1,=,-100000                                             #10  021
+         SPACE 2                                                        #10  022
+         LET   R1,=,+9                                                  #10  021
+         SPACE 2                                                        #10  022
+         LET   R1,=,+100000                                             #10  021
+         SPACE 2                                                        #10  022
+         LET   R1,=,100000                                              #10  021
+         SPACE 2                                                        #10  022
+         LET   R1,=,30000                                               #10  021
+         SPACE 2                                                        #10  022
+         LET   R1,=,-30000                                              #10  021
+         SPACE 2                                                        #10  022
+         LET   R1,=,2000                                                #10  021
+         SPACE 2                                                        #10  022
+         LET   R1,=,0                                                   #10  021
+         SPACE 2                                                        #10  022
+         LET   C2,=,C2                                                  #10  023
+         SPACE 2                                                        #10  024
+         LET   C2,=,H2                                                  #10  025
+         SPACE 2                                                        #10  026
+         LET   3(R5):C,=,9                                              #10  027
+         SPACE 2                                                        #10  028
+         LET   3(R5):C,=,X'01'                                          #10  027
+         SPACE 2                                                        #10  028
+         LET   3(R5):C,=,C' '                                           #10  027
+         SPACE 2                                                        #10  028
+         LET   3(R5):C,=,X'0000'                                        #10  027
+         SPACE 2                                                        #10  028
+         LET   3(R5):C,=,XL1'0000'                                      #10  027
+         SPACE 2                                                        #10  028
+         LET   3(R5):C,=,(3+6):N                                        #10  027
+         SPACE 2                                                        #10  028
+         LET   3(R5):C,=,(3+6):#                                        #10  027
+         SPACE 2                                                        #10  028
+         LET   3(R5):C,=,(3+6):H                                        #10  027
+         SPACE 2                                                        #10  028
+         LET   3(R5):C,=,C2                                             #10  029
+         SPACE 2                                                        #10  030
+         LET   5(R3):C,=,3(R5):C                                        #10  031
+         SPACE                                                          #10  032
+*-------------------------------------   LET  X,=,-,Y  ---------------* #10  033
+         SPACE                                                          #10  034
+         LET   R5,=,-,R6                                                #10  035
+         SPACE                                                          #10  036
+*-------------------------------------   LET  X,=,Y,+,Z  -------------* #10  037
+         SPACE                                                          #10  038
+         LET   R6,=,9,+,10                                              #10  039
+         SPACE 2                                                        #10  040
+         LET   R5,=,R5,+,7                                              #10  041
+         SPACE 2                                                        #10  042
+         LET   R5,=,F2,+,R5                                             #10  043
+         SPACE 2                                                        #10  044
+         LET   F2,=,H2,+,R0                                             #10  045
+         SPACE                                                          #10  046
+*-------------------------------------   LET  X,=,Y,-,Z  -------------* #10  047
+         SPACE                                                          #10  048
+         LET   R6,=,9,-,R6                                              #10  049
+         SPACE                                                          #10  050
+*-------------------------------------   LET  X,=,Y,*,Z  -------------* #10  051
+         SPACE                                                          #10  052
+         LET   R5,=,9,*,3                                               #10  053
+         SPACE 2                                                        #10  054
+         LET   R5,=,R6,*,9                                              #10  055
+         SPACE 2                                                        #10  056
+         LET   R5,=,9,*,R5                                              #10  057
+         SPACE                                                          #10  058
+*-------------------------------------   LET  X,=,Y,/,Z  -------------* #10  059
+         SPACE                                                          #10  060
+         LET   R5,=,9,/,2                                               #10  061
+         SPACE 2                                                        #10  062
+         LET   R5,=,R6,/,2                                              #10  063
+         SPACE 2                                                        #10  064
+         LET   R5,=,R6,/,3                                              #10  065
+         SPACE 2                                                        #10  066
+         LET   R5,=,9,/,H2        VARIABLE 2.OP OF / MUST BE POWER OF 2 #10  067
+         SPACE                                                          #10  068
+*-------------------------------------   LET  X,=,Y,+,Z,-,V  ---------* #10  069
+         SPACE                                                          #10  070
+         LET   R5,=,FULLWORD,+,9,-,CHAR                                 #10  071
+         SPACE 2                                                        #10  072
+         LET   FULLWORD,=,R6,+,3,+,R0                                   #10  073
+         SPACE                                                          #10  074
+*-------------------------------------   LET  X,->,Y  ----------------* #10  075
+         SPACE                                                          #10  076
+         LET   R5,->,F2                                                 #10  077
+         SPACE 2                                                        #10  078
+         LET   R2,->,R3                                                 #10  079
+         SPACE 2                                                        #10  080
+         LET   R5,->,HALFWORD,+,8                                       #10  081
+         SPACE                                                          #10  082
+*-------------------------------------   LET  X,+,Y (,...)  ----------* #10  083
+         SPACE                                                          #10  084
+LET1     LET   R5,+,3                                                   #10  085
+         SPACE 2                                                        #10  086
+         LET   FULLWORD,+,5                                             #10  087
+         SPACE 2                                                        #10  088
+         LET   R5,+,H2,*,R5                                             #10  089
+         SPACE 2                                                        #10  090
+         LET   F2,+,H2,*,R5,WORK=R6                                     #10  091
+         SPACE                                                          #10  092
+*-------------------------------------   LET  X,*,Y  -----------------* #10  093
+         SPACE                                                          #10  094
+         LET   R5,*,6                                                   #10  095
+         SPACE 2                                                        #10  096
+         LET   R5,*,R6                                                  #10  097
+         SPACE                                                          #10  098
+*-------------------------------------   LET  X,/,Y  -----------------* #10  099
+         SPACE                                                          #10  100
+         LET   R5,/,2                                                   #10  101
+         SPACE 2                                                        #10  102
+LET3     LET   R5,/,R6            2.OP MUST BE POWER OF 2               #10  103
+         TITLE 'EXAMPLES FOR MACRO   LET    ---- FLAG ASSIGNMENTS ----' #10  104
+         SPACE                                                          #10  105
+*-------------------------------------   LET  X,:,Y  -----------------* #10  106
+         SPACE                                                          #10  107
+         LET   FULLWORD,:,9                                             #10  108
+         SPACE 2                                                        #10  107
+         LET   FULLWORD,ON,10                                           #10  108
+         SPACE 2                                                        #10  109
+         LET   R5,:,R6                                                  #10  110
+         SPACE                                                          #10  111
+*-------------------------------------   LET  X,¬:,Y  ----------------* #10  112
+         SPACE                                                          #10  113
+         LET   F2,¬:,X'02'                                              #10  114
+         SPACE 2                                                        #10  115
+         LET   FULLWORD,¬:,9                                            #10  116
+         SPACE 2                                                        #10  117
+         LET   FULLWORD,OFF,X'03'                                       #10  108
+         SPACE 2                                                        #10  109
+         LET   F2,¬:,B'00000010'                                        #10  118
+         SPACE 2                                                        #10  119
+LET4     LET   FULLWORD,¬:,R6                                           #10  120
+         SPACE 2                                                        #10  121
+         LET   FULLWORD,¬:,HALFWORD                                     #10  122
+         SPACE 2                                                        #10  123
+         LET   FULLWORD,¬:,9,+,10                                       #10  124
+         TITLE 'EXAMPLES FOR MACRO   LET    -- STRING ASSIGNM. / OTHER' #10  125
+         SPACE                                                          #10  126
+*-------------------------------------   LET  (X,Y),=,Z  -------------* #10  127
+         SPACE                                                          #10  128
+         SPACE 2                                                        #10  129
+         LET   (A,9),=,R5                                               #10  130
+         SPACE 2                                                        #10  131
+         LET   (7(R3),2),=,'9'                                          #10  132
+         SPACE 2                                                        #10  133
+         LET   (7(R3),2),=,HALFWORD                                     #10  134
+         SPACE 2                                                        #10  135
+         LET   (F2,H2),=,C2                                             #10  136
+         SPACE 2                                                        #10  137
+LET5     LET   (F2,3),+,H2                    NO ARITHM. IN STRING ASSG #10  138
+         SPACE 2                                                        #10  139
+         LET   (F2,2),=,H2,+,4,-,C2           NO ARITHM. IN STRING ASSG #10  140
+         SPACE                                                          #10  141
+*-------------------------------------   LET  (X,Y),=,Z  -------------* RZBN
+         SPACE 2                                                        RZBN
+LET6     LET   (A,R3),=,R5                                              RZBN
+         SPACE 2                                                        RZBN
+         LET   (7(R3),R0),=,'9'                                         RZBN
+         SPACE 2                                                        RZBN
+         LET   (7(R3),R4),=,HALFWORD                                    RZBN
+         SPACE 2                                                        RZBN
+         LET   (F2,R2),=,C2                                             RZBN
+         SPACE 2
+         LET   (R2,12),=,C2                                             RZBN
+         SPACE 2                                                        RZBN
+         LET   (R2,4),=,4(R5)                                           RZBN
+         SPACE 2                                                        RZBN
+         LET   (R14,8),=,12(R13)                                        RZBN
+         SPACE 2                                                        RZBN
+         LET   (F2,12),=,C2                                             RZBN
+         SPACE 2                                                        RZBN
+         LET   (12(R13),60),=,R14                                       RZBN
+         SPACE 2                                                        RZBN
+         LET   (R2,R3),=,C2                                             RZBN
+         SPACE 2                                                        RZBN
+         LET   (0(R2),R0),=,C2                                          RZBN
+         SPACE 2                                                        RZBN
+         LET   (R2,3),=,C2                                              RZBN
+         SPACE 2                                                        RZBN
+         LET   (R2,0),=,C2                                              RZBN
+         SPACE 2                                                        RZBN
+         LET   (R2,R3),=,C2                                             RZBN
+         SPACE 2                                                        RZBN
+*-------------------------------------   LET  X,???,Y  ---------------* #10  142
+         SPACE                                                          #10  143
+LET99999 LET   R5,&,9                                                   #10  144
+         SPACE 2                                                        #10  145
+         LET   R5,=,R6,+,3,><,4                                         #10  146
+         SPACE 2                                                        #10  147
+         PRINT OFF                                                      #10  148
+.LET     ANOP                                                           #10  149

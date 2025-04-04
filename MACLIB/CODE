@@ -1,0 +1,24 @@
+         MACRO
+         CODE
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*
+.*  OPEN/RESUME INSTRUCTIONS PART OF PROCEDURE
+.*       "PROC" ... "DATA" DATA-DCL "CODE" INSTRUCTIONS ...
+.*
+         GBLA  &PRC,&BLK
+         GBLB  &BLKXCPT(30)
+         GBLC  &PRCTYPE(04),&PRCCODE(04),&PRCDATA(04),&PRCXCPT(4)
+.SASLIST SASLIST MACRO,'CODE'
+.*
+         MNOTE *,'***************'
+*   OPEN/RESUME PROC INSTRUCTIONS BODY
+         AIF   (&BLKXCPT(&BLK)).XCPT
+&PRCCODE(&PRC) LOCTR ,
+         AGO   .MEND
+.XCPT    ANOP
+&PRCXCPT(&PRC) LOCTR ,
+.MEND    SASLIST MACEND
+         MEND

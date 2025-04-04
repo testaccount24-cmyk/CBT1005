@@ -1,0 +1,37 @@
+         MACRO
+&L       LET0M
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*
+.*
+.*  GENERATE (XC AND) MVC.
+.*       SUB-MACRO FOR 'LET', MAY NOT BE USED AS OUTER MACRO.
+.*       SIMULATE:
+.*       (L|LH|IC)    @0,&LETA(2)
+.*       (ST|STH|STC) @0,&LETA(1)
+.*
+         GBLA  &LETL(3)
+         GBLB  &LETLA
+         GBLC  &LETA(3),&LETM(3),&LET0M1
+         LCLC  &TO,&FROM
+         LCLA  &K
+         AIF   (&LETL(2) LE &LETL(1)).MVCK2
+&K       SETA  &LETL(2)-&LETL(1)
+.MVCK2   ANOP
+&FROM    SETC  '&K'.'+'.'&LETA(2)'
+&K       SETA  0
+         AIF   (&LETL(1) LE &LETL(2)).MVCK1
+&K       SETA  &LETL(1)-&LETL(2)
+.MVCK1   AIF   (&LETL(2) GE &LETL(1)).MVCK11
+         LET0M1 &LETA(1),&K,&LETA(1)
+         XC    &LET0M1
+.MVCK11  ANOP
+&TO      SETC  '&K'.'+'.'&LETA(1)'
+&K       SETA  &LETL(1)
+         AIF   (&LETL(2) GT &LETL(1)).MVCK9
+&K       SETA  &LETL(2)
+.MVCK9   LET0M1 &TO,&K,&FROM
+         MVC   &LET0M1
+.MEND    MEND

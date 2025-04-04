@@ -1,0 +1,71 @@
+         MACRO
+         FOR$  &LABEL
+.**********************************************************************
+.*COPYRIGHT GESELLSCHAFT FUER MATHEMATIK UNF DATENVERARBEITUNG MBH 1985
+.*LICENSED MATERIAL --- PROGRAM PROPERTY OF GMD-Z1.BN
+.**********************************************************************
+.*
+.*  "(FOR" LOOP-CONTROL "LOOP" BLOCK "FOR)"
+.*       END "FOR" CLAUSE.
+.*
+         GBLA  &BLK,&BLKAUXN,&EQUR
+         GBLB  &BLKTEST
+         GBLB  &BLKXCPT(30)
+         GBLC  &BLKTYPE(30),&BLKNAME(30),&BLKID(30),&BLKAUX(30)
+         LCLC  &C
+&LABEL   SASLIST MACRO,'FOR)'
+.*  PLACEMENT VERIFICATION
+         AIF   ('&BLKTYPE(&BLK)'(1,1) NE 'W' AND                       -
+               '&BLKTYPE(&BLK)'(1,1) NE 'U').NOLU
+         LOOP ,                     TERMINATE WHILE/UNTIL BLOCK
+.NOLU    AIF   ('&BLKTYPE(&BLK)' NE 'FX').Y0
+         AIF   ('&LABEL' NE '' AND '&LABEL' NE '&BLKNAME(&BLK)').Y0
+         AIF   (NOT &BLKXCPT(&BLK)).NOXCPT
+         CODEX ,
+&BLKXCPT(&BLK) SETB 0
+         IF0BC 15,@@Z&BLKID(&BLK)
+         CODEX ,
+.NOXCPT ANOP
+         AIF   ('&BLKNAME(&BLK)' EQ '').NOXREF
+         DS    0S(&BLKNAME(&BLK))
+.NOXREF  ANOP
+.*
+&C       SETC  '&BLKAUX(&BLKAUXN)'     LOOP CONTROL REGISTER
+.*
+.*  "(FOR" GPR "TIMES" ...
+.*
+         AIF   ('&BLKAUX(&BLKAUXN-1)' NE '').STEPN
+         BCT   &C,@@A&BLKID(&BLK)
+         AGO   .POP
+.*
+.*  "(FOR" GPR "STEP" N ...
+.*
+.STEPN   AIF   ('&BLKAUX(&BLKAUXN-1)' NE '-1').STEPN1
+         BCTR  &C,0                      DECR - 1
+         AGO   .STEPN21
+.STEPN1  LA    &C,&BLKAUX(&BLKAUXN-1)(,&C) STEP REGISTER
+.STEPN21 AIF   ('&BLKAUX(&BLKAUXN-2)' NE '').STEPNC
+         B     @@A&BLKID(&BLK)            AND REPEAT.
+         AGO   .POP
+.*
+.*  "(FOR" GPR "STEP" N "TO" LIMIT ...
+.*
+.STEPNC  LET0X &C,C,&BLKAUX(&BLKAUXN-2) COMPARE W/LIMIT
+         AIF   ('&BLKAUX(&BLKAUXN-1)' NE '-1').STEPNC1
+         BNL   @@A&BLKID(&BLK)         REPEAT IF LIMIT NOT YET REACHED.
+         AGO   .POP
+.STEPNC1 BNH   @@A&BLKID(&BLK)         REPEAT IF LIMIT NOT YET REACHED.
+.*
+.*
+.*
+.POP     ANOP
+&BLKAUXN SETA  &BLKAUXN-3              POP AUXILIARY STACK
+@@X&BLKID(&BLK)  DS  0H               END OF FOR CLAUSE.
+@@Y&BLKID(&BLK)  DS  0H               END OF FOR CLAUSE.
+@@Z&BLKID(&BLK)  DS  0H               END OF FOR CLAUSE.
+&BLK     SETA  &BLK-1                  POP STRUCTURE STACKS.
+         AGO  .MEND
+.**********************************************************************
+.Y0      BLK0TEST FOR,F,&LABEL
+.MEND    SASLIST MACEND
+         MEND
